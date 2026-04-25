@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Facciamo la Spesa!</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Comic Sans MS', 'Chalkboard SE', cursive; background: #FFF9E6; color: #333; }
+
+  h1 { text-align: center; background: #FF6B35; color: white; padding: 18px; font-size: 2em; letter-spacing: 1px; border-radius: 0 0 20px 20px; }
+
+  .tabs { display: flex; justify-content: center; gap: 12px; margin: 18px 10px 10px; }
+  .tab { padding: 12px 28px; border: none; border-radius: 30px; font-size: 1.2em; font-family: inherit; cursor: pointer; font-weight: bold; transition: transform 0.1s; }
+  .tab:active { transform: scale(0.95); }
+  .tab.active { background: #FF6B35; color: white; box-shadow: 0 4px 10px rgba(255,107,53,0.4); }
+  .tab.inactive { background: #FFD9C7; color: #FF6B35; }
+
+  .section { display: none; padding: 10px 14px 30px; }
+  .section.visible { display: block; }
+
+  /* PRODOTTI */
+  .products-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .product-card { background: white; border-radius: 18px; padding: 14px 10px; text-align: center; box-shadow: 0 3px 12px rgba(0,0,0,0.1); border: 3px solid transparent; transition: border 0.2s; }
+  .product-card.in-cart { border-color: #4CAF50; }
+  .product-emoji { font-size: 3em; }
+  .product-name { font-size: 1.05em; font-weight: bold; margin: 6px 0 4px; }
+  .product-price { font-size: 1.1em; color: #FF6B35; font-weight: bold; margin-bottom: 10px; }
+  .btn-add { background: #4CAF50; color: white; border: none; border-radius: 20px; padding: 8px 16px; font-size: 1em; font-family: inherit; cursor: pointer; font-weight: bold; }
+  .btn-add:active { transform: scale(0.95); }
+  .btn-add.added { background: #FF6B35; }
+
+  /* CARRELLO */
+  .cart-empty { text-align: center; font-size: 1.3em; color: #aaa; margin-top: 40px; }
+  .cart-item { background: white; border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .cart-item-left { display: flex; align-items: center; gap: 10px; font-size: 1.05em; font-weight: bold; }
+  .cart-item-emoji { font-size: 1.8em; }
+  .cart-item-price { font-size: 1.1em; color: #FF6B35; font-weight: bold; }
+  .cart-item-qty { display: flex; align-items: center; gap: 8px; }
+  .qty-btn { background: #eee; border: none; border-radius: 50%; width: 30px; height: 30px; font-size: 1.2em; cursor: pointer; font-weight: bold; }
+  .qty-btn:active { transform: scale(0.9); }
+  .qty-num { font-size: 1.1em; font-weight: bold; min-width: 20px; text-align: center; }
+
+  .total-box { background: #FF6B35; color: white; border-radius: 16px; padding: 16px; text-align: center; margin: 16px 0; font-size: 1.4em; font-weight: bold; }
+
+  .btn-pay { display: block; width: 100%; background: #4CAF50; color: white; border: none; border-radius: 30px; padding: 14px; font-size: 1.3em; font-family: inherit; font-weight: bold; cursor: pointer; margin-top: 10px; }
+  .btn-pay:active { transform: scale(0.98); }
+
+  /* PAGAMENTO */
+  .pay-total { background: #FF6B35; color: white; border-radius: 16px; padding: 14px; text-align: center; font-size: 1.5em; font-weight: bold; margin-bottom: 16px; }
+  .pay-inserted { background: #4CAF50; color: white; border-radius: 16px; padding: 14px; text-align: center; font-size: 1.5em; font-weight: bold; margin-bottom: 16px; }
+  .coins-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+  .coin-btn { background: linear-gradient(135deg, #FFD700, #FFA500); color: #5a3700; border: none; border-radius: 50%; width: 80px; height: 80px; font-size: 1em; font-weight: bold; font-family: inherit; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: transform 0.1s; display: flex; align-items: center; justify-content: center; flex-direction: column; margin: 0 auto; }
+  .coin-btn:active { transform: scale(0.9); }
+  .coin-label { font-size: 0.7em; }
+
+  .btn-minus { display: block; width: 100%; background: #e53935; color: white; border: none; border-radius: 30px; padding: 12px; font-size: 1.2em; font-family: inherit; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
+  .btn-minus:active { transform: scale(0.98); }
+  .btn-reset-pay { display: block; width: 100%; background: #9E9E9E; color: white; border: none; border-radius: 30px; padding: 12px; font-size: 1.1em; font-family: inherit; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
+
+  .btn-verify { display: block; width: 100%; background: #3F51B5; color: white; border: none; border-radius: 30px; padding: 14px; font-size: 1.3em; font-family: inherit; font-weight: bold; cursor: pointer; margin-top: 6px; }
+  .btn-verify:active { transform: scale(0.98); }
+
+  .result-box { border-radius: 16px; padding: 18px; text-align: center; font-size: 1.4em; font-weight: bold; margin-top: 14px; display: none; }
+  .result-box.ok { background: #C8E6C9; color: #2E7D32; display: block; }
+  .result-box.err { background: #FFCDD2; color: #C62828; display: block; }
+
+  .coins-history { background: white; border-radius: 14px; padding: 10px 14px; margin-bottom: 12px; min-height: 48px; font-size: 1em; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .coin-chip { background: #FFD700; border-radius: 20px; padding: 4px 10px; font-size: 0.95em; font-weight: bold; color: #5a3700; }
+</style>
+</head>
+<body>
+
+<h1>🛒 Facciamo la Spesa!</h1>
+
+<div class="tabs">
+  <button class="tab active" onclick="showSection('prodotti')">🍎 Prodotti</button>
+  <button class="tab inactive" onclick="showSection('carrello')">🛒 Carrello</button>
+  <button class="tab inactive" onclick="showSection('pagamento')">💰 Paga</button>
+</div>
+
+<!-- PRODOTTI -->
+<div id="prodotti" class="section visible">
+  <div class="products-grid" id="productsGrid"></div>
+</div>
+
+<!-- CARRELLO -->
+<div id="carrello" class="section">
+  <div id="cartContent"></div>
+</div>
+
+<!-- PAGAMENTO -->
+<div id="pagamento" class="section">
+  <div class="pay-total" id="payTotal">💶 Da pagare: €0.00</div>
+  <div class="pay-inserted" id="payInserted">💳 Hai inserito: €0.00</div>
+  <div class="coins-history" id="coinsHistory">🪙 Le tue monete appaiono qui...</div>
+  <div class="coins-grid">
+    <button class="coin-btn" onclick="addCoin(10)">🪙<span class="coin-label">€0.10</span></button>
+    <button class="coin-btn" onclick="addCoin(20)">🪙<span class="coin-label">€0.20</span></button>
+    <button class="coin-btn" onclick="addCoin(50)">🪙<span class="coin-label">€0.50</span></button>
+    <button class="coin-btn" onclick="addCoin(100)">🪙<span class="coin-label">€1.00</span></button>
+    <button class="coin-btn" onclick="addCoin(200)">🪙<span class="coin-label">€2.00</span></button>
+    <button class="coin-btn" onclick="addCoin(500)">🟡<span class="coin-label">€5.00</span></button>
+  </div>
+  <button class="btn-minus" onclick="removeLast()">↩️ Togli ultima moneta</button>
+  <button class="btn-reset-pay" onclick="resetCoins()">🔄 Ricomincia</button>
+  <button class="btn-verify" onclick="verify()">✅ HAI PAGATO GIUSTO?</button>
+  <div class="result-box" id="resultBox"></div>
+</div>
+
+<script>
+const products = [
+  { id: 1, name: 'Banane', emoji: '🍌', price: 200 },
+  { id: 2, name: 'Mele', emoji: '🍎', price: 300 },
+  { id: 3, name: 'Latte 1lt', emoji: '🥛', price: 150 },
+  { id: 4, name: 'Coca-Cola', emoji: '🥤', price: 250 },
+  { id: 5, name: 'Pomodori', emoji: '🍅', price: 350 },
+  { id: 6, name: 'Hamburger', emoji: '🍔', price: 450 },
+  { id: 7, name: 'Yogurt', emoji: '🍦', price: 150 },
+  { id: 8, name: 'Budino vaniglia', emoji: '🍮', price: 230 },
+  { id: 9, name: 'Salame', emoji: '🥩', price: 600 },
+  { id: 10, name: 'Biscotti', emoji: '🍪', price: 430 },
+];
+
+let cart = {}; // id -> qty
+let insertedCoins = []; // array of coin values in cents
+
+function fmt(cents) {
+  return '€' + (cents / 100).toFixed(2);
+}
+
+function getTotal() {
+  return Object.entries(cart).reduce((sum, [id, qty]) => {
+    const p = products.find(p => p.id == id);
+    return sum + p.price * qty;
+  }, 0);
+}
+
+function getInserted() {
+  return insertedCoins.reduce((a, b) => a + b, 0);
+}
+
+// RENDER PRODUCTS
+function renderProducts() {
+  const grid = document.getElementById('productsGrid');
+  grid.innerHTML = products.map(p => {
+    const inCart = cart[p.id] > 0;
+    return `<div class="product-card ${inCart ? 'in-cart' : ''}" id="card-${p.id}">
+      <div class="product-emoji">${p.emoji}</div>
+      <div class="product-name">${p.name}</div>
+      <div class="product-price">${fmt(p.price)}</div>
+      <button class="btn-add ${inCart ? 'added' : ''}" onclick="addToCart(${p.id})">
+        ${inCart ? '✅ Nel carrello (' + cart[p.id] + ')' : '➕ Aggiungi'}
+      </button>
+    </div>`;
+  }).join('');
+}
+
+function addToCart(id) {
+  cart[id] = (cart[id] || 0) + 1;
+  renderProducts();
+  updateCartBadge();
+}
+
+function changeQty(id, delta) {
+  cart[id] = (cart[id] || 0) + delta;
+  if (cart[id] <= 0) delete cart[id];
+  renderProducts();
+  renderCart();
+  updateCartBadge();
+}
+
+function updateCartBadge() {
+  const count = Object.values(cart).reduce((a, b) => a + b, 0);
+  const btn = document.querySelectorAll('.tab')[1];
+  btn.textContent = count > 0 ? `🛒 Carrello (${count})` : '🛒 Carrello';
+}
+
+// RENDER CART
+function renderCart() {
+  const div = document.getElementById('cartContent');
+  const ids = Object.keys(cart);
+  if (ids.length === 0) {
+    div.innerHTML = '<div class="cart-empty">😊 Il carrello è vuoto!<br>Aggiungi qualcosa dalla lista prodotti.</div>';
+    return;
+  }
+  let html = ids.map(id => {
+    const p = products.find(x => x.id == id);
+    const qty = cart[id];
+    return `<div class="cart-item">
+      <div class="cart-item-left">
+        <span class="cart-item-emoji">${p.emoji}</span>
+        <div>
+          <div>${p.name}</div>
+          <div style="font-size:0.9em;color:#888">${fmt(p.price)} x ${qty}</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+        <div class="cart-item-price">${fmt(p.price * qty)}</div>
+        <div class="cart-item-qty">
+          <button class="qty-btn" onclick="changeQty(${id}, -1)">−</button>
+          <span class="qty-num">${qty}</span>
+          <button class="qty-btn" onclick="changeQty(${id}, 1)">+</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const total = getTotal();
+  html += `<div class="total-box">💶 Totale: ${fmt(total)}</div>`;
+  html += `<button class="btn-pay" onclick="goToPay()">💰 Vai a pagare!</button>`;
+  div.innerHTML = html;
+}
+
+function goToPay() {
+  showSection('pagamento');
+  resetCoins();
+  updatePayDisplay();
+}
+
+// COINS
+function addCoin(val) {
+  insertedCoins.push(val);
+  updatePayDisplay();
+  document.getElementById('resultBox').className = 'result-box';
+}
+
+function removeLast() {
+  if (insertedCoins.length > 0) {
+    insertedCoins.pop();
+    updatePayDisplay();
+    document.getElementById('resultBox').className = 'result-box';
+  }
+}
+
+function resetCoins() {
+  insertedCoins = [];
+  updatePayDisplay();
+  document.getElementById('resultBox').className = 'result-box';
+}
+
+function updatePayDisplay() {
+  const total = getTotal();
+  const inserted = getInserted();
+  document.getElementById('payTotal').textContent = '💶 Da pagare: ' + fmt(total);
+  document.getElementById('payInserted').textContent = '💳 Hai inserito: ' + fmt(inserted);
+
+  const hist = document.getElementById('coinsHistory');
+  if (insertedCoins.length === 0) {
+    hist.innerHTML = '🪙 Le tue monete appaiono qui...';
+  } else {
+    hist.innerHTML = insertedCoins.map(c => `<span class="coin-chip">${fmt(c)}</span>`).join('');
+  }
+}
+
+function verify() {
+  const total = getTotal();
+  const inserted = getInserted();
+  const box = document.getElementById('resultBox');
+  if (total === 0) {
+    box.className = 'result-box err';
+    box.textContent = '🛒 Il carrello è vuoto! Aggiungi prima qualcosa.';
+    return;
+  }
+  if (inserted === total) {
+    box.className = 'result-box ok';
+    box.textContent = '🎉 Bravo! Hai pagato esattamente ' + fmt(total) + '! Sei stato bravissimo! ⭐';
+  } else if (inserted > total) {
+    const resto = inserted - total;
+    box.className = 'result-box err';
+    box.textContent = '😅 Hai messo troppi soldi! Hai dato ' + fmt(inserted) + ' ma bastava ' + fmt(total) + '. Togli ' + fmt(resto) + '!';
+  } else {
+    const manca = total - inserted;
+    box.className = 'result-box err';
+    box.textContent = '😊 Quasi! Hai messo ' + fmt(inserted) + ' ma devi arrivare a ' + fmt(total) + '. Mancano ancora ' + fmt(manca) + '!';
+  }
+}
+
+// TABS
+function showSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('visible'));
+  document.querySelectorAll('.tab').forEach(t => { t.className = 'tab inactive'; });
+  document.getElementById(name).classList.add('visible');
+
+  const idx = ['prodotti','carrello','pagamento'].indexOf(name);
+  document.querySelectorAll('.tab')[idx].className = 'tab active';
+
+  if (name === 'carrello') renderCart();
+  if (name === 'pagamento') updatePayDisplay();
+}
+
+renderProducts();
+</script>
+</body>
+</html>
