@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Test Stili Attributivi</title>
+<style>
+  :root {
+    --primary: #4f46e5;
+    --primary-light: #818cf8;
+    --success: #059669;
+    --danger: #dc2626;
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --muted: #64748b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  header { background: var(--primary); color: white; padding: 20px 24px; text-align: center; }
+  header h1 { font-size: 1.4rem; font-weight: 700; }
+  header p { font-size: 0.85rem; opacity: 0.85; margin-top: 4px; }
+
+  .container { max-width: 760px; margin: 0 auto; padding: 24px 16px 60px; }
+
+  /* Progress */
+  .progress-bar { background: var(--border); border-radius: 8px; height: 8px; margin-bottom: 24px; }
+  .progress-fill { background: var(--primary); height: 8px; border-radius: 8px; transition: width 0.4s; }
+  .progress-label { font-size: 0.78rem; color: var(--muted); text-align: right; margin-top: 4px; }
+
+  /* Cards */
+  .card { background: var(--card); border-radius: 14px; box-shadow: 0 1px 6px rgba(0,0,0,0.08); padding: 24px; margin-bottom: 20px; }
+
+  /* Form fields */
+  .field { margin-bottom: 16px; }
+  label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: var(--muted); }
+  input[type=text] { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 1rem; outline: none; transition: border 0.2s; }
+  input[type=text]:focus { border-color: var(--primary); }
+
+  /* Question */
+  .q-header { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 8px; }
+  .q-header.success-s { color: var(--success); }
+  .q-header.insuccess-s { color: var(--danger); }
+  .q-header.success-e { color: #d97706; }
+  .q-header.insuccess-e { color: #7c3aed; }
+  .q-text { font-size: 1rem; font-weight: 600; margin-bottom: 16px; line-height: 1.5; }
+
+  .choice-section { margin-bottom: 12px; }
+  .choice-label { font-size: 0.78rem; font-weight: 600; color: var(--muted); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .badge { display: inline-block; background: var(--primary); color: white; border-radius: 20px; padding: 1px 8px; font-size: 0.7rem; }
+  .badge.second { background: var(--primary-light); }
+
+  .options { display: flex; flex-direction: column; gap: 8px; }
+  .opt { display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 10px; cursor: pointer; transition: all 0.18s; background: white; }
+  .opt:hover { border-color: var(--primary-light); background: #f0f0ff; }
+  .opt.selected-1 { border-color: var(--primary); background: #eef2ff; }
+  .opt.selected-2 { border-color: var(--primary-light); background: #f5f3ff; }
+  .opt.disabled { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
+  .opt-radio { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border); flex-shrink: 0; margin-top: 2px; display: flex; align-items: center; justify-content: center; }
+  .opt.selected-1 .opt-radio { border-color: var(--primary); background: var(--primary); }
+  .opt.selected-2 .opt-radio { border-color: var(--primary-light); background: var(--primary-light); }
+  .opt-radio::after { content:''; width: 7px; height: 7px; border-radius: 50%; background: white; display: none; }
+  .opt.selected-1 .opt-radio::after, .opt.selected-2 .opt-radio::after { display: block; }
+  .opt-text { font-size: 0.93rem; line-height: 1.45; }
+  .opt-style { font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+
+  .reset-btn { margin-top: 10px; font-size: 0.78rem; color: var(--primary); background: none; border: none; cursor: pointer; text-decoration: underline; }
+  .reset-btn:hover { color: #3730a3; }
+
+  /* Buttons */
+  .btn { display: inline-block; padding: 12px 28px; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover { background: #3730a3; }
+  .btn-primary:disabled { background: #a5b4fc; cursor: not-allowed; }
+  .btn-outline { background: white; color: var(--primary); border: 1.5px solid var(--primary); }
+  .btn-outline:hover { background: #eef2ff; }
+  .btn-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
+
+  /* Results */
+  .result-section { margin-bottom: 24px; }
+  .result-section h3 { font-size: 1rem; font-weight: 700; color: var(--muted); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.8rem; }
+  .style-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+  .style-name { font-weight: 700; font-size: 1rem; min-width: 160px; }
+  .bar-wrap { flex: 1; background: var(--border); border-radius: 6px; height: 14px; min-width: 120px; }
+  .bar-fill { height: 14px; border-radius: 6px; background: var(--primary); transition: width 0.6s; }
+  .bar-count { font-size: 0.85rem; color: var(--muted); min-width: 30px; text-align: right; }
+
+  .winner-box { background: #eef2ff; border: 2px solid var(--primary); border-radius: 12px; padding: 16px 20px; margin-top: 10px; }
+  .winner-box h4 { font-size: 0.75rem; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .winner-box .winner-name { font-size: 1.15rem; font-weight: 700; color: var(--primary); }
+  .winner-box .winner-desc { font-size: 0.88rem; color: var(--text); margin-top: 8px; line-height: 1.6; }
+
+  .desc-card { background: #f8fafc; border-left: 4px solid var(--primary); border-radius: 0 10px 10px 0; padding: 14px 16px; margin-top: 16px; }
+  .desc-card h4 { font-size: 0.8rem; font-weight: 700; color: var(--primary); margin-bottom: 6px; }
+  .desc-card p { font-size: 0.88rem; line-height: 1.65; color: var(--text); }
+
+  .divider { border: none; border-top: 1.5px solid var(--border); margin: 24px 0; }
+
+  .hidden { display: none !important; }
+
+  .step-indicator { display: flex; gap: 6px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
+  .step-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); transition: background 0.3s; }
+  .step-dot.done { background: var(--primary-light); }
+  .step-dot.active { background: var(--primary); }
+
+  .alert { background: #fef3c7; border: 1.5px solid #fcd34d; border-radius: 10px; padding: 12px 16px; font-size: 0.88rem; color: #92400e; margin-bottom: 16px; }
+
+  @media(max-width:500px) {
+    .style-row { flex-direction: column; align-items: flex-start; }
+    .bar-wrap { width: 100%; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>🧭 Test Stili Attributivi</h1>
+  <p>Scopri come interpreti i tuoi successi e insuccessi</p>
+</header>
+
+<div class="container">
+
+  <!-- STEP 1: Anagrafica -->
+  <div id="step-info">
+    <div class="card">
+      <div class="q-text">Prima di iniziare, inserisci i tuoi dati:</div>
+      <div class="field"><label>Nome</label><input type="text" id="nome" placeholder="Es. Marco"></div>
+      <div class="field"><label>Cognome</label><input type="text" id="cognome" placeholder="Es. Rossi"></div>
+      <div class="field"><label>Classe</label><input type="text" id="classe" placeholder="Es. 3A"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="startTest()">Inizia il test →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2: Domande -->
+  <div id="step-questions" class="hidden">
+    <div class="step-indicator" id="step-dots"></div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    <div class="progress-label" id="progress-label">0 / 8 completate</div>
+    <div id="q-container"></div>
+    <div class="btn-row">
+      <button class="btn btn-outline" id="btn-prev" onclick="prevQ()" style="display:none">← Indietro</button>
+      <button class="btn btn-primary" id="btn-next" onclick="nextQ()">Avanti →</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: Risultati -->
+  <div id="step-results" class="hidden">
+    <div id="results-content"></div>
+  </div>
+
+</div>
+
+<script>
+const STYLES = ['Impegno','Abilità individuale','Aiuto ricevuto','Difficoltà/Facilità del compito','Fortuna/Caso'];
+const STYLE_KEYS = ['impegno','abilita','aiuto','difficolta','fortuna'];
+
+const DESCRIPTIONS = {
+  impegno: `Chi attribuisce i propri risultati all'impegno ritiene che il successo o il fallimento dipendano dalla quantità di lavoro, dedizione e costanza messi in campo. Questo stile è considerato il più funzionale dal punto di vista educativo: la causa è interna, instabile e controllabile. Lo studente sa di poter modificare il proprio rendimento semplicemente cambiando il proprio comportamento. Favorisce la motivazione, la perseveranza e la disponibilità a mettersi in gioco anche di fronte alle difficoltà.`,
+  abilita: `Chi attribuisce i risultati alla propria abilità o intelligenza ritiene di avere — o non avere — una capacità innata e fissa. Quando questo stile accompagna il successo, può rafforzare l'autostima; quando accompagna il fallimento, rischia di diventare bloccante, alimentando la convinzione di non essere "portato" per certe cose. Essendo la causa percepita come interna, stabile e non controllabile, questo stile può portare nel tempo a rinuncia, evitamento del compito e, nei casi più marcati, a fenomeni di impotenza appresa.`,
+  aiuto: `Chi attribuisce i propri risultati all'aiuto ricevuto riconosce il ruolo fondamentale del supporto esterno — insegnanti, compagni, familiari — nel determinare l'esito di un'esperienza. La causa è esterna, instabile e parzialmente controllabile, poiché lo studente può attivarsi per cercare aiuto, ma non sempre è in grado di ottenerlo. Questo stile non è di per sé negativo: saper riconoscere e utilizzare le risorse disponibili è una competenza preziosa. Diventa problematico quando lo studente delega completamente il proprio apprendimento agli altri.`,
+  difficolta: `Chi attribuisce i risultati alla difficoltà o alla facilità del compito sposta la causa all'esterno, considerando il livello della prova come il fattore determinante del proprio successo o fallimento. La causa è esterna, stabile e non controllabile. Questo stile porta spesso a una lettura deresponsabilizzante dell'esperienza scolastica: quando le cose vanno bene, è perché il compito era semplice; quando vanno male, è perché era troppo difficile. Ostacola lo sviluppo di una valutazione realistica delle proprie competenze e riduce la motivazione a migliorare.`,
+  fortuna: `Chi attribuisce i risultati alla fortuna o al caso ritiene che gli esiti dipendano da fattori imprevedibili e del tutto indipendenti dalla propria volontà o capacità. La causa è esterna, instabile e non controllabile. Questo stile genera una percezione di imprevedibilità che può minare il senso di autoefficacia: se i risultati dipendono dal caso, non vale la pena impegnarsi sistematicamente. Nel tempo può favorire atteggiamenti passivi, scarsa pianificazione e difficoltà nel costruire un rapporto solido con l'apprendimento.`
+};
+
+const QUESTIONS = [
+  {
+    id: 1, cat: 'success-s', catLabel: '✅ Successo scolastico', ambito: 'scolastico',
+    text: 'Hai preso un bel voto in matematica. Perché pensi di esserci riuscito?',
+    options: [
+      {text:'Sono bravo in matematica', style:'abilita'},
+      {text:'Ho studiato tanto', style:'impegno'},
+      {text:'Era una verifica facile', style:'difficolta'},
+      {text:'Ho avuto fortuna', style:'fortuna'},
+      {text:'Un compagno / la maestra mi aveva spiegato bene', style:'aiuto'}
+    ]
+  },
+  {
+    id: 2, cat: 'success-s', catLabel: '✅ Successo scolastico', ambito: 'scolastico',
+    text: 'Sei riuscito a finire il compito di italiano prima di tutti. Come mai, secondo te?',
+    options: [
+      {text:'Sono veloce a scrivere, ce la faccio sempre', style:'abilita'},
+      {text:'Quella mattina mi ero concentrato bene', style:'impegno'},
+      {text:'Il testo era corto e semplice', style:'difficolta'},
+      {text:'Non lo so, è andata così', style:'fortuna'},
+      {text:'Un compagno mi aveva dato un consiglio utile prima di iniziare', style:'aiuto'}
+    ]
+  },
+  {
+    id: 3, cat: 'insuccess-s', catLabel: '❌ Insuccesso scolastico', ambito: 'scolastico',
+    text: 'Hai sbagliato molte risposte nel compito di storia. Perché pensi che sia successo?',
+    options: [
+      {text:'Non sono portato per storia', style:'abilita'},
+      {text:'Quella settimana non avevo studiato abbastanza', style:'impegno'},
+      {text:'Le domande erano troppo difficili e strane', style:'difficolta'},
+      {text:'Sfortuna, non mi capitano mai le cose che so', style:'fortuna'},
+      {text:'Nessuno mi ha aiutato a studiare e da solo non ce l\'ho fatta', style:'aiuto'}
+    ]
+  },
+  {
+    id: 4, cat: 'insuccess-s', catLabel: '❌ Insuccesso scolastico', ambito: 'scolastico',
+    text: 'L\'insegnante ti ha rimproverato perché non hai capito la spiegazione. Secondo te, perché non hai capito?',
+    options: [
+      {text:'Faccio sempre fatica a capire le spiegazioni', style:'abilita'},
+      {text:'Quel giorno ero stanco e non stavo attento', style:'impegno'},
+      {text:'La maestra spiegava in modo confuso', style:'difficolta'},
+      {text:'Boh, a volte succede senza un motivo', style:'fortuna'},
+      {text:'Nessun compagno me lo ha rispiegato dopo e sono rimasto bloccato', style:'aiuto'}
+    ]
+  },
+  {
+    id: 5, cat: 'success-e', catLabel: '🏅 Successo extra-scolastico', ambito: 'extrascolastico',
+    text: 'Hai vinto una partita di calcio / una gara / un gioco con gli amici. Come mai hai vinto?',
+    options: [
+      {text:'Sono bravo in questo gioco, mi riesce sempre', style:'abilita'},
+      {text:'Mi ero allenato tanto ultimamente', style:'impegno'},
+      {text:'Gli altri erano più scarsi del solito', style:'difficolta'},
+      {text:'Ho avuto fortuna, le cose sono andate bene', style:'fortuna'},
+      {text:'Il mio allenatore / un amico mi aveva dato consigli giusti', style:'aiuto'}
+    ]
+  },
+  {
+    id: 6, cat: 'success-e', catLabel: '🏅 Successo extra-scolastico', ambito: 'extrascolastico',
+    text: 'Hai imparato a fare qualcosa di nuovo (andare in bici, un gioco, uno sport). Come ci sei riuscito?',
+    options: [
+      {text:'Sono uno che impara in fretta le cose nuove', style:'abilita'},
+      {text:'Ho provato tante volte anche quando non mi riusciva', style:'impegno'},
+      {text:'Era una cosa abbastanza semplice da imparare', style:'difficolta'},
+      {text:'Non saprei, all\'improvviso mi è venuto', style:'fortuna'},
+      {text:'Qualcuno mi ha mostrato come si fa e mi ha aiutato passo per passo', style:'aiuto'}
+    ]
+  },
+  {
+    id: 7, cat: 'insuccess-e', catLabel: '💥 Insuccesso extra-scolastico', ambito: 'extrascolastico',
+    text: 'Hai litigato con un amico e ora non si parla più. Perché pensi che sia successo?',
+    options: [
+      {text:'Faccio sempre fatica ad andare d\'accordo con gli altri', style:'abilita'},
+      {text:'Quel giorno ero di cattivo umore e ho esagerato', style:'impegno'},
+      {text:'Il mio amico era nervoso e ha iniziato lui', style:'difficolta'},
+      {text:'Queste cose capitano, non dipende da niente di preciso', style:'fortuna'},
+      {text:'Nessun adulto ci ha aiutato a fare pace e chiarire', style:'aiuto'}
+    ]
+  },
+  {
+    id: 8, cat: 'insuccess-e', catLabel: '💥 Insuccesso extra-scolastico', ambito: 'extrascolastico',
+    text: 'Hai partecipato a un torneo / concorso fuori dalla scuola e non hai fatto bene. Perché secondo te?',
+    options: [
+      {text:'Non sono abbastanza bravo per queste cose', style:'abilita'},
+      {text:'Non mi ero preparato come avrei dovuto', style:'impegno'},
+      {text:'Gli altri erano molto più grandi o più esperti di me', style:'difficolta'},
+      {text:'È stata una giornata storta, di solito mi va meglio', style:'fortuna'},
+      {text:'Nessuno mi ha allenato o preparato per bene', style:'aiuto'}
+    ]
+  }
+];
+
+// State
+let userData = {};
+let answers = {}; // answers[qIdx] = {first: styleKey, second: styleKey}
+let currentQ = 0;
+
+function startTest() {
+  const nome = document.getElementById('nome').value.trim();
+  const cognome = document.getElementById('cognome').value.trim();
+  const classe = document.getElementById('classe').value.trim();
+  if (!nome || !cognome || !classe) {
+    alert('Per favore compila tutti i campi prima di iniziare.');
+    return;
+  }
+  userData = {nome, cognome, classe};
+  document.getElementById('step-info').classList.add('hidden');
+  document.getElementById('step-questions').classList.remove('hidden');
+  renderDots();
+  renderQuestion();
+}
+
+function renderDots() {
+  const c = document.getElementById('step-dots');
+  c.innerHTML = '';
+  QUESTIONS.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'step-dot' + (i === currentQ ? ' active' : (answers[i]?.first ? ' done' : ''));
+    c.appendChild(d);
+  });
+}
+
+function renderQuestion() {
+  const q = QUESTIONS[currentQ];
+  const ans = answers[currentQ] || {};
+  const pct = Math.round((Object.keys(answers).filter(k => answers[k]?.first).length / 8) * 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-label').textContent =
+    Object.keys(answers).filter(k => answers[k]?.first).length + ' / 8 completate';
+
+  document.getElementById('btn-prev').style.display = currentQ > 0 ? '' : 'none';
+  document.getElementById('btn-next').textContent = currentQ === 7 ? 'Vedi risultati →' : 'Avanti →';
+
+  const container = document.getElementById('q-container');
+  container.innerHTML = `
+    <div class="card">
+      <div class="q-header ${q.cat}">${q.catLabel}</div>
+      <div class="q-text">Domanda ${q.id} di 8: ${q.text}</div>
+
+      <div class="choice-section">
+        <div class="choice-label">
+          <span class="badge">1°</span> Stile prevalente (prima scelta)
+        </div>
+        <div class="options" id="opts-1">
+          ${q.options.map((o, i) => `
+            <div class="opt ${ans.first === o.style && ans.firstIdx === i ? 'selected-1' : ''} ${ans.second === o.style && ans.secondIdx === i ? 'disabled' : ''}"
+                 onclick="selectOpt(1, '${o.style}', ${i})">
+              <div class="opt-radio"></div>
+              <div>
+                <div class="opt-text">${o.text}</div>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>
+
+      <div class="choice-section" style="margin-top:20px">
+        <div class="choice-label">
+          <span class="badge second">2°</span> Stile secondario (seconda scelta)
+          ${!ans.first ? '<span style="color:#dc2626;font-size:0.75rem;margin-left:8px">(scegli prima il 1° stile)</span>' : ''}
+        </div>
+        <div class="options" id="opts-2">
+          ${q.options.map((o, i) => `
+            <div class="opt ${ans.second === o.style && ans.secondIdx === i ? 'selected-2' : ''} ${!ans.first || (ans.first === o.style && ans.firstIdx === i) ? 'disabled' : ''}"
+                 onclick="selectOpt(2, '${o.style}', ${i})">
+              <div class="opt-radio"></div>
+              <div>
+                <div class="opt-text">${o.text}</div>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>
+
+      ${(ans.first || ans.second) ? `<button class="reset-btn" onclick="resetQ()">↺ Azzera le risposte per questa domanda</button>` : ''}
+    </div>`;
+
+  renderDots();
+}
+
+function selectOpt(rank, style, idx) {
+  if (!answers[currentQ]) answers[currentQ] = {};
+  const ans = answers[currentQ];
+  if (rank === 1) {
+    ans.first = style;
+    ans.firstIdx = idx;
+    if (ans.secondIdx === idx) { delete ans.second; delete ans.secondIdx; }
+  } else {
+    if (!ans.first) return;
+    if (ans.firstIdx === idx) return;
+    ans.second = style;
+    ans.secondIdx = idx;
+  }
+  renderQuestion();
+}
+
+function resetQ() {
+  answers[currentQ] = {};
+  renderQuestion();
+}
+
+function nextQ() {
+  const ans = answers[currentQ];
+  if (!ans?.first || !ans?.second) {
+    alert('Scegli sia il 1° che il 2° stile prima di andare avanti.');
+    return;
+  }
+  if (currentQ < 7) { currentQ++; renderQuestion(); }
+  else { showResults(); }
+}
+
+function prevQ() {
+  if (currentQ > 0) { currentQ--; renderQuestion(); }
+}
+
+function calcScores(subset) {
+  const scores = {};
+  STYLE_KEYS.forEach(k => scores[k] = 0);
+  subset.forEach(qIdx => {
+    const ans = answers[qIdx];
+    if (!ans) return;
+    if (ans.first) scores[ans.first] = (scores[ans.first] || 0) + 2;
+    if (ans.second) scores[ans.second] = (scores[ans.second] || 0) + 1;
+  });
+  return scores;
+}
+
+function topStyle(scores) {
+  return STYLE_KEYS.reduce((a,b) => scores[a] >= scores[b] ? a : b);
+}
+
+function styleName(key) {
+  const map = {impegno:'Impegno', abilita:'Abilità individuale', aiuto:'Aiuto ricevuto', difficolta:'Difficoltà/Facilità del compito', fortuna:'Fortuna/Caso'};
+  return map[key];
+}
+
+function renderBar(scores, maxPossible) {
+  const max = Math.max(...Object.values(scores), 1);
+  return STYLE_KEYS.map(k => `
+    <div class="style-row">
+      <div class="style-name">${styleName(k)}</div>
+      <div class="bar-wrap"><div class="bar-fill" style="width:${Math.round((scores[k]/max)*100)}%"></div></div>
+      <div class="bar-count">${scores[k]} pt</div>
+    </div>`).join('');
+}
+
+function winnerBox(key, title) {
+  return `<div class="winner-box">
+    <h4>${title}</h4>
+    <div class="winner-name">🏆 ${styleName(key)}</div>
+    <div class="winner-desc">${DESCRIPTIONS[key]}</div>
+  </div>`;
+}
+
+function showResults() {
+  document.getElementById('step-questions').classList.add('hidden');
+  document.getElementById('step-results').classList.remove('hidden');
+
+  const allIdx = [0,1,2,3,4,5,6,7];
+  const scolarIdx = [0,1,2,3];
+  const extraIdx = [4,5,6,7];
+
+  const total = calcScores(allIdx);
+  const scol = calcScores(scolarIdx);
+  const extra = calcScores(extraIdx);
+
+  const topTotal = topStyle(total);
+  const topScol = topStyle(scol);
+  const topExtra = topStyle(extra);
+
+  const maxT = 8*2+8*1; // 8 domande × (2+1)
+  const maxP = 4*2+4*1;
+
+  const rc = document.getElementById('results-content');
+  rc.innerHTML = `
+    <div class="card">
+      <h2 style="font-size:1.2rem;margin-bottom:4px">📊 Risultati di ${userData.nome} ${userData.cognome} — Classe ${userData.classe}</h2>
+      <p style="color:var(--muted);font-size:0.85rem">Completato il ${new Date().toLocaleDateString('it-IT')}</p>
+    </div>
+
+    <div class="card">
+      <div class="result-section">
+        <h3>Punteggio complessivo (tutte le domande)</h3>
+        ${renderBar(total, maxT)}
+      </div>
+      ${winnerBox(topTotal, 'Stile attributivo prevalente — Totale')}
+    </div>
+
+    <div class="card">
+      <div class="result-section">
+        <h3>Ambito scolastico (domande 1–4)</h3>
+        ${renderBar(scol, maxP)}
+      </div>
+      ${winnerBox(topScol, 'Stile prevalente — Ambito scolastico')}
+    </div>
+
+    <div class="card">
+      <div class="result-section">
+        <h3>Ambito extra-scolastico (domande 5–8)</h3>
+        ${renderBar(extra, maxP)}
+      </div>
+      ${winnerBox(topExtra, 'Stile prevalente — Ambito extra-scolastico')}
+    </div>
+
+    <div class="card">
+      <h3 style="font-size:0.9rem;font-weight:700;margin-bottom:16px">📖 Descrizioni di tutti gli stili attributivi</h3>
+      ${STYLE_KEYS.map(k => `
+        <div class="desc-card">
+          <h4>${styleName(k)}</h4>
+          <p>${DESCRIPTIONS[k]}</p>
+        </div>`).join('')}
+    </div>
+
+    <div class="card">
+      <h3 style="font-size:0.9rem;font-weight:700;margin-bottom:12px">📋 Riepilogo risposte</h3>
+      ${QUESTIONS.map((q,i) => {
+        const ans = answers[i] || {};
+        const opt1 = q.options.find((_,j) => j === ans.firstIdx);
+        const opt2 = q.options.find((_,j) => j === ans.secondIdx);
+        return `<div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)">
+          <div style="font-size:0.8rem;color:var(--muted);margin-bottom:4px">D${q.id} — ${q.catLabel}</div>
+          <div style="font-size:0.88rem;margin-bottom:6px;font-weight:600">${q.text}</div>
+          <div style="font-size:0.85rem">🥇 <b>${opt1?.text || '—'}</b> <span style="color:var(--muted)">(${styleName(ans.first || '')})</span></div>
+          <div style="font-size:0.85rem;margin-top:4px">🥈 <b>${opt2?.text || '—'}</b> <span style="color:var(--muted)">(${styleName(ans.second || '')})</span></div>
+        </div>`;
+      }).join('')}
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="downloadData()">⬇ Scarica i dati (CSV)</button>
+      <button class="btn btn-outline" onclick="restart()">↺ Ricomincia</button>
+    </div>`;
+}
+
+function downloadData() {
+  const allIdx = [0,1,2,3,4,5,6,7];
+  const scolarIdx = [0,1,2,3];
+  const extraIdx = [4,5,6,7];
+  const total = calcScores(allIdx);
+  const scol = calcScores(scolarIdx);
+  const extra = calcScores(extraIdx);
+
+  let csv = 'Campo;Valore\n';
+  csv += `Nome;${userData.nome}\n`;
+  csv += `Cognome;${userData.cognome}\n`;
+  csv += `Classe;${userData.classe}\n`;
+  csv += `Data;${new Date().toLocaleDateString('it-IT')}\n`;
+  csv += '\n';
+  csv += 'Domanda;Ambito;Testo domanda;1a scelta (risposta);1a scelta (stile);2a scelta (risposta);2a scelta (stile)\n';
+  QUESTIONS.forEach((q,i) => {
+    const ans = answers[i] || {};
+    const opt1 = q.options[ans.firstIdx];
+    const opt2 = q.options[ans.secondIdx];
+    csv += `${q.id};${q.ambito};"${q.text}";"${opt1?.text||''}";${styleName(ans.first||'')};"${opt2?.text||''}";${styleName(ans.second||'')}\n`;
+  });
+  csv += '\n';
+  csv += 'Punteggi totali\n';
+  csv += 'Stile;Punteggio totale;Punteggio scolastico;Punteggio extra-scolastico\n';
+  STYLE_KEYS.forEach(k => {
+    csv += `${styleName(k)};${total[k]};${scol[k]};${extra[k]}\n`;
+  });
+  csv += '\n';
+  csv += `Stile prevalente totale;${styleName(topStyle(total))}\n`;
+  csv += `Stile prevalente scolastico;${styleName(topStyle(scol))}\n`;
+  csv += `Stile prevalente extra-scolastico;${styleName(topStyle(extra))}\n`;
+
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `stili_attributivi_${userData.cognome}_${userData.nome}_${userData.classe}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function restart() {
+  if (!confirm('Vuoi ricominciare? Tutti i dati inseriti andranno persi.')) return;
+  userData = {}; answers = {}; currentQ = 0;
+  document.getElementById('step-results').classList.add('hidden');
+  document.getElementById('step-info').classList.remove('hidden');
+  document.getElementById('nome').value='';
+  document.getElementById('cognome').value='';
+  document.getElementById('classe').value='';
+}
+</script>
+</body>
+</html>
