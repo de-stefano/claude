@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Storico: La Germania</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .drag-item {
+            cursor: grab;
+            user-select: none;
+            -webkit-user-select: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .drag-item:active {
+            cursor: grabbing;
+            transform: scale(0.95);
+        }
+        .drop-area {
+            min-height: 180px;
+            border: 3px dashed #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .drop-area.drag-over {
+            background-color: #e0e7ff;
+            border-color: #4f46e5;
+            transform: scale(1.01);
+        }
+        .hidden {
+            display: none;
+        }
+        .modal-bg {
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(4px);
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c7d2fe;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #818cf8;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen font-sans text-slate-900">
+
+    <div id="main-container" class="max-w-6xl mx-auto p-4 md:p-6">
+        
+        <!-- SCHERMATA INIZIALE -->
+        <section id="start-screen" class="bg-white rounded-3xl shadow-2xl p-8 md:p-12 text-center border border-slate-200">
+            <h1 class="text-4xl font-extrabold mb-6 text-indigo-800">Le Cartine Storiche della Germania</h1>
+            <div class="text-left bg-indigo-50 p-6 rounded-2xl mb-8 border border-indigo-100">
+                <p class="text-lg leading-relaxed mb-4">
+                    Ti saranno fatte vedere delle cartine storiche della Germania e tu dovrai indovinare l’anno di riferimento; inoltre dovrai trascinare nell’area apposita tutte le affermazioni corrette che si riferiscono alla cartina in oggetto.
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm font-medium text-indigo-900">
+                    <div class="flex items-center"><span class="w-2 h-2 bg-indigo-600 rounded-full mr-2"></span> Massimo 3 tentativi per cartina.</div>
+                    <div class="flex items-center"><span class="w-2 h-2 bg-indigo-600 rounded-full mr-2"></span> Ordine delle cartine casuale.</div>
+                    <div class="flex items-center"><span class="w-2 h-2 bg-indigo-600 rounded-full mr-2"></span> Totale 6 livelli di difficoltà.</div>
+                    <div class="flex items-center"><span class="w-2 h-2 bg-indigo-600 rounded-full mr-2"></span> Studio preliminare consigliato.</div>
+                </div>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row gap-6 justify-center">
+                <button onclick="openStudyPdf()" class="flex items-center justify-center bg-white border-2 border-amber-500 text-amber-600 hover:bg-amber-500 hover:text-white font-bold py-4 px-8 rounded-2xl shadow-lg transition-all">
+                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                    Studia Documento
+                </button>
+                <button onclick="startGame()" class="flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-10 rounded-2xl shadow-xl transition-all transform hover:scale-105 active:scale-95">
+                    Inizia il Gioco
+                    <svg class="w-6 h-6 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                </button>
+            </div>
+        </section>
+
+        <!-- AREA DI GIOCO -->
+        <section id="game-screen" class="hidden animate-fade-in">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                
+                <!-- Colonna Cartina -->
+                <div class="lg:col-span-5 space-y-6">
+                    <div class="bg-white p-6 rounded-3xl shadow-xl border border-slate-200">
+                        <div class="flex justify-between items-center mb-4">
+                            <span id="level-badge" class="bg-indigo-100 text-indigo-700 px-4 py-1 rounded-full text-sm font-bold uppercase tracking-widest">Livello 1/6</span>
+                            <div id="tries-container" class="flex gap-1">
+                                <!-- Cuori o pallini per i tentativi -->
+                            </div>
+                        </div>
+                        
+                        <div class="aspect-video bg-slate-100 rounded-2xl overflow-hidden mb-6 border border-slate-200 flex items-center justify-center">
+                            <img id="map-image" src="" alt="Cartina Storica" class="max-w-full max-h-full object-contain shadow-sm">
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-bold text-slate-600 mb-2">Qual è l'anno della cartina?</label>
+                                <input type="number" id="year-input" placeholder="Inserisci l'anno..." class="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 outline-none transition-all text-xl font-bold">
+                            </div>
+                            <div class="p-4 bg-amber-50 rounded-xl border border-amber-100 text-amber-800 text-sm italic">
+                                Suggerimento: Trascina esattamente <strong id="needed-count">0</strong> elementi nell'area DROP.
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="checkAnswer()" class="w-full bg-green-500 hover:bg-green-600 text-white font-black py-5 rounded-3xl shadow-lg transition-all transform active:scale-95 text-xl tracking-wider uppercase">
+                        Verifica Risposta
+                    </button>
+                </div>
+
+                <!-- Colonna Drag & Drop -->
+                <div class="lg:col-span-7 space-y-6">
+                    <div class="bg-white p-6 rounded-3xl shadow-xl border border-slate-200 h-full flex flex-col">
+                        <h3 class="text-lg font-bold mb-4 text-slate-700 flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-indigo-500" fill="currentColor" viewBox="0 0 20 20"><path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"></path></svg>
+                            Elementi disponibili (28)
+                        </h3>
+                        
+                        <div id="pool-container" class="flex flex-wrap gap-2 p-4 bg-slate-50 rounded-2xl border border-slate-100 min-h-[200px] mb-8" ondrop="dropToPool(event)" ondragover="allowDrop(event)">
+                            <!-- Generato dinamicamente -->
+                        </div>
+
+                        <h3 class="text-lg font-bold mb-4 text-indigo-700 flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-indigo-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+                            Area DROP (Trascina qui le risposte)
+                        </h3>
+                        
+                        <div id="drop-zone" class="drop-area flex flex-wrap gap-2 p-6 rounded-2xl bg-indigo-50/50" ondrop="dropToZone(event)" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">
+                            <!-- Elementi selezionati -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCHERMATA FINALE -->
+        <section id="end-screen" class="hidden bg-white rounded-3xl shadow-2xl p-10 text-center max-w-3xl mx-auto border-b-8 border-indigo-600">
+            <div id="final-icon" class="mb-6 inline-block p-6 rounded-full bg-indigo-100 text-indigo-600">
+                <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+            <h2 class="text-4xl font-black mb-2 text-slate-800">Risultato del Quiz</h2>
+            <p id="steps-counter" class="text-2xl font-bold text-indigo-600 mb-8 bg-indigo-50 inline-block px-6 py-2 rounded-full">hai superato in totale 0 step</p>
+            
+            <div class="bg-slate-50 p-8 rounded-2xl border border-slate-100 mb-10">
+                <p id="judgment-text" class="text-xl italic text-slate-700 leading-relaxed font-medium"></p>
+            </div>
+            
+            <button onclick="restartGame()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-5 px-16 rounded-3xl shadow-xl transition-all transform hover:scale-105 active:scale-95 text-lg">
+                Ricomincia Partita
+            </button>
+        </section>
+
+    </div>
+
+    <!-- MODAL PDF -->
+    <div id="pdf-modal" class="modal-bg fixed inset-0 z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white w-full max-w-5xl h-[85vh] rounded-3xl overflow-hidden flex flex-col shadow-2xl animate-scale-up">
+            <div class="p-5 flex justify-between items-center bg-slate-50 border-b">
+                <h2 class="font-black text-slate-700 text-xl tracking-tight uppercase">Manuale di Studio</h2>
+                <button onclick="closeStudyPdf()" class="p-2 hover:bg-red-100 text-red-500 rounded-full transition-colors">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l18 18"></path></svg>
+                </button>
+            </div>
+            <iframe id="pdf-frame" class="w-full flex-grow border-none"></iframe>
+        </div>
+    </div>
+
+    <!-- MODAL FEEDBACK -->
+    <div id="alert-modal" class="modal-bg fixed inset-0 z-[100] flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl transform transition-transform">
+            <div id="alert-icon" class="mb-4 inline-block"></div>
+            <h3 id="alert-title" class="text-2xl font-bold mb-2"></h3>
+            <p id="alert-body" class="text-slate-600 mb-6"></p>
+            <button onclick="closeAlert()" id="alert-btn" class="w-full py-4 rounded-2xl font-bold text-white shadow-lg transition-all active:scale-95"></button>
+        </div>
+    </div>
+
+    <script>
+        const GAME_DATA = [
+            { id: 1, year: 1871, img: "https://de-stefano.github.io/claude/cartine-germania/germania1.png", items: ["Guerra franco-prussiana", "Sconfitta della Francia a Sedan", "Conquista di Alsazia e Lorene da parte tedesca", "Unificazione della Germania", "Egemonia della Prussia"] },
+            { id: 2, year: 1919, img: "https://de-stefano.github.io/claude/cartine-germania/germania2.png", items: ["Pace di Versailles", "Restituzione di Alsazia e Lorena", "Istituzione del “Corridoio polacco”", "Cessione della città di Danzica"] },
+            { id: 3, year: 1939, img: "https://de-stefano.github.io/claude/cartine-germania/germania3.png", items: ["Espansionismo nazista", "Anschluss dell’Austria", "Invasione dei Sudeti", "Invasione della Polonia", "Referendum in Austria", "Conferenza di Monaco"] },
+            { id: 4, year: 1949, img: "https://de-stefano.github.io/claude/cartine-germania/germania4.png", items: ["Separazione della Germania in zona est e zona ovest", "Piano Marshall", "Egemonia russa sulla Germania Est", "Egemonia statunitense sulla Germania ovest", "Separazione di Berlino in zona est ed ovest"] },
+            { id: 5, year: 1961, img: "https://de-stefano.github.io/claude/cartine-germania/germania5.png", items: ["Costruzione del muro di Berlino", "Presidente Ulbricht", "Ich bin ein berliner", "Presidente J. F. Kennedy"] },
+            { id: 6, year: 1989, img: "https://de-stefano.github.io/claude/cartine-germania/germania6.png", items: ["Riunificazione della Germania", "Caduta del muro di Berlino", "M. Gorbaciov e politica della Perestroika", "Apertura dei valichi tra Ungheria e Austria"] }
+        ];
+
+        let levelSequence = [];
+        let currentIndex = 0;
+        let currentTries = 3;
+        let successfulSteps = 0;
+        let fullItemsPool = GAME_DATA.flatMap(d => d.items);
+        let onContinue = null;
+
+        // Shuffle logic
+        function shuffle(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex != 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        // PDF Management
+        function openStudyPdf() {
+            document.getElementById('pdf-frame').src = "https://de-stefano.github.io/claude/cartine-germania/confini-germania.pdf";
+            document.getElementById('pdf-modal').classList.remove('hidden');
+        }
+
+        function closeStudyPdf() {
+            document.getElementById('pdf-modal').classList.add('hidden');
+            document.getElementById('pdf-frame').src = "";
+        }
+
+        // Game Core
+        function startGame() {
+            levelSequence = shuffle([...GAME_DATA]);
+            currentIndex = 0;
+            successfulSteps = 0;
+            
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('end-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            
+            loadLevel();
+        }
+
+        function loadLevel() {
+            const level = levelSequence[currentIndex];
+            currentTries = 3;
+            
+            document.getElementById('level-badge').innerText = `Livello ${currentIndex + 1}/6`;
+            document.getElementById('map-image').src = level.img;
+            document.getElementById('needed-count').innerText = level.items.length;
+            document.getElementById('year-input').value = "";
+            document.getElementById('drop-zone').innerHTML = "";
+            
+            updateTriesUI();
+            renderPool();
+        }
+
+        function updateTriesUI() {
+            const container = document.getElementById('tries-container');
+            container.innerHTML = "";
+            for(let i=0; i<3; i++) {
+                const dot = document.createElement('div');
+                dot.className = `w-4 h-4 rounded-full ${i < currentTries ? 'bg-red-500 shadow-sm shadow-red-200' : 'bg-slate-200'}`;
+                container.appendChild(dot);
+            }
+        }
+
+        function renderPool() {
+            const pool = document.getElementById('pool-container');
+            pool.innerHTML = "";
+            const randomizedItems = shuffle([...fullItemsPool]);
+            
+            randomizedItems.forEach((text, i) => {
+                const item = document.createElement('div');
+                item.className = "drag-item bg-white border border-slate-300 p-3 rounded-xl shadow-sm text-sm font-semibold hover:border-indigo-400";
+                item.draggable = true;
+                item.innerText = text;
+                item.id = `item-${i}`;
+                item.ondragstart = (e) => e.dataTransfer.setData('text', e.target.id);
+                pool.appendChild(item);
+            });
+        }
+
+        // Drag & Drop
+        function allowDrop(e) { e.preventDefault(); }
+        function dragEnter(e) { e.currentTarget.classList.add('drag-over'); }
+        function dragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+
+        function dropToZone(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+            const id = e.dataTransfer.getData('text');
+            const el = document.getElementById(id);
+            if (el) e.currentTarget.appendChild(el);
+        }
+
+        function dropToPool(e) {
+            e.preventDefault();
+            const id = e.dataTransfer.getData('text');
+            const el = document.getElementById(id);
+            if (el) e.currentTarget.appendChild(el);
+        }
+
+        // Logic Check
+        function checkAnswer() {
+            const level = levelSequence[currentIndex];
+            const yearInput = parseInt(document.getElementById('year-input').value);
+            const droppedElements = Array.from(document.getElementById('drop-zone').children).map(c => c.innerText);
+            
+            const isYearCorrect = yearInput === level.year;
+            const isItemsCorrect = droppedElements.length === level.items.length && 
+                                   droppedElements.every(val => level.items.includes(val));
+
+            if (isYearCorrect && isItemsCorrect) {
+                successfulSteps++;
+                showAlert("Successo!", "Hai risolto correttamente questa cartina!", "success", () => {
+                    currentIndex++;
+                    if (currentIndex < 6) loadLevel();
+                    else showFinalScreen();
+                });
+            } else {
+                currentTries--;
+                updateTriesUI();
+                
+                if (currentTries > 0) {
+                    let hint = "C'è qualche errore. ";
+                    if (!isYearCorrect) hint += "L'anno non è corretto. ";
+                    if (!isItemsCorrect) hint += "Le affermazioni non corrispondono o il numero non è esatto.";
+                    showAlert("Riprova", hint + ` Ti restano ${currentTries} tentativi.`, "retry");
+                } else {
+                    showAlert("Tentativi Esauriti", "Non sei riuscito a risolvere questa cartina. Il gioco finisce qui.", "fail", () => {
+                        showFinalScreen();
+                    });
+                }
+            }
+        }
+
+        function showAlert(title, body, type, action = null) {
+            const modal = document.getElementById('alert-modal');
+            const t = document.getElementById('alert-title');
+            const b = document.getElementById('alert-body');
+            const btn = document.getElementById('alert-btn');
+            const icon = document.getElementById('alert-icon');
+            
+            t.innerText = title;
+            b.innerText = body;
+            onContinue = action;
+            
+            if (type === 'success') {
+                btn.className = "w-full py-4 rounded-2xl font-bold text-white shadow-lg bg-green-500 hover:bg-green-600";
+                btn.innerText = "Prossimo Livello";
+                icon.innerHTML = '<svg class="w-16 h-16 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>';
+            } else if (type === 'retry') {
+                btn.className = "w-full py-4 rounded-2xl font-bold text-white shadow-lg bg-amber-500 hover:bg-amber-600";
+                btn.innerText = "Correggi";
+                icon.innerHTML = '<svg class="w-16 h-16 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>';
+            } else {
+                btn.className = "w-full py-4 rounded-2xl font-bold text-white shadow-lg bg-red-500 hover:bg-red-600";
+                btn.innerText = "Vedi Risultati";
+                icon.innerHTML = '<svg class="w-16 h-16 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>';
+            }
+            
+            modal.classList.remove('hidden');
+        }
+
+        function closeAlert() {
+            document.getElementById('alert-modal').classList.add('hidden');
+            if (onContinue) onContinue();
+            onContinue = null;
+        }
+
+        function showFinalScreen() {
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('end-screen').classList.remove('hidden');
+            
+            const stepsEl = document.getElementById('steps-counter');
+            const judgeEl = document.getElementById('judgment-text');
+            
+            stepsEl.innerText = `hai superato in totale ${successfulSteps} step`;
+            
+            let msg = "";
+            switch(successfulSteps) {
+                case 0:
+                case 1: msg = "Sei uno storico ancora alle primissime armi… mi sa che devi studiare tutto da capo."; break;
+                case 2: msg = "Insomma, ho visto di meglio… la tua attenzione è tutta da migliorare."; break;
+                case 3: msg = "Storico a metà! Tre cartine indovinate e poi… il crollo!!!"; break;
+                case 4: msg = "Bene, ci siamo quasi… ancora una studiata e potrai acquisire il titolo di “storico diplomato”."; break;
+                case 5: msg = "molto bene!!! Storico esperto o, quasi esperto."; break;
+                case 6: msg = "LAUREA HONORIS CAUSA: STORICO A TUTTI GLI EFFETTI… FOR EVER!!!"; break;
+            }
+            judgeEl.innerText = msg;
+        }
+
+        function restartGame() {
+            document.getElementById('end-screen').classList.add('hidden');
+            document.getElementById('start-screen').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
