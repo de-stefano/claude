@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crea il tuo Piatto Bilanciato</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #f0fdf4;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+        }
+        .food-card {
+            transition: all 0.2s ease;
+            cursor: pointer;
+            user-select: none;
+        }
+        .food-card:hover {
+            transform: scale(1.05);
+            border-color: #10b981;
+        }
+        .food-card.selected {
+            border: 4px solid #10b981;
+            background-color: #ecfdf5;
+            box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);
+        }
+        .plate-area {
+            border: 12px solid #e2e8f0;
+            border-radius: 50%;
+            width: 280px;
+            height: 280px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background: white;
+            box-shadow: inset 0 4px 10px rgba(0,0,0,0.05), 0 10px 25px -5px rgba(0,0,0,0.1);
+        }
+        @media (min-width: 768px) {
+            .plate-area { width: 320px; height: 320px; }
+        }
+        .food-on-plate {
+            position: absolute;
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            width: 70px;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .heart {
+            color: #ef4444;
+            font-size: 1.8rem;
+            margin: 0 2px;
+            transition: all 0.3s ease;
+        }
+        .lost-heart {
+            color: #d1d5db;
+            transform: scale(0.8);
+            filter: grayscale(1);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #10b981;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-2 md:p-8">
+    <div class="max-w-6xl mx-auto bg-white rounded-3xl shadow-xl p-4 md:p-10 border border-emerald-50">
+        <!-- Intestazione -->
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4 border-b border-emerald-100 pb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-emerald-800">Crea il tuo Piatto</h1>
+                <p class="text-emerald-600 font-medium italic">Crea il piatto bilanciato perfetto</p>
+            </div>
+            <div id="lives-container" class="flex bg-emerald-50 px-4 py-2 rounded-2xl border border-emerald-100">
+                <span class="heart" data-index="0">❤️</span>
+                <span class="heart" data-index="1">❤️</span>
+                <span class="heart" data-index="2">❤️</span>
+            </div>
+        </div>
+
+        <!-- Area di Gioco -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12">
+            
+            <!-- Selezione Cibo -->
+            <div class="flex flex-col h-full">
+                <h2 class="text-lg font-bold text-slate-700 mb-4 flex items-center">
+                    <span class="bg-emerald-100 p-2 rounded-lg mr-2">🍱</span> Ingredienti disponibili:
+                </h2>
+                <div id="food-scroll-container" class="overflow-y-auto max-h-[500px] pr-2 custom-scrollbar bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                    <div id="food-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        <!-- I cibi verranno inseriti qui dallo script -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visualizzatore Piatto -->
+            <div class="flex flex-col items-center space-y-6 bg-emerald-50/30 p-6 md:p-8 rounded-3xl border border-emerald-100">
+                <div class="plate-area" id="main-plate">
+                    <div id="plate-placeholder" class="text-center text-slate-300">
+                        <p class="text-6xl mb-2">🍽️</p>
+                        <p class="font-bold uppercase tracking-widest text-xs">Piatto Vuoto</p>
+                    </div>
+                    <div id="plate-items-layer" class="absolute inset-0 pointer-events-none"></div>
+                </div>
+                
+                <div id="selected-summary" class="w-full bg-white p-5 rounded-2xl shadow-sm border border-emerald-200 min-h-[100px]">
+                    <h3 class="font-bold text-emerald-800 mb-3 text-sm uppercase tracking-tight">Selezione Corrente:</h3>
+                    <ul id="summary-list" class="flex flex-wrap gap-2">
+                        <li class="text-gray-400 italic text-sm">Nessun ingrediente...</li>
+                    </ul>
+                </div>
+
+                <button id="check-btn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-5 rounded-2xl shadow-lg transition-all active:scale-95 text-xl tracking-wider uppercase">
+                    Verifica il Piatto
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale Messaggi -->
+    <div id="modal" class="fixed inset-0 bg-slate-900/80 hidden flex items-center justify-center p-4 z-50 backdrop-blur-md">
+        <div class="bg-white p-8 md:p-12 rounded-[2.5rem] max-w-sm w-full text-center shadow-2xl border-b-8 border-emerald-500">
+            <div id="modal-icon" class="text-7xl mb-6"></div>
+            <h2 id="modal-title" class="text-3xl font-black mb-4 text-slate-800 uppercase tracking-tight"></h2>
+            <p id="modal-message" class="text-slate-600 mb-8 text-lg font-medium"></p>
+            <button id="modal-btn" onclick="resetGame()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-black text-xl transition-all shadow-lg active:scale-95">
+                NUOVA PARTITA
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const foodDataRaw = {
+            "Carboidrati": ["Pasta", "Riso", "Pane", "Orzo", "Patate"],
+            "Proteine": ["Carne rossa", "Carne bianca", "Pesce", "Affettati", "Uova"],
+            "Verdure": ["Carote", "Pomodori", "Insalata", "Cetrioli", "Zucchine"],
+            "Frutta": ["Mela", "Pere", "Banana", "Uva", "Mandarino"],
+            "Lipidi": ["Olio"]
+        };
+
+        const itemEmoji = {
+            "Pasta": "🍝", "Riso": "🍚", "Pane": "🍞", "Orzo": "🌾", "Patate": "🥔",
+            "Carne rossa": "🥩", "Carne bianca": "🍗", "Pesce": "🐟", "Affettati": "🥓", "Uova": "🥚",
+            "Carote": "🥕", "Pomodori": "🍅", "Insalata": "🥬", "Cetrioli": "🥒", "Zucchine": "🥒",
+            "Mela": "🍎", "Pere": "🍐", "Banana": "🍌", "Uva": "🍇", "Mandarino": "🍊",
+            "Olio": "🍾"
+        };
+
+        let selectedFood = {}; 
+        let lives = 3;
+        let flattenedFood = [];
+
+        const foodGrid = document.getElementById('food-grid');
+        const foodScrollContainer = document.getElementById('food-scroll-container');
+        const summaryList = document.getElementById('summary-list');
+        const checkBtn = document.getElementById('check-btn');
+        const livesContainer = document.getElementById('lives-container');
+        const modal = document.getElementById('modal');
+        const plateItemsLayer = document.getElementById('plate-items-layer');
+        const platePlaceholder = document.getElementById('plate-placeholder');
+
+        function prepareAndShuffle() {
+            flattenedFood = [];
+            for (const [category, items] of Object.entries(foodDataRaw)) {
+                items.forEach(name => {
+                    flattenedFood.push({ name, category });
+                });
+            }
+            shuffle(flattenedFood);
+        }
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function renderFoodGrid() {
+            foodGrid.innerHTML = '';
+            flattenedFood.forEach(food => {
+                const btn = document.createElement('div');
+                btn.className = 'food-card bg-white border-2 border-slate-200 p-4 rounded-2xl text-center text-sm font-bold shadow-sm';
+                if (selectedFood[food.name]) {
+                    btn.classList.add('selected');
+                }
+                btn.innerHTML = `<div class="text-3xl mb-2">${itemEmoji[food.name] || '🍴'}</div>${food.name}`;
+                btn.onclick = () => toggleFood(food.category, food.name, btn);
+                foodGrid.appendChild(btn);
+            });
+        }
+
+        function toggleFood(category, item, element) {
+            if (selectedFood[item]) {
+                delete selectedFood[item];
+                element.classList.remove('selected');
+            } else {
+                selectedFood[item] = category;
+                element.classList.add('selected');
+            }
+            updateSummary();
+            renderPlate();
+        }
+
+        function updateSummary() {
+            const items = Object.keys(selectedFood);
+            if (items.length === 0) {
+                summaryList.innerHTML = '<li class="text-gray-400 italic text-sm">Nessun ingrediente...</li>';
+                return;
+            }
+            summaryList.innerHTML = items.map(i => `
+                <li class="flex items-center bg-emerald-100 px-3 py-1.5 rounded-full text-xs font-bold text-emerald-800 border border-emerald-200">
+                    <span class="mr-1">${itemEmoji[i]}</span> ${i}
+                </li>
+            `).join('');
+        }
+
+        function renderPlate() {
+            plateItemsLayer.innerHTML = '';
+            const items = Object.keys(selectedFood);
+            
+            if (items.length === 0) {
+                platePlaceholder.style.display = 'block';
+                return;
+            }
+            
+            platePlaceholder.style.display = 'none';
+            items.forEach((item, index) => {
+                const angle = (index / items.length) * (Math.PI * 2);
+                const radius = items.length === 1 ? 0 : 75;
+                const x = Math.cos(angle) * radius;
+                const y = Math.sin(angle) * radius;
+                
+                const itemEl = document.createElement('div');
+                itemEl.className = 'food-on-plate';
+                itemEl.style.left = `calc(50% + ${x}px - 35px)`;
+                itemEl.style.top = `calc(50% + ${y}px - 35px)`;
+                itemEl.innerHTML = `
+                    <span class="text-5xl drop-shadow-md">${itemEmoji[item]}</span>
+                    <span class="text-[10px] font-black text-emerald-900 bg-white/90 px-2 py-0.5 rounded-full shadow-sm mt-1 border border-emerald-100">${item.toUpperCase()}</span>
+                `;
+                plateItemsLayer.appendChild(itemEl);
+            });
+        }
+
+        checkBtn.onclick = () => {
+            const categories = Object.keys(foodDataRaw);
+            const counts = {};
+            categories.forEach(c => counts[c] = 0);
+
+            Object.values(selectedFood).forEach(cat => counts[cat]++);
+
+            const missing = categories.filter(cat => counts[cat] === 0);
+            const extra = categories.filter(cat => counts[cat] > 1);
+
+            const isCorrect = missing.length === 0 && extra.length === 0 && Object.keys(selectedFood).length === categories.length;
+
+            if (isCorrect) {
+                document.getElementById('modal-icon').textContent = "🏆";
+                document.getElementById('modal-btn').textContent = "GIOCA ANCORA";
+                showModal("Vittoria!", "Hai creato il piatto perfetto! Ottima scelta nutrizionale.");
+            } else {
+                lives--;
+                updateLivesDisplay();
+                
+                let feedback = "";
+                if (missing.length > 0) {
+                    feedback += `Mancano ${missing.length} categorie di alimenti. `;
+                }
+                if (extra.length > 0) {
+                    feedback += `Hai inserito troppi ingredienti per ${extra.length} categorie. `;
+                }
+
+                if (lives <= 0) {
+                    document.getElementById('modal-icon').textContent = "💔";
+                    document.getElementById('modal-btn').textContent = "RIPROVA";
+                    showModal("Game Over", `Hai esaurito i tentativi. ${feedback}`);
+                } else {
+                    handleWrongTurn(feedback);
+                }
+            }
+        };
+
+        function handleWrongTurn(feedback) {
+            showMessageBox("PIATTO SBAGLIATO!", `${feedback} Vite rimaste: ${lives}`);
+            
+            selectedFood = {};
+            updateSummary();
+            renderPlate();
+            
+            foodScrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+            
+            setTimeout(() => {
+                prepareAndShuffle();
+                renderFoodGrid();
+            }, 300);
+        }
+
+        function updateLivesDisplay() {
+            const hearts = livesContainer.querySelectorAll('.heart');
+            hearts.forEach((h, i) => {
+                if (i >= lives) h.classList.add('lost-heart');
+                else h.classList.remove('lost-heart');
+            });
+        }
+
+        function showModal(title, message) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-message').textContent = message;
+            modal.classList.remove('hidden');
+        }
+
+        function showMessageBox(title, text) {
+            const msg = document.createElement('div');
+            msg.className = 'fixed top-10 left-1/2 -translate-x-1/2 bg-red-600 text-white px-8 py-5 rounded-3xl shadow-2xl z-[100] animate-pulse text-center border-4 border-white max-w-[90%] w-96';
+            msg.innerHTML = `<p class="font-black text-xl uppercase mb-1">${title}</p><p class="font-bold text-sm">${text}</p>`;
+            document.body.appendChild(msg);
+            setTimeout(() => {
+                msg.style.opacity = '0';
+                msg.style.transform = 'translate(-50%, -20px)';
+                msg.style.transition = 'all 0.5s';
+                setTimeout(() => msg.remove(), 500);
+            }, 4000);
+        }
+
+        function resetGame() {
+            lives = 3;
+            selectedFood = {};
+            updateLivesDisplay();
+            updateSummary();
+            renderPlate();
+            modal.classList.add('hidden');
+            prepareAndShuffle();
+            renderFoodGrid();
+            foodScrollContainer.scrollTo({ top: 0 });
+        }
+
+        window.onload = () => {
+            prepareAndShuffle();
+            renderFoodGrid();
+        };
+    </script>
+</body>
+</html>
+
