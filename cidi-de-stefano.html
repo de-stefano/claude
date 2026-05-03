@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Convegno CIDI 2026</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #fff9f0; color: #333; }
+
+  header {
+    background: linear-gradient(135deg, #ff9a9e, #fad0c4, #ffecd2);
+    text-align: center;
+    padding: 48px 20px 36px;
+  }
+  header h1 {
+    font-size: 2.6rem;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    letter-spacing: 1px;
+  }
+  header p {
+    margin-top: 10px;
+    font-size: 1.1rem;
+    color: #fff;
+    opacity: 0.9;
+  }
+
+  main { max-width: 960px; margin: 40px auto; padding: 0 20px 60px; }
+
+  .section { margin-bottom: 36px; }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .section-header .icon {
+    font-size: 1.8rem;
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .section-header h2 { font-size: 1.25rem; font-weight: 700; }
+
+  .cards { display: flex; flex-wrap: wrap; gap: 10px; }
+
+  .card {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 50px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .card:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.13); }
+  .card span.dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  /* Palette per sezione */
+  .s1 .icon { background: #ffe0f0; }
+  .s1 h2 { color: #e91e8c; }
+  .s1 .card { background: #fff0f8; color: #c2185b; border: 1.5px solid #f8bbd0; }
+  .s1 .card .dot { background: #e91e8c; }
+
+  .s2 .icon { background: #e0f7fa; }
+  .s2 h2 { color: #00838f; }
+  .s2 .card { background: #e0f7fa; color: #006064; border: 1.5px solid #b2ebf2; }
+  .s2 .card .dot { background: #00acc1; }
+
+  .s3 .icon { background: #fff8e1; }
+  .s3 h2 { color: #f57f17; }
+  .s3 .card { background: #fff8e1; color: #e65100; border: 1.5px solid #ffe082; }
+  .s3 .card .dot { background: #ffa000; }
+
+  .s4 .icon { background: #f3e5f5; }
+  .s4 h2 { color: #7b1fa2; }
+  .s4 .card { background: #f3e5f5; color: #6a1b9a; border: 1.5px solid #ce93d8; }
+  .s4 .card .dot { background: #ab47bc; }
+
+  .s5 .icon { background: #e8f5e9; }
+  .s5 h2 { color: #2e7d32; }
+  .s5 .card { background: #e8f5e9; color: #1b5e20; border: 1.5px solid #a5d6a7; }
+  .s5 .card .dot { background: #43a047; }
+
+  .s6 .icon { background: #e3f2fd; }
+  .s6 h2 { color: #1565c0; }
+  .s6 .card { background: #e3f2fd; color: #0d47a1; border: 1.5px solid #90caf9; }
+  .s6 .card .dot { background: #1e88e5; }
+
+  .s7 .icon { background: #fce4ec; }
+  .s7 h2 { color: #c62828; }
+  .s7 .card { background: #fce4ec; color: #b71c1c; border: 1.5px solid #f48fb1; }
+  .s7 .card .dot { background: #e53935; }
+
+  .s8 .icon { background: #fff3e0; }
+  .s8 h2 { color: #bf360c; }
+  .s8 .card { background: #fff3e0; color: #bf360c; border: 1.5px solid #ffcc80; }
+  .s8 .card .dot { background: #fb8c00; }
+
+  footer {
+    text-align: center;
+    padding: 20px;
+    font-size: 0.85rem;
+    color: #aaa;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎓 Convegno CIDI 2026</h1>
+  <p>Risorse digitali e progetti scolastici</p>
+</header>
+
+<main>
+
+  <!-- 1 App con AI -->
+  <div class="section s1">
+    <div class="section-header">
+      <div class="icon">🤖</div>
+      <h2>App con AI</h2>
+    </div>
+    <div class="cards">
+      <a class="card" href="https://de-stefano.github.io/claude/spesa_app.html" target="_blank"><span class="dot"></span>App carrello della spesa</a>
+      <a class="card" href="https://de-stefano.github.io/claude/prompt-carrello-spesa.pdf" target="_blank"><span class="dot"></span>Prompt per Claude</a>
+      <a class="card" href="https://de-stefano.github.io/claude/aurora-leonardo-bis.html" target="_blank"><span class="dot"></span>Piramide alimentare – Aurora e Leonardo</a>
+      <a class="card" href="https://de-stefano.github.io/claude/gioia-gemma-ultimo.html" target="_blank"><span class="dot"></span>Piramide alimentare – Gioia e Gemma</a>
+      <a class="card" href="https://de-stefano.github.io/claude/germania_quiz-claude.html" target="_blank"><span class="dot"></span>Cartine di geografia storica</a>
+    </div>
+  </div>
+
+  <!-- 2 Sito di Geografia -->
+  <div class="section s2">
+    <div class="section-header">
+      <div class="icon">🌍</div>
+      <h2>Sito di Geografia</h2>
+    </div>
+    <div class="cards">
+      <a class="card" href="https://sites.google.com/6icudine.edu.it/viaggi-virtuali/home-page" target="_blank"><span class="dot"></span>Vicino e lontano</a>
+      <a class="card" href="https://sites.google.com/6icudine.edu.it/viaggi-virtuali/giochi/francia-e-il-gioco-delloca" target="_blank"><span class="dot"></span>Gioco dell'oca</a>
+      <a class="card" href="https://sites.google.com/6icudine.edu.it/viaggi-virtuali/realt%C3%A0-virtuale/mostra-assiri" target="_blank"><span class="dot"></span>Immagine a 360 gradi</a>
+      <a class="card" href="https://sites.google.com/6icudine.edu.it/pianeta-marconi/2025-26/secondo-quadrimestre/attivit%C3%A0-giugno-2026/ovep-valori-olimpici" target="_blank"><span class="dot"></span>Valori olimpici</a>
+      <a class="card" href="https://sites.google.com/6icudine.edu.it/viaggi-virtuali/viaggi-di-scoperta/sardegna" target="_blank"><span class="dot"></span>Sardegna con HTML</a>
+    </div>
+  </div>
+
+  <!-- 3 Viaggio di istruzione -->
+  <div class="section s3">
+    <div class="section-header">
+      <div class="icon">🏛️</div>
+      <h2>Sito viaggio di istruzione</h2>
+    </div>
+    <div class="cards">
+      <a class="card" href="https://sites.google.com/6icudine.edu.it/visita-a-roma-2024/home-page" target="_blank"><span class="dot"></span>Roma</a>
+    </div>
+  </div>
+
+  <!-- 4 Giornalino -->
+  <div class="section s4">
+    <div class="section-header">
+      <div class="icon">📰</div>
+      <h2>Giornalino scolastico</h2>
+    </div>
+    <div class="cards">
+      <a class="card" href="https://sites.google.com/6icudine.edu.it/pianeta-marconi/2024-25/primo-quadrimestre/interviste" target="_blank"><span class="dot"></span>Podcast 1</a>
+      <a class="card" href="https://sites.google.com/6icudine.edu.it/pianeta-marconi/2025-26/primo-quadrimestre/attivit%C3%A0-2025/olimpiadi" target="_blank"><span class="dot"></span>Podcast 2</a>
+      <a class="card" href="https://sites.google.com/6icudine.edu.it/pianeta-marconi/2024-25/secondo-quadrimestre/laboratori" target="_blank"><span class="dot"></span>Podcast in francese</a>
+      <a class="card" href="https://sites.google.com/6icudine.edu.it/pianeta-marconi/2024-25/secondo-quadrimestre/divertiamoci" target="_blank"><span class="dot"></span>Giochi con LearningApps</a>
+      <a class="card" href="https://sites.google.com/6icudine.edu.it/pianeta-marconi/2024-25/secondo-quadrimestre/racconti/animali-aurora" target="_blank"><span class="dot"></span>Racconti – spazio per tutti 1</a>
+      <a class="card" href="https://sites.google.com/6icudine.edu.it/pianeta-marconi/2024-25/primo-quadrimestre/laboratori/cos%C3%A8-la-storia" target="_blank"><span class="dot"></span>Racconti – spazio per tutti 2</a>
+      <a class="card" href="https://sites.google.com/6icudine.edu.it/pianeta-marconi/2023-24/primo-quadrimestre/attivit%C3%A0/laboratorio-di-coding" target="_blank"><span class="dot"></span>Giochi con Scratch</a>
+      <a class="card" href="https://sites.google.com/6icudine.edu.it/pianeta-marconi/2023-24/primo-quadrimestre/comics" target="_blank"><span class="dot"></span>Comics</a>
+      <a class="card" href="https://sites.google.com/6icudine.edu.it/pianeta-marconi/2024-25/secondo-quadrimestre/attivit%C3%A0/pittini-1c" target="_blank"><span class="dot"></span>Presentazione Agricoltura 4.0</a>
+      <a class="card" href="https://sites.google.com/6icudine.edu.it/pianeta-marconi/2024-25/secondo-quadrimestre/laboratori/adidas" target="_blank"><span class="dot"></span>Tecnologia</a>
+      <a class="card" href="https://sites.google.com/6icudine.edu.it/pianeta-marconi/2024-25/primo-quadrimestre/laboratori/tour-di-udine" target="_blank"><span class="dot"></span>Tour di Udine con StoryMap JS</a>
+      <a class="card" href="https://sites.google.com/6icudine.edu.it/pianeta-marconi/2024-25/secondo-quadrimestre/laboratori/alberi" target="_blank"><span class="dot"></span>Gli alberi del giardino</a>
+      <a class="card" href="https://sites.google.com/6icudine.edu.it/pianeta-marconi/2024-25/secondo-quadrimestre/laboratori/club-della-lettura" target="_blank"><span class="dot"></span>Video – Club della lettura</a>
+      <a class="card" href="https://sites.google.com/6icudine.edu.it/pianeta-marconi/2025-26/secondo-quadrimestre/geografia-giugno-2026/water-pollution" target="_blank"><span class="dot"></span>Video green screen – Water pollution</a>
+      <a class="card" href="https://sites.google.com/6icudine.edu.it/pianeta-marconi/2025-26/secondo-quadrimestre/geografia-giugno-2026/water-pollution-again" target="_blank"><span class="dot"></span>Water pollution – CLIL</a>
+      <a class="card" href="https://sites.google.com/6icudine.edu.it/pianeta-marconi/2024-25/secondo-quadrimestre/attivit%C3%A0/notte-magica" target="_blank"><span class="dot"></span>Notte alla Marconi</a>
+      <a class="card" href="https://sites.google.com/6icudine.edu.it/pianeta-marconi/2024-25/secondo-quadrimestre/divertiamoci/sophie-escape" target="_blank"><span class="dot"></span>Escape room 1</a>
+      <a class="card" href="https://sites.google.com/6icudine.edu.it/pianeta-marconi/2024-25/secondo-quadrimestre/divertiamoci/lorenzo-escape" target="_blank"><span class="dot"></span>Escape room 2</a>
+    </div>
+  </div>
+
+  <!-- 5 Google Moduli -->
+  <div class="section s5">
+    <div class="section-header">
+      <div class="icon">📝</div>
+      <h2>Google Moduli</h2>
+    </div>
+    <div class="cards">
+      <a class="card" href="https://forms.gle/ZnkGCJ7D73NX6wnL9" target="_blank"><span class="dot"></span>Storie a bivi – Inglese</a>
+      <a class="card" href="https://forms.gle/sSMqFozszSQYmj3o9" target="_blank"><span class="dot"></span>Storie a bivi – Italiano</a>
+    </div>
+  </div>
+
+  <!-- 6 Scuola aperta -->
+  <div class="section s6">
+    <div class="section-header">
+      <div class="icon">🏫</div>
+      <h2>Sito "Scuola aperta"</h2>
+    </div>
+    <div class="cards">
+      <a class="card" href="https://sites.google.com/6icudine.edu.it/scuola-marconi/home-page" target="_blank"><span class="dot"></span>Video di presentazione della scuola</a>
+    </div>
+  </div>
+
+  <!-- 7 Siti degli alunni -->
+  <div class="section s7">
+    <div class="section-header">
+      <div class="icon">👩‍🎓</div>
+      <h2>Siti degli alunni</h2>
+    </div>
+    <div class="cards">
+      <a class="card" href="https://sites.google.com/6icudine.edu.it/sonia/home-page" target="_blank"><span class="dot"></span>Sito di Sonia</a>
+      <a class="card" href="https://de-stefano.github.io/claude/crea-sito.pdf" target="_blank"><span class="dot"></span>Istruzioni per creare un sito</a>
+    </div>
+  </div>
+
+  <!-- 8 Esami di Stato -->
+  <div class="section s8">
+    <div class="section-header">
+      <div class="icon">🎓</div>
+      <h2>Esami di Stato</h2>
+    </div>
+    <div class="cards">
+      <a class="card" href="https://sites.google.com/6icudine.edu.it/esame-classe3c/home-page" target="_blank"><span class="dot"></span>Anno scolastico 2022-23</a>
+      <a class="card" href="https://sites.google.com/6icudine.edu.it/esami/home-page" target="_blank"><span class="dot"></span>Anno scolastico 2023-24</a>
+    </div>
+  </div>
+
+</main>
+
+<footer>Convegno CIDI 2026 · Scuola Marconi, Udine</footer>
+
+</body>
+</html>
