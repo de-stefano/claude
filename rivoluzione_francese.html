@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:sans-serif;background:#f7f4ee;min-height:100vh;padding:20px}
+h1{text-align:center;font-size:20px;font-weight:500;color:#3a3a3a;margin-bottom:6px}
+.subtitle{text-align:center;font-size:13px;color:#888;margin-bottom:18px}
+
+/* VITE */
+.lives{display:flex;justify-content:center;gap:8px;margin-bottom:18px}
+.heart{font-size:22px;transition:opacity .3s}
+.heart.lost{opacity:.2}
+
+/* TAB DATE */
+.tabs{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:20px}
+.tab{padding:8px 22px;border-radius:20px;border:1.5px solid #c0b89a;background:#fff;font-size:15px;font-weight:500;cursor:pointer;color:#7a6a3a;transition:all .2s}
+.tab:hover{background:#f0e8cc}
+.tab.active{background:#c9a227;border-color:#c9a227;color:#fff}
+.tab.done{border-color:#6aaa6a;color:#6aaa6a;background:#eaffea}
+.tab.done.active{background:#6aaa6a;color:#fff}
+.tab.recap{background:#fff;border-color:#b07a2a;color:#b07a2a}
+.tab.recap.active{background:#b07a2a;color:#fff}
+.tab.disabled{opacity:.4;pointer-events:none}
+
+/* PANNELLO */
+.panel{display:none}
+.panel.active{display:block}
+.instructions{text-align:center;font-size:13px;color:#888;margin-bottom:14px}
+
+/* FRASI */
+.phrases{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+.phrase{padding:12px 16px;background:#fff;border:1.5px solid #d8d0b8;border-radius:10px;cursor:pointer;font-size:14px;color:#3a3a3a;transition:all .15s;user-select:none}
+.phrase:hover{border-color:#c9a227;background:#fffbf0}
+.phrase.selected{background:#fff8e0;border-color:#c9a227;color:#7a5900}
+.phrase.correct{background:#eaffea;border-color:#6aaa6a;color:#2a6a2a;pointer-events:none}
+.phrase.wrong{background:#ffeaea;border-color:#e06060;color:#8a2020;pointer-events:none}
+.phrase.disabled{pointer-events:none;opacity:.6}
+
+/* PULSANTE */
+.btn{display:block;margin:0 auto;padding:10px 32px;background:#c9a227;border:none;border-radius:20px;color:#fff;font-size:15px;font-weight:500;cursor:pointer;transition:background .2s}
+.btn:hover{background:#a87e1a}
+.btn:disabled{opacity:.4;pointer-events:none}
+
+/* FEEDBACK */
+.feedback{text-align:center;font-size:14px;font-weight:500;min-height:22px;margin-bottom:12px}
+.feedback.ok{color:#3a9a3a}
+.feedback.err{color:#c03030}
+
+/* GAME OVER */
+.gameover{text-align:center;padding:30px}
+.gameover h2{font-size:22px;color:#c03030;margin-bottom:10px}
+.gameover p{font-size:14px;color:#666;margin-bottom:20px}
+
+/* QUIZ FINALE */
+.final-item{background:#fff;border:1.5px solid #d8d0b8;border-radius:10px;padding:14px 16px;margin-bottom:14px}
+.final-item h3{font-size:13px;color:#888;font-weight:400;margin-bottom:6px}
+.final-item ul{list-style:none;margin-bottom:10px}
+.final-item ul li{font-size:14px;color:#3a3a3a;padding:3px 0;padding-left:12px;position:relative}
+.final-item ul li::before{content:"•";position:absolute;left:0;color:#c9a227}
+.final-item input{width:100%;padding:8px 12px;border:1.5px solid #d8d0b8;border-radius:8px;font-size:14px;color:#3a3a3a;outline:none;transition:border .2s}
+.final-item input:focus{border-color:#c9a227}
+.final-item input.correct{border-color:#6aaa6a;background:#eaffea}
+.final-item input.wrong{border-color:#e06060;background:#ffeaea}
+.final-score{text-align:center;font-size:18px;font-weight:500;color:#3a3a3a;margin-top:10px}
+.final-score span{color:#c9a227}
+
+/* SCHERMATA COMPLETAMENTO */
+.win{text-align:center;padding:30px}
+.win h2{font-size:22px;color:#3a9a3a;margin-bottom:10px}
+.trophy{font-size:48px;margin-bottom:10px}
+</style>
+</head>
+<body>
+<h2 style="visibility:hidden;height:0">Quiz interattivo sulla Rivoluzione Francese</h2>
+<h1>La Rivoluzione Francese</h1>
+<p class="subtitle">Seleziona gli eventi corretti per ogni data</p>
+
+<div class="lives" id="lives">
+  <span class="heart" id="h1">❤️</span>
+  <span class="heart" id="h2">❤️</span>
+  <span class="heart" id="h3">❤️</span>
+</div>
+
+<div class="tabs" id="tabs">
+  <button class="tab active" onclick="showPanel('1789')" id="tab-1789">1789</button>
+  <button class="tab disabled" onclick="showPanel('1791')" id="tab-1791">1791</button>
+  <button class="tab disabled" onclick="showPanel('1792')" id="tab-1792">1792</button>
+  <button class="tab disabled" onclick="showPanel('1793')" id="tab-1793">1793</button>
+  <button class="tab recap disabled" onclick="showPanel('recap')" id="tab-recap">📝 Scrivi la data</button>
+</div>
+
+<!-- PANNELLO 1789 -->
+<div class="panel active" id="panel-1789">
+  <p class="instructions">Seleziona i <strong>3 eventi</strong> avvenuti nel <strong>1789</strong></p>
+  <div class="phrases" id="phrases-1789"></div>
+  <p class="feedback" id="fb-1789"></p>
+  <button class="btn" id="btn-1789" onclick="check('1789')" disabled>Conferma</button>
+</div>
+
+<!-- PANNELLO 1791 -->
+<div class="panel" id="panel-1791">
+  <p class="instructions">Seleziona i <strong>2 eventi</strong> avvenuti nel <strong>1791</strong></p>
+  <div class="phrases" id="phrases-1791"></div>
+  <p class="feedback" id="fb-1791"></p>
+  <button class="btn" id="btn-1791" onclick="check('1791')" disabled>Conferma</button>
+</div>
+
+<!-- PANNELLO 1792 -->
+<div class="panel" id="panel-1792">
+  <p class="instructions">Seleziona i <strong>2 eventi</strong> avvenuti nel <strong>1792</strong></p>
+  <div class="phrases" id="phrases-1792"></div>
+  <p class="feedback" id="fb-1792"></p>
+  <button class="btn" id="btn-1792" onclick="check('1792')" disabled>Conferma</button>
+</div>
+
+<!-- PANNELLO 1793 -->
+<div class="panel" id="panel-1793">
+  <p class="instructions">Seleziona i <strong>3 eventi</strong> avvenuti nel <strong>1793</strong></p>
+  <div class="phrases" id="phrases-1793"></div>
+  <p class="feedback" id="fb-1793"></p>
+  <button class="btn" id="btn-1793" onclick="check('1793')" disabled>Conferma</button>
+</div>
+
+<!-- PANNELLO RIEPILOGO -->
+<div class="panel" id="panel-recap">
+  <p class="instructions">Scrivi la <strong>data corretta</strong> per ciascun gruppo di eventi</p>
+  <div id="recap-items"></div>
+  <p class="feedback" id="fb-recap"></p>
+  <button class="btn" id="btn-recap" onclick="checkRecap()">Verifica tutto</button>
+</div>
+
+<!-- GAME OVER -->
+<div class="panel" id="panel-gameover">
+  <div class="gameover">
+    <h2>Hai esaurito le vite! 💀</h2>
+    <p>Hai commesso troppi errori. Riprova dall'inizio!</p>
+    <button class="btn" onclick="resetGame()">Ricomincia</button>
+  </div>
+</div>
+
+<!-- VITTORIA -->
+<div class="panel" id="panel-win">
+  <div class="win">
+    <div class="trophy">🏆</div>
+    <h2>Complimenti! Hai completato il quiz!</h2>
+    <p style="font-size:14px;color:#666;margin-bottom:20px">Hai risposto correttamente a tutte le domande.</p>
+    <button class="btn" onclick="resetGame()">Gioca ancora</button>
+  </div>
+</div>
+
+<script>
+const DATA = {
+  '1789': [
+    'Convocazione degli Stati Generali',
+    'Istituzione dell\'Assemblea Nazionale Costituente',
+    'Presa della Bastiglia'
+  ],
+  '1791': [
+    'Fuga del re catturata a Varennes',
+    'Assemblea Legislativa: monarchia costituzionale'
+  ],
+  '1792': [
+    'Nasce una nuova assemblea: la Convenzione',
+    'Arresto del Re: nasce la Repubblica'
+  ],
+  '1793': [
+    'Esecuzione e morte di Luigi XVI per ghigliottinamento',
+    'Periodo del Terrore',
+    'Robespierre e l\'uccisione dei nemici della Repubblica'
+  ]
+};
+
+const REQUIRED = {'1789':3,'1791':2,'1792':2,'1793':3};
+const YEARS = ['1789','1791','1792','1793'];
+let lives = 3;
+let currentYear = '1789';
+let completed = {};
+let selected = {'1789':[],'1791':[],'1792':[],'1793':[]};
+let gameOver = false;
+
+function shuffle(arr){
+  let a=[...arr];
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+const ALL_PHRASES = shuffle([
+  ...DATA['1789'].map(t=>({text:t,year:'1789'})),
+  ...DATA['1791'].map(t=>({text:t,year:'1791'})),
+  ...DATA['1792'].map(t=>({text:t,year:'1792'})),
+  ...DATA['1793'].map(t=>({text:t,year:'1793'}))
+]);
+
+function buildPhrases(year){
+  const container = document.getElementById('phrases-'+year);
+  container.innerHTML='';
+  ALL_PHRASES.forEach((p,i)=>{
+    const div=document.createElement('div');
+    div.className='phrase';
+    div.dataset.index=i;
+    div.dataset.year=p.year;
+    div.textContent=p.text;
+    div.onclick=()=>togglePhrase(year,div,i);
+    container.appendChild(div);
+  });
+}
+
+function togglePhrase(year,el,idx){
+  if(completed[year]) return;
+  const sel=selected[year];
+  const pos=sel.indexOf(idx);
+  if(pos>=0){
+    sel.splice(pos,1);
+    el.classList.remove('selected');
+  } else {
+    sel.push(idx);
+    el.classList.add('selected');
+  }
+  document.getElementById('btn-'+year).disabled = sel.length !== REQUIRED[year];
+}
+
+function check(year){
+  const sel=selected[year];
+  const container=document.getElementById('phrases-'+year);
+  const phrases=container.querySelectorAll('.phrase');
+  let allCorrect=true;
+  let errorCount=0;
+  phrases.forEach(p=>{
+    const idx=parseInt(p.dataset.index);
+    const isSelected=sel.includes(idx);
+    const isCorrect=p.dataset.year===year;
+    if(isSelected&&isCorrect) p.classList.add('correct');
+    else if(isSelected&&!isCorrect){p.classList.add('wrong');errorCount++;allCorrect=false;}
+    else if(!isSelected&&isCorrect){p.classList.add('wrong');allCorrect=false;}
+    p.classList.remove('selected');
+  });
+
+  if(allCorrect){
+    showFeedback(year,'✅ Perfetto! Tutti gli eventi sono corretti.','ok');
+    document.getElementById('btn-'+year).disabled=true;
+    completed[year]=true;
+    document.getElementById('tab-'+year).classList.add('done');
+    unlockNext(year);
+  } else {
+    loseLife();
+    showFeedback(year,'❌ Qualche errore! Riprova.','err');
+    setTimeout(()=>resetPanel(year),1400);
+  }
+}
+
+function resetPanel(year){
+  if(gameOver) return;
+  selected[year]=[];
+  buildPhrases(year);
+  document.getElementById('btn-'+year).disabled=true;
+  document.getElementById('fb-'+year).textContent='';
+}
+
+function unlockNext(year){
+  const idx=YEARS.indexOf(year);
+  if(idx<YEARS.length-1){
+    const next=YEARS[idx+1];
+    document.getElementById('tab-'+next).classList.remove('disabled');
+    setTimeout(()=>showPanel(next),600);
+  } else {
+    document.getElementById('tab-recap').classList.remove('disabled');
+    setTimeout(()=>showPanel('recap'),600);
+    buildRecap();
+  }
+}
+
+function loseLife(){
+  lives--;
+  document.getElementById('h'+( 3-lives+1 > 3 ? 3 : lives+1)).classList.add('lost');
+  // Trova il cuore perso
+  for(let i=1;i<=3;i++){
+    const h=document.getElementById('h'+i);
+    if(!h.classList.contains('lost') && lives < (3-i+1)){
+      h.classList.add('lost');
+    }
+  }
+  updateHearts();
+  if(lives<=0){
+    gameOver=true;
+    setTimeout(()=>showPanel('gameover'),800);
+  }
+}
+
+function updateHearts(){
+  for(let i=1;i<=3;i++){
+    const h=document.getElementById('h'+i);
+    h.classList.toggle('lost', i > lives);
+  }
+}
+
+function showFeedback(year,msg,type){
+  const el=document.getElementById('fb-'+year);
+  el.textContent=msg;
+  el.className='feedback '+type;
+}
+
+function showPanel(id){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  const t=document.getElementById('tab-'+id);
+  if(t) t.classList.add('active');
+  currentYear=id;
+}
+
+function buildRecap(){
+  const cont=document.getElementById('recap-items');
+  cont.innerHTML='';
+  const shuffledYears=shuffle([...YEARS]);
+  shuffledYears.forEach(year=>{
+    const div=document.createElement('div');
+    div.className='final-item';
+    div.dataset.year=year;
+    const events=shuffle([...DATA[year]]);
+    div.innerHTML=`<h3>Questi eventi a quale anno appartengono?</h3>
+      <ul>${events.map(e=>`<li>${e}</li>`).join('')}</ul>
+      <input type="text" placeholder="Scrivi l'anno (es. 1750)" maxlength="4" />`;
+    cont.appendChild(div);
+  });
+}
+
+function checkRecap(){
+  const items=document.querySelectorAll('.final-item');
+  let score=0;
+  items.forEach(item=>{
+    const inp=item.querySelector('input');
+    const correct=item.dataset.year;
+    const val=inp.value.trim();
+    if(val===correct){
+      inp.classList.add('correct');
+      inp.classList.remove('wrong');
+      score++;
+    } else {
+      inp.classList.add('wrong');
+      inp.classList.remove('correct');
+    }
+  });
+  const fb=document.getElementById('fb-recap');
+  if(score===4){
+    fb.textContent='🎉 Perfetto! Tutte le date corrette!';
+    fb.className='feedback ok';
+    setTimeout(()=>showPanel('win'),1000);
+  } else {
+    fb.textContent=`${score}/4 corrette. Riprova!`;
+    fb.className='feedback err';
+  }
+}
+
+function resetGame(){
+  lives=3;
+  gameOver=false;
+  completed={};
+  selected={'1789':[],'1791':[],'1792':[],'1793':[]};
+  updateHearts();
+  YEARS.forEach(y=>{
+    const tab=document.getElementById('tab-'+y);
+    tab.classList.remove('done','disabled');
+    if(y!=='1789') tab.classList.add('disabled');
+  });
+  document.getElementById('tab-recap').classList.add('disabled');
+  YEARS.forEach(y=>buildPhrases(y));
+  YEARS.forEach(y=>{
+    document.getElementById('btn-'+y).disabled=true;
+    document.getElementById('fb-'+y).textContent='';
+  });
+  showPanel('1789');
+}
+
+YEARS.forEach(y=>buildPhrases(y));
+</script>
+</body>
+</html>
