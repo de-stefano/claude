@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>I Confini della Germania - Gioco Storico</title>
+    <!-- Tailwind CSS per uno stile moderno e reattivo -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons per icone pulite -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .word-badge {
+            transition: all 0.2s ease;
+            cursor: grab;
+        }
+        .word-badge:active {
+            cursor: grabbing;
+        }
+        .drop-zone {
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+        .drop-zone.dragover {
+            background-color: #f3f4f6;
+            border-color: #3b82f6;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
+
+    <!-- Header dell'applicazione -->
+    <header class="bg-slate-800 border-b border-slate-700 py-4 px-6 shadow-md">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-amber-500 text-slate-950 p-2 rounded-lg font-bold">
+                    <i data-lucide="map" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-black tracking-tight text-white">I CONFINI DELLA GERMANIA</h1>
+                    <p class="text-xs text-slate-400">Trascina le parole chiave e indovina l'anno corrispondente alla cartina!</p>
+                </div>
+            </div>
+            <!-- Contatore del Progresso -->
+            <div class="bg-slate-750 border border-slate-600 rounded-full px-4 py-1.5 text-sm flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>Cartine completate: <strong id="score" class="text-emerald-400">0</strong>/6</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenitore Principale -->
+    <main class="flex-grow max-w-6xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+       
+        <!-- COLONNA SINISTRA: Cartina e Input Anno (7 Colonne) -->
+        <section class="lg:col-span-7 flex flex-col gap-6">
+            <!-- Box Cartina -->
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 shadow-xl flex flex-col items-center justify-between min-h-[350px] relative overflow-hidden">
+                <div class="absolute top-3 left-3 bg-slate-900/80 backdrop-blur text-xs px-3 py-1 rounded-full text-slate-300 font-semibold border border-slate-700">
+                    Cartina corrente
+                </div>
+               
+                <div class="w-full flex justify-center items-center my-4 min-h-[260px]">
+                    <img id="map-image" src="" alt="Cartina Storica Germania" class="max-h-[320px] rounded-lg shadow-md border border-slate-700 object-contain bg-slate-950 p-1" onerror="this.src='https://placehold.co/600x400/1e293b/ffffff?text=Caricamento+Cartina...'">
+                </div>
+
+                <!-- Input Data Corretta -->
+                <div class="w-full border-t border-slate-700 pt-4 flex flex-col sm:flex-row items-center gap-4 justify-between">
+                    <label for="input-year" class="text-sm font-bold tracking-wide uppercase text-slate-300">
+                        In quale anno/periodo siamo?
+                    </label>
+                    <div class="relative w-full sm:w-48">
+                        <i data-lucide="calendar" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5"></i>
+                        <input type="text" id="input-year" placeholder="Es. 1919 o 1989/90" class="w-full pl-10 pr-4 py-2 bg-slate-950 border border-slate-600 rounded-lg text-white font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-lg placeholder-slate-600">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Zona Rilascio Parole Chiave (Drop Zone) -->
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-sm font-bold tracking-wide uppercase text-slate-300 flex items-center gap-2">
+                        <i data-lucide="check-square" class="w-5 h-5 text-blue-400"></i>
+                        Area di inserimento parole chiave (4 richieste)
+                    </h3>
+                    <button id="clear-keywords" class="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1 transition">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Svuota area
+                    </button>
+                </div>
+               
+                <p class="text-xs text-slate-400 mb-3">
+                    Trascina qui dentro le 4 parole collegate alla cartina visualizzata, oppure clicca sulle parole dell'elenco a destra per spostarle automaticamente qui.
+                </p>
+
+                <div id="drop-zone" class="drop-zone min-h-[120px] border-2 border-dashed border-slate-600 rounded-xl bg-slate-950/50 p-4 flex flex-wrap gap-2 items-center justify-center">
+                    <!-- Le parole chiave trascinate appariranno qui -->
+                    <span id="drop-placeholder" class="text-slate-500 text-sm italic pointer-events-none">
+                        Trascina o clicca sulle parole chiave per inserirle qui...
+                    </span>
+                </div>
+            </div>
+
+            <!-- Pulsante di Verifica -->
+            <button id="btn-verify" class="w-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-extrabold text-lg py-4 px-6 rounded-2xl shadow-lg transition-all duration-200 transform hover:-translate-y-0.5 flex items-center justify-center gap-3">
+                <i data-lucide="send" class="w-6 h-6"></i>
+                VERIFICA RISPOSTE
+            </button>
+        </section>
+
+        <!-- COLONNA DESTRA: Parole Chiave Mischiate (5 Colonne) -->
+        <section class="lg:col-span-5 flex flex-col gap-6">
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl flex-grow flex flex-col">
+                <h3 class="text-sm font-bold tracking-wide uppercase text-slate-300 mb-2 flex items-center gap-2">
+                    <i data-lucide="shuffle" class="text-amber-400 w-5 h-5"></i>
+                    Banca delle Parole Chiave (MISTE!)
+                </h3>
+                <p class="text-xs text-slate-400 mb-4">
+                    Tutte le parole chiave di tutte le cartine sono mescolate. Seleziona le 4 esatte per la cartina mostrata!
+                </p>
+
+                <!-- Box Scorrevole con le parole -->
+                <div class="flex-grow overflow-y-auto max-h-[500px] pr-2 bg-slate-950/40 rounded-xl p-3 border border-slate-700/60">
+                    <div id="words-container" class="flex flex-wrap gap-2.5 justify-center">
+                        <!-- Generato dinamicamente in modo mischiato -->
+                    </div>
+                </div>
+               
+                <div class="mt-4 pt-4 border-t border-slate-700 flex justify-between items-center text-xs text-slate-500">
+                    <span>Totale parole disponibili: 24</span>
+                    <button id="btn-reshuffle" class="text-blue-400 hover:text-blue-300 flex items-center gap-1">
+                        <i data-lucide="refresh-cw" class="w-3 h-3"></i> Rimescola lista
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- POPUP MODALE RISULTATI (Corretto o Sbagliato) -->
+    <div id="result-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div id="modal-content" class="w-full max-w-lg bg-slate-800 border-2 rounded-3xl p-6 md:p-8 shadow-2xl transform scale-95 transition-all duration-300 flex flex-col items-center text-center">
+           
+            <!-- Icona di Stato -->
+            <div id="modal-icon-container" class="w-20 h-20 rounded-full flex items-center justify-center mb-6 shadow-inner">
+                <!-- Icona dinamica inserita via JS -->
+            </div>
+
+            <!-- Titolo Principale Risultato -->
+            <h2 id="modal-title" class="text-3xl font-black mb-3"></h2>
+           
+            <!-- Descrizione o feedback -->
+            <p id="modal-message" class="text-slate-300 text-base mb-6 leading-relaxed"></p>
+
+            <!-- Sezione AIUTO / RISTUDIA (Attiva in caso di errore) -->
+            <div id="study-help-section" class="w-full bg-slate-900 border border-slate-700 rounded-2xl p-4 mb-6 text-left hidden">
+                <h4 class="text-amber-400 font-bold text-sm mb-2 flex items-center gap-1.5">
+                    <i data-lucide="book-open" class="w-4 h-4"></i> Ristudia le Cartine qui:
+                </h4>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <a href="https://de-stefano.github.io/claude/cartine-germania/germania1.png" target="_blank" class="p-2 bg-slate-800 rounded border border-slate-700 hover:border-amber-500 transition flex items-center gap-1 text-slate-300">
+                        <span class="font-bold text-amber-500">1:</span> Cartina 1871
+                    </a>
+                    <a href="https://de-stefano.github.io/claude/cartine-germania/germania2.png" target="_blank" class="p-2 bg-slate-800 rounded border border-slate-700 hover:border-amber-500 transition flex items-center gap-1 text-slate-300">
+                        <span class="font-bold text-amber-500">2:</span> Cartina 1919
+                    </a>
+                    <a href="https://de-stefano.github.io/claude/cartine-germania/germania3.png" target="_blank" class="p-2 bg-slate-800 rounded border border-slate-700 hover:border-amber-500 transition flex items-center gap-1 text-slate-300">
+                        <span class="font-bold text-amber-500">3:</span> Cartina 1939
+                    </a>
+                    <a href="https://de-stefano.github.io/claude/cartine-germania/germania4.png" target="_blank" class="p-2 bg-slate-800 rounded border border-slate-700 hover:border-amber-500 transition flex items-center gap-1 text-slate-300">
+                        <span class="font-bold text-amber-500">4:</span> Cartina 1949
+                    </a>
+                    <a href="https://de-stefano.github.io/claude/cartine-germania/germania5.png" target="_blank" class="p-2 bg-slate-800 rounded border border-slate-700 hover:border-amber-500 transition flex items-center gap-1 text-slate-300">
+                        <span class="font-bold text-amber-500">5:</span> Cartina 1961
+                    </a>
+                    <a href="https://de-stefano.github.io/claude/cartine-germania/germania6.png" target="_blank" class="p-2 bg-slate-800 rounded border border-slate-700 hover:border-amber-500 transition flex items-center gap-1 text-slate-300">
+                        <span class="font-bold text-amber-500">6:</span> Cartina 1989/90
+                    </a>
+                </div>
+            </div>
+
+            <!-- Pulsante Azione Finale del Modal -->
+            <button id="modal-action-btn" class="w-full py-3 px-6 rounded-xl font-bold transition duration-200 shadow-md">
+                Pulsante Azione
+            </button>
+
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-slate-950 border-t border-slate-800 py-4 text-center text-xs text-slate-500">
+        <p>I Confini della Germania - Progetto Didattico di Storia e Cartografia. Tutti i diritti riservati.</p>
+    </footer>
+
+    <!-- LOGICA DI GIOCO JAVASCRIPT -->
+    <script>
+        // Database delle Cartine e delle informazioni correlate
+        const database = [
+            {
+                id: 1,
+                year: "1871",
+                alternateYears: ["1871"],
+                image: "https://de-stefano.github.io/claude/cartine-germania/germania1.png",
+                keywords: [
+                    "guerra dei Trent’anni",
+                    "suddivisione della germania",
+                    "nascita della nazione tedesca riunificata",
+                    "grande espansione"
+                ],
+                explanation: "Nel 1871, dopo la guerra franco-prussiana, nasce la Nazione Tedesca Unificata (secondo Reich) sotto la spinta della Prussia, portando a un'estensione enorme dei confini."
+            },
+            {
+                id: 2,
+                year: "1919",
+                alternateYears: ["1919", "1919-1920", "1920"],
+                image: "https://de-stefano.github.io/claude/cartine-germania/germania2.png",
+                keywords: [
+                    "pace Versailles",
+                    "pace punitiva",
+                    "corridoio polacco",
+                    "restituzione dell’Alsazia e la Lorena"
+                ],
+                explanation: "La pace di Versailles del 1919 impose pesanti condizioni punitive alla Germania sconfitta nella Prima Guerra Mondiale, smembrando parti di territorio e creando il corridoio polacco."
+            },
+            {
+                id: 3,
+                year: "1939",
+                alternateYears: ["1939", "1938"],
+                image: "https://de-stefano.github.io/claude/cartine-germania/germania3.png",
+                keywords: [
+                    "Hitler",
+                    "invasione Polonia",
+                    "inizia la seconda guerra mondiale",
+                    "Hitler occupa l’Austria"
+                ],
+                explanation: "Nel 1939 ha inizio la Seconda Guerra Mondiale con l'invasione della Polonia, preceduta dall'occupazione dell'Austria (Anschluss) e dei Sudeti."
+            },
+            {
+                id: 4,
+                year: "1949",
+                alternateYears: ["1949", "1945", "1948"],
+                image: "https://de-stefano.github.io/claude/cartine-germania/germania4.png",
+                keywords: [
+                    "la Germania fu divisa in due zone",
+                    "Germania Ovest/Germania Est",
+                    "URSS",
+                    "fine della seconda guerra mondiale"
+                ],
+                explanation: "Dopo la fine della Seconda Guerra Mondiale, nel 1949 la divisione divenne definitiva con la nascita della Repubblica Federale (Ovest) e la Repubblica Democratica sotto controllo sovietico (Est)."
+            },
+            {
+                id: 5,
+                year: "1961",
+                alternateYears: ["1961", "1963"],
+                image: "https://de-stefano.github.io/claude/cartine-germania/germania5.png",
+                keywords: [
+                    "iniziò la costruzione del muro di Berlino",
+                    "Il muro era lungo 166 chilometri",
+                    "tagliava in due ben 192 strade",
+                    "divise in due la città di Berlino"
+                ],
+                explanation: "Nella notte tra il 12 e il 13 agosto 1961 iniziò la costruzione del muro di Berlino per fermare il flusso migratorio di massa verso l'ovest capitalista."
+            },
+            {
+                id: 6,
+                year: "1989/90",
+                alternateYears: ["1989/90", "1989", "1990", "1989-1990"],
+                image: "https://de-stefano.github.io/claude/cartine-germania/germania6.png",
+                keywords: [
+                    "caduta del muro di berlino",
+                    "9 novembre 1989",
+                    "Michail Gorbaciov",
+                    "Ungheria apre confini con Austria"
+                ],
+                explanation: "Il 9 novembre 1989 crolla il muro di Berlino, spianando la strada alla riunificazione tedesca avvenuta ufficialmente il 3 ottobre 1990."
+            }
+        ];
+
+        // Stato dell'applicazione
+        let currentMapIndex = -1;
+        let selectedKeywords = [];
+        let score = 0;
+        let availableMaps = [...database]; // Per assicurare la rotazione senza ripetizioni immediate
+
+        // Elementi DOM
+        const mapImage = document.getElementById('map-image');
+        const inputYear = document.getElementById('input-year');
+        const wordsContainer = document.getElementById('words-container');
+        const dropZone = document.getElementById('drop-zone');
+        const dropPlaceholder = document.getElementById('drop-placeholder');
+        const clearKeywordsBtn = document.getElementById('clear-keywords');
+        const btnVerify = document.getElementById('btn-verify');
+        const btnReshuffle = document.getElementById('btn-reshuffle');
+        const scoreSpan = document.getElementById('score');
+
+        // Modale
+        const resultModal = document.getElementById('result-modal');
+        const modalContent = document.getElementById('modal-content');
+        const modalIconContainer = document.getElementById('modal-icon-container');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessage = document.getElementById('modal-message');
+        const studyHelpSection = document.getElementById('study-help-section');
+        const modalActionBtn = document.getElementById('modal-action-btn');
+
+        // Inizializzazione icone Lucide
+        function initIcons() {
+            lucide.createIcons();
+        }
+
+        // Funzione helper per mischiare un array (Fisher-Yates)
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // Ottieni tutte le parole chiave esistenti (24 in totale)
+        function getAllKeywords() {
+            let all = [];
+            database.forEach(item => {
+                all = all.concat(item.keywords);
+            });
+            return all;
+        }
+
+        // Seleziona una nuova cartina a rotazione (evita ripetizioni consecutive se possibile)
+        function selectNextMap() {
+            if (availableMaps.length === 0) {
+                availableMaps = [...database]; // Resetta il pool se sono finite tutte
+            }
+           
+            // Scegli una mappa a caso dal pool rimanente
+            const randomIndex = Math.floor(Math.random() * availableMaps.length);
+            const nextMap = availableMaps[randomIndex];
+           
+            // Rimuovila dal pool di quelle disponibili in questo "giro"
+            availableMaps.splice(randomIndex, 1);
+           
+            // Trova l'indice nel database originale
+            currentMapIndex = database.findIndex(item => item.id === nextMap.id);
+           
+            // Aggiorna la vista
+            mapImage.src = database[currentMapIndex].image;
+            inputYear.value = "";
+            resetDropZone();
+            renderWordsList();
+        }
+
+        // Rendering delle parole chiave disponibili (mischiate!)
+        function renderWordsList() {
+            wordsContainer.innerHTML = '';
+            const allWords = shuffleArray(getAllKeywords());
+
+            allWords.forEach(word => {
+                // Non mostrare le parole che sono già state selezionate/inserite nell'area drop
+                if (selectedKeywords.includes(word)) return;
+
+                const badge = document.createElement('div');
+                badge.className = 'word-badge bg-slate-800 hover:bg-slate-700 active:bg-slate-650 text-slate-100 border border-slate-600 rounded-xl px-3.5 py-2 text-sm text-center select-none shadow-sm font-medium hover:border-blue-400 transition-all active:scale-95 duration-150';
+                badge.innerText = word;
+                badge.draggable = true;
+               
+                // Evento d'inizio trascinamento (Drag)
+                badge.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', word);
+                });
+
+                // Supporto anche al click diretto per facilitare l'uso su Tablet/Mobile
+                badge.addEventListener('click', () => {
+                    addKeyword(word);
+                });
+
+                wordsContainer.appendChild(badge);
+            });
+        }
+
+        // Aggiunge una parola chiave alla zona di risposta
+        function addKeyword(word) {
+            if (selectedKeywords.length >= 4) {
+                // Limite di 4 elementi
+                return;
+            }
+            if (!selectedKeywords.includes(word)) {
+                selectedKeywords.push(word);
+                updateDropZoneUI();
+                renderWordsList();
+            }
+        }
+
+        // Rimuove una parola chiave dalla zona di risposta
+        function removeKeyword(word) {
+            selectedKeywords = selectedKeywords.filter(w => w !== word);
+            updateDropZoneUI();
+            renderWordsList();
+        }
+
+        // Ripristina l'area di rilascio
+        function resetDropZone() {
+            selectedKeywords = [];
+            updateDropZoneUI();
+        }
+
+        // Aggiorna graficamente l'area di rilascio delle parole chiave
+        function updateDropZoneUI() {
+            // Svuota tranne il placeholder se vuoto
+            dropZone.innerHTML = '';
+           
+            if (selectedKeywords.length === 0) {
+                dropZone.appendChild(dropPlaceholder);
+                dropPlaceholder.classList.remove('hidden');
+            } else {
+                dropPlaceholder.classList.add('hidden');
+               
+                selectedKeywords.forEach(word => {
+                    const selectedBadge = document.createElement('div');
+                    selectedBadge.className = 'bg-blue-900/40 text-blue-100 border-2 border-blue-500/60 rounded-xl px-3.5 py-1.5 text-sm flex items-center gap-2 shadow-sm animate-scale-up';
+                   
+                    const textSpan = document.createElement('span');
+                    textSpan.innerText = word;
+                   
+                    const removeBtn = document.createElement('button');
+                    removeBtn.className = 'text-blue-400 hover:text-rose-400 transition';
+                    removeBtn.innerHTML = '<i data-lucide="x" class="w-4 h-4"></i>';
+                    removeBtn.addEventListener('click', () => {
+                        removeKeyword(word);
+                    });
+
+                    selectedBadge.appendChild(textSpan);
+                    selectedBadge.appendChild(removeBtn);
+                    dropZone.appendChild(selectedBadge);
+                });
+            }
+            initIcons();
+        }
+
+        // Setup degli Eventi di Drag and Drop per computer
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const word = e.dataTransfer.getData('text/plain');
+            if (word) {
+                addKeyword(word);
+            }
+        });
+
+        // Evento svuota area
+        clearKeywordsBtn.addEventListener('click', () => {
+            resetDropZone();
+            renderWordsList();
+        });
+
+        // Evento Rimescola manuale della lista
+        btnReshuffle.addEventListener('click', () => {
+            renderWordsList();
+        });
+
+        // Gestore del Controllo delle risposte
+        btnVerify.addEventListener('click', () => {
+            const currentMap = database[currentMapIndex];
+            const enteredYear = inputYear.value.trim().toLowerCase();
+           
+            // Validazione iniziale
+            if (!enteredYear) {
+                showModal({
+                    status: 'info',
+                    title: 'ANNO MANCANTE!',
+                    message: 'Scrivi prima l\'anno corretto nella barra sotto la cartina!',
+                    buttonText: 'Riprova'
+                });
+                return;
+            }
+
+            if (selectedKeywords.length < 4) {
+                showModal({
+                    status: 'info',
+                    title: 'PAROLE MANCANTI!',
+                    message: `Hai inserito solo ${selectedKeywords.length} parole chiave. Ne servono esattamente 4!`,
+                    buttonText: 'Inserisci le altre'
+                });
+                return;
+            }
+
+            // 1. Verifica Anno (confronto insensibile a maiuscole/minuscole e spazi)
+            const normalizedEnteredYear = enteredYear.replace(/\s+/g, '');
+            const isYearCorrect = currentMap.alternateYears.some(yr =>
+                yr.replace(/\s+/g, '').toLowerCase() === normalizedEnteredYear
+            );
+
+            // 2. Verifica Parole Chiave
+            // Tutte le parole chiave selezionate devono appartenere alla lista corretta di quella mappa
+            const areKeywordsCorrect = selectedKeywords.every(word =>
+                currentMap.keywords.includes(word)
+            ) && selectedKeywords.length === 4;
+
+            // Decisione finale
+            if (isYearCorrect && areKeywordsCorrect) {
+                // VITTORIA
+                score++;
+                scoreSpan.innerText = score;
+               
+                showModal({
+                    status: 'success',
+                    title: 'BRAVO! ce l’hai fatta.',
+                    message: `Ottimo lavoro! La cartina corrispondeva proprio all'anno <strong>${currentMap.year}</strong>.<br><br><span class="text-sm italic block text-slate-300 bg-slate-900/60 p-3 rounded-xl border border-slate-700/50">${currentMap.explanation}</span>`,
+                    buttonText: 'Passa alla prossima cartina'
+                });
+            } else {
+                // SCONFITTA (VAI A STUDIARE)
+                showModal({
+                    status: 'fail',
+                    title: 'NOOO, VAI A STUDIARE!!',
+                    message: `Ops! Le risposte fornite non sono corrette. Controlla l'anno inserito o le associazioni delle parole e ristudia la mappa corrispondente per colmare le tue lacune.`,
+                    buttonText: "PROVA CON UN'ALTRA CARTINA!!!!"
+                });
+            }
+        });
+
+        // Mostra il popup dei risultati con stili personalizzati
+        function showModal({ status, title, message, buttonText }) {
+            // Reset classi
+            modalContent.className = "w-full max-w-lg bg-slate-800 border-2 rounded-3xl p-6 md:p-8 shadow-2xl transform transition-all duration-300 flex flex-col items-center text-center";
+            modalIconContainer.innerHTML = '';
+            studyHelpSection.classList.add('hidden');
+
+            if (status === 'success') {
+                modalContent.classList.add('border-emerald-500');
+                modalIconContainer.className = "w-20 h-20 rounded-full flex items-center justify-center mb-6 bg-emerald-950 text-emerald-400 shadow-inner border border-emerald-500";
+                modalIconContainer.innerHTML = '<i data-lucide="party-popper" class="w-10 h-10"></i>';
+                modalTitle.className = "text-3xl font-black text-emerald-400 mb-3";
+                modalActionBtn.className = "w-full py-3 px-6 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold transition duration-200 shadow-md";
+               
+                // Al click sul pulsante successo, cambiamo cartina
+                modalActionBtn.onclick = () => {
+                    closeModal();
+                    selectNextMap();
+                };
+            } else if (status === 'fail') {
+                modalContent.classList.add('border-rose-500');
+                modalIconContainer.className = "w-20 h-20 rounded-full flex items-center justify-center mb-6 bg-rose-950 text-rose-400 shadow-inner border border-rose-500";
+                modalIconContainer.innerHTML = '<i data-lucide="frown" class="w-10 h-10"></i>';
+                modalTitle.className = "text-3xl font-black text-rose-500 mb-3";
+                modalActionBtn.className = "w-full py-3 px-6 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-bold transition duration-200 shadow-md";
+               
+                // Mostra i link per ristudiare
+                studyHelpSection.classList.remove('hidden');
+               
+                // Quando si preme "PROVA CON UN'ALTRA CARTINA!!!!", cambiamo cartina
+                modalActionBtn.onclick = () => {
+                    closeModal();
+                    selectNextMap();
+                };
+            } else {
+                // Info / Campi incompleti
+                modalContent.classList.add('border-blue-500');
+                modalIconContainer.className = "w-20 h-20 rounded-full flex items-center justify-center mb-6 bg-blue-950 text-blue-400 shadow-inner border border-blue-500";
+                modalIconContainer.innerHTML = '<i data-lucide="help-circle" class="w-10 h-10"></i>';
+                modalTitle.className = "text-3xl font-black text-blue-400 mb-3";
+                modalActionBtn.className = "w-full py-3 px-6 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition duration-200 shadow-md";
+               
+                modalActionBtn.onclick = closeModal;
+            }
+
+            modalTitle.innerText = title;
+            modalMessage.innerHTML = message;
+            modalActionBtn.innerText = buttonText;
+
+            // Mostra Modale con animazione
+            resultModal.classList.remove('hidden');
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95');
+                modalContent.classList.add('scale-100');
+            }, 50);
+
+            initIcons();
+        }
+
+        // Chiude il modale
+        function closeModal() {
+            modalContent.classList.remove('scale-100');
+            modalContent.classList.add('scale-95');
+            setTimeout(() => {
+                resultModal.classList.add('hidden');
+            }, 150);
+        }
+
+        // Avvio iniziale sul caricamento della finestra
+        window.onload = function() {
+            selectNextMap();
+            initIcons();
+        }
+    </script>
+</body>
+</html>
