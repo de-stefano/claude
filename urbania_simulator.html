@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Urbania - Sfida di Pianificazione Urbana</title>
+    <!-- Tailwind CSS para lo stile moderno -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Animazioni personalizzate per rendere l'interfaccia vivace */
+        @keyframes pulse-subtle {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+        .pulse-btn {
+            animation: pulse-subtle 3s infinite ease-in-out;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
+
+    <!-- HEADER / BARRA SUPERIORE -->
+    <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-40 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
+            <!-- Titolo e Logo -->
+            <div class="flex items-center space-x-3">
+                <div class="bg-emerald-500 text-slate-950 p-2 rounded-lg font-bold text-xl shadow-lg shadow-emerald-500/20">
+                    🏙️
+                </div>
+                <div>
+                    <h1 class="font-black text-lg md:text-2xl tracking-tight bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">
+                        URBANIA
+                    </h1>
+                    <p class="text-xs text-slate-400">Sfida di Sostenibilità Urbana</p>
+                </div>
+            </div>
+
+            <!-- Budget Principale -->
+            <div class="flex items-center bg-slate-950/60 border border-slate-600/50 px-5 py-2 rounded-full shadow-inner">
+                <span class="text-xs uppercase tracking-wider font-semibold text-slate-400 mr-2">Budget:</span>
+                <span id="budget-value" class="text-2xl font-black text-amber-400">100</span>
+                <span class="text-amber-400 font-bold ml-1">M€</span>
+            </div>
+
+            <!-- Pulsanti di Controllo Principali -->
+            <div class="flex items-center gap-2">
+                <button onclick="checkCityStatus(true)" class="pulse-btn bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-2 rounded-lg transition-all text-sm shadow-md shadow-emerald-500/10 flex items-center gap-1">
+                    🔍 Controlla Sfida
+                </button>
+                <button onclick="nextTurn()" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-4 py-2 rounded-lg transition-all text-sm flex items-center gap-1">
+                    🔄 Prossimo Turno
+                </button>
+                <button onclick="resetGame()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 p-2 rounded-lg transition-all text-sm" title="Riavvia Gioco">
+                    🗑️ Ripristina
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN LAYOUT -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- COLONNA SINISTRA (8 colonne su desktop): Elementi Edificabili con Categorie -->
+        <section class="lg:col-span-7 flex flex-col space-y-4">
+            
+            <!-- Pannello Filtri / Categorie -->
+            <div class="bg-slate-800 p-3 rounded-xl border border-slate-700/80 flex flex-wrap gap-2 items-center">
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 px-2">Filtra:</span>
+                <button onclick="filterCategory('all')" id="tab-all" class="cat-tab px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500 text-slate-950 transition-all">
+                    Tutti (30)
+                </button>
+                <button onclick="filterCategory('green')" id="tab-green" class="cat-tab px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 transition-all">
+                    🌿 Verde & Clima
+                </button>
+                <button onclick="filterCategory('social')" id="tab-social" class="cat-tab px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 transition-all">
+                    🏛️ Sociale & Salute
+                </button>
+                <button onclick="filterCategory('mobility')" id="tab-mobility" class="cat-tab px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 transition-all">
+                    🚇 Trasporti & Mobilità
+                </button>
+                <button onclick="filterCategory('production')" id="tab-production" class="cat-tab px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 transition-all">
+                    🏭 Lavoro & Industria
+                </button>
+            </div>
+
+            <!-- Lista degli Elementi Edificabili -->
+            <div class="bg-slate-800 rounded-xl border border-slate-700 p-4 flex-grow flex flex-col shadow-lg">
+                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-300 mb-3 flex items-center justify-between">
+                    <span>Progetti Disponibili</span>
+                    <span class="text-xs font-normal text-slate-400">Clicca su + per costruire nella tua città</span>
+                </h2>
+                
+                <!-- Container Elementi Scrollabile -->
+                <div id="elements-container" class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[62vh] overflow-y-auto pr-1 scrollbar-hide">
+                    <!-- Elementi generati dinamicamente via JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- COLONNA DESTRA (5 colonne su desktop): Statistiche, Obiettivi e Log Eventi -->
+        <section class="lg:col-span-5 flex flex-col space-y-6">
+            
+            <!-- PANNELLO INDICATORI (GRAFICO A BARRE IN TEMPO REALE) -->
+            <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-lg">
+                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-300 mb-4 flex items-center justify-between">
+                    <span>Indicatori Cittadini</span>
+                    <span class="text-xs text-slate-400">Base iniziale: 25</span>
+                </h2>
+                
+                <div class="space-y-4">
+                    <!-- AMBIENTE -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1 text-xs">
+                            <span class="font-bold text-emerald-400 flex items-center gap-1">🌿 AMBIENTE</span>
+                            <span class="font-mono text-slate-300"><span id="val-amb" class="font-bold text-slate-100">25</span> / 100</span>
+                        </div>
+                        <div class="w-full bg-slate-900 h-3.5 rounded-full overflow-hidden border border-slate-700 flex">
+                            <div id="bar-amb" class="bg-gradient-to-r from-emerald-600 to-emerald-400 h-full rounded-full transition-all duration-500" style="width: 25%"></div>
+                        </div>
+                    </div>
+
+                    <!-- BENESSERE -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1 text-xs">
+                            <span class="font-bold text-rose-400 flex items-center gap-1">❤️ BENESSERE</span>
+                            <span class="font-mono text-slate-300"><span id="val-ben" class="font-bold text-slate-100">25</span> / 100</span>
+                        </div>
+                        <div class="w-full bg-slate-900 h-3.5 rounded-full overflow-hidden border border-slate-700 flex">
+                            <div id="bar-ben" class="bg-gradient-to-r from-rose-600 to-rose-400 h-full rounded-full transition-all duration-500" style="width: 25%"></div>
+                        </div>
+                    </div>
+
+                    <!-- MOBILITÀ -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1 text-xs">
+                            <span class="font-bold text-amber-400 flex items-center gap-1">🚗 MOBILITÀ</span>
+                            <span class="font-mono text-slate-300"><span id="val-mob" class="font-bold text-slate-100">25</span> / 100</span>
+                        </div>
+                        <div class="w-full bg-slate-900 h-3.5 rounded-full overflow-hidden border border-slate-700 flex">
+                            <div id="bar-mob" class="bg-gradient-to-r from-amber-600 to-amber-400 h-full rounded-full transition-all duration-500" style="width: 25%"></div>
+                        </div>
+                    </div>
+
+                    <!-- LAVORO -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1 text-xs">
+                            <span class="font-bold text-blue-400 flex items-center gap-1">💼 LAVORO</span>
+                            <span class="font-mono text-slate-300"><span id="val-lav" class="font-bold text-slate-100">25</span> / 100</span>
+                        </div>
+                        <div class="w-full bg-slate-900 h-3.5 rounded-full overflow-hidden border border-slate-700 flex">
+                            <div id="bar-lav" class="bg-gradient-to-r from-blue-600 to-blue-400 h-full rounded-full transition-all duration-500" style="width: 25%"></div>
+                        </div>
+                    </div>
+
+                    <!-- INCLUSIONE -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1 text-xs">
+                            <span class="font-bold text-violet-400 flex items-center gap-1">🤝 INCLUSIONE</span>
+                            <span class="font-mono text-slate-300"><span id="val-inc" class="font-bold text-slate-100">25</span> / 100</span>
+                        </div>
+                        <div class="w-full bg-slate-900 h-3.5 rounded-full overflow-hidden border border-slate-700 flex">
+                            <div id="bar-inc" class="bg-gradient-to-r from-violet-600 to-violet-400 h-full rounded-full transition-all duration-500" style="width: 25%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OBIETTIVI & FEEDBACK DI VITTORIA -->
+            <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-lg flex-grow flex flex-col justify-between">
+                <div>
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-slate-300 mb-3">Requisiti di Vittoria</h2>
+                    
+                    <ul class="space-y-2 text-xs">
+                        <li id="req-amb" class="flex items-center justify-between p-2 rounded bg-slate-900/50">
+                            <span>🌿 Ambiente ≥ 40</span>
+                            <span id="badge-amb" class="text-rose-400 font-bold">Incompleto</span>
+                        </li>
+                        <li id="req-ben" class="flex items-center justify-between p-2 rounded bg-slate-900/50">
+                            <span>❤️ Benessere ≥ 40</span>
+                            <span id="badge-ben" class="text-rose-400 font-bold">Incompleto</span>
+                        </li>
+                        <li id="req-inc" class="flex items-center justify-between p-2 rounded bg-slate-900/50">
+                            <span>🤝 Inclusione ≥ 35</span>
+                            <span id="badge-inc" class="text-rose-400 font-bold">Incompleto</span>
+                        </li>
+                    </ul>
+
+                    <div class="mt-4 p-3 bg-slate-900/80 border border-slate-700 rounded-lg">
+                        <div class="text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">Rischio Sbilanciamento</div>
+                        <div class="text-xs text-slate-300" id="unbalance-check">
+                            Nessun indicatore sotto la soglia critica del <span class="text-rose-400 font-bold">20</span>.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Evento Attivo Corrente / Turni -->
+                <div class="mt-4 border-t border-slate-700 pt-4">
+                    <div class="flex justify-between items-center text-xs text-slate-400 mb-2">
+                        <span class="uppercase tracking-wider font-bold">Eventi & Cronologia</span>
+                        <span>Mese Corrente: <strong id="month-count" class="text-blue-400 font-mono">1</strong></span>
+                    </div>
+                    <div id="event-display" class="bg-blue-950/40 border border-blue-900/50 p-3 rounded-lg text-xs text-blue-300">
+                        ✨ Benvenuto ad Urbania. Costruisci strutture sostenibili e passa i turni per guadagnare entrate dalle tasse (proporzionali al livello di <strong>Lavoro</strong>)!
+                    </div>
+                </div>
+            </div>
+            
+        </section>
+    </main>
+
+    <!-- LISTA EDIFICI COSTRUITI (VISUAL HUD) -->
+    <footer class="bg-slate-950/80 border-t border-slate-800 p-4">
+        <div class="max-w-7xl mx-auto">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 flex justify-between items-center">
+                <span>Edifici Costruiti nella tua Città (<span id="built-count" class="text-emerald-400 font-mono">0</span>)</span>
+                <span class="text-[10px] text-slate-500">Puoi demolire gli elementi costruiti per recuperare l'80% dei costi</span>
+            </h3>
+            <div id="built-list" class="flex flex-wrap gap-2 max-h-24 overflow-y-auto scrollbar-hide">
+                <span class="text-xs text-slate-500 italic py-1">Nessun edificio ancora eretto. Seleziona i progetti in alto per iniziare.</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- MODALE DI VERIFICA VITTORIA / FINE PARTITA -->
+    <div id="modal-status" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-slate-900 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+            <div id="modal-decoration" class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-emerald-500 to-teal-500"></div>
+            
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg font-bold">✕</button>
+            
+            <div class="text-center mt-2">
+                <div id="modal-icon" class="text-5xl mb-3">🏙️</div>
+                <h3 id="modal-title" class="text-2xl font-black tracking-tight text-white mb-2">Stato della Città</h3>
+                <p id="modal-desc" class="text-slate-300 text-sm mb-6">Analisi completa degli indicatori urbani in corso...</p>
+                
+                <div class="bg-slate-950/50 p-4 rounded-xl border border-slate-800 text-left space-y-2 mb-6">
+                    <div class="flex justify-between text-xs">
+                        <span class="text-slate-400">🌿 Ambiente:</span>
+                        <span id="m-amb" class="font-bold text-white">0</span>
+                    </div>
+                    <div class="flex justify-between text-xs">
+                        <span class="text-slate-400">❤️ Benessere:</span>
+                        <span id="m-ben" class="font-bold text-white">0</span>
+                    </div>
+                    <div class="flex justify-between text-xs">
+                        <span class="text-slate-400">🤝 Inclusione:</span>
+                        <span id="m-inc" class="font-bold text-white">0</span>
+                    </div>
+                    <div class="flex justify-between text-xs border-t border-slate-800 pt-2">
+                        <span class="text-slate-400">🚗 Mobilità:</span>
+                        <span id="m-mob" class="font-bold text-white">0</span>
+                    </div>
+                    <div class="flex justify-between text-xs">
+                        <span class="text-slate-400">💼 Lavoro:</span>
+                        <span id="m-lav" class="font-bold text-white">0</span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-2">
+                    <button onclick="closeModal()" class="bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2.5 rounded-xl transition-all text-sm">
+                        Continua a Pianificare
+                    </button>
+                    <button onclick="resetGame(); closeModal();" class="text-xs text-rose-400 hover:text-rose-300 py-1 font-semibold">
+                        Ricomincia da Capo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MESSAGGI INLINE POPUP (SOSTITUTI DI ALERT) -->
+    <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm pointer-events-none"></div>
+
+    <script>
+        // DATI DEGLI ELEMENTI (30 ELEMENTI BILANCIATI ED EDITATI DA TABELLA UTENTE)
+        const items = [
+            // Categoria: Verde (Green)
+            { id: 1, name: "Parco pubblico", cat: "green", cost: 15, amb: 10, ben: 8, mob: 2, lav: 0, inc: 5, icon: "🌳" },
+            { id: 2, name: "Pista ciclabile", cat: "green", cost: 10, amb: 8, ben: 4, mob: 8, lav: 0, inc: 3, icon: "🚲" },
+            { id: 3, name: "Orto urbano", cat: "green", cost: 12, amb: 9, ben: 5, mob: 0, lav: 1, inc: 4, icon: "🥕" },
+            { id: 4, name: "Alberi in città", cat: "green", cost: 8, amb: 7, ben: 3, mob: 1, lav: 0, inc: 2, icon: "🌲" },
+            { id: 5, name: "Raccolta differenziata", cat: "green", cost: 12, amb: 7, ben: 3, mob: 0, lav: 4, inc: 6, icon: "♻️" },
+            { id: 6, name: "Impianto solare", cat: "green", cost: 20, amb: 10, ben: 3, mob: 0, lav: 6, inc: 2, icon: "☀️" },
+            
+            // Categoria: Trasporti (Mobility)
+            { id: 7, name: "Trasporto elettrico", cat: "mobility", cost: 25, amb: 7, ben: 6, mob: 8, lav: 5, inc: 5, icon: "⚡" },
+            { id: 21, name: "Metropolitana", cat: "mobility", cost: 35, amb: 6, ben: 7, mob: 10, lav: 5, inc: 6, icon: "🚇" },
+            { id: 22, name: "Autobus elettrico", cat: "mobility", cost: 20, amb: 7, ben: 6, mob: 8, lav: 4, inc: 5, icon: "🚌" },
+            { id: 23, name: "Strada urbana", cat: "mobility", cost: 15, amb: -2, ben: 2, mob: 6, lav: 3, inc: 0, icon: "🛣️" },
+            { id: 24, name: "Car sharing", cat: "mobility", cost: 18, amb: 6, ben: 6, mob: 7, lav: 3, inc: 5, icon: "🚗" },
+            { id: 19, name: "Autostrada", cat: "mobility", cost: 25, amb: -7, ben: 1,  mob: 10, lav: 6, inc: 0, icon: "🛣️" },
+            { id: 20, name: "Parcheggio grande", cat: "mobility", cost: 10, amb: -6, ben: 1,  mob: 8,  lav: 4, inc: 0, icon: "🅿️" },
+            
+            // Categoria: Sociale (Social)
+            { id: 8, name: "Biblioteca", cat: "social", cost: 18, amb: 3, ben: 7, mob: 0, lav: 2, inc: 6, icon: "📚" },
+            { id: 9, name: "Scuola", cat: "social", cost: 25, amb: 2, ben: 9, mob: 0, lav: 5, inc: 8, icon: "🏫" },
+            { id: 10, name: "Ospedale", cat: "social", cost: 30, amb: 0, ben: 10, mob: 0, lav: 5, inc: 6, icon: "🏥" },
+            { id: 11, name: "Centro sportivo", cat: "social", cost: 22, amb: 3, ben: 8, mob: 0, lav: 4, inc: 7, icon: "⚽" },
+            { id: 12, name: "Piazza pubblica", cat: "social", cost: 15, amb: 6, ben: 7, mob: 2, lav: 0, inc: 8, icon: "⛲" },
+            { id: 13, name: "Centro giovani", cat: "social", cost: 18, amb: 2, ben: 8, mob: 0, lav: 3, inc: 10, icon: "🧒" },
+            { id: 14, name: "Casa di riposo", cat: "social", cost: 20, amb: 1, ben: 7, mob: 0, lav: 3, inc: 9, icon: "👵" },
+            { id: 27, name: "Centro eventi", cat: "social", cost: 22, amb: 2, ben: 8, mob: 2, lav: 3, inc: 9, icon: "🎪" },
+            { id: 30, name: "Quartiere residenziale", cat: "social", cost: 18, amb: 4, ben: 8, mob: 2, lav: 2, inc: 6, icon: "🏡" },
+            
+            // Categoria: Produzione & Lavoro (Production)
+            { id: 15, name: "Uffici smart working", cat: "production", cost: 20, amb: 3, ben: 5, mob: 2, lav: 6, inc: 4, icon: "💻" },
+            { id: 16, name: "Fabbrica moderna", cat: "production", cost: 30, amb: -7, ben: 2, mob: -3, lav: 10, inc: 1, icon: "🏭" },
+            { id: 17, name: "Centro commerciale", cat: "production", cost: 25, amb: -5, ben: 3, mob: -4, lav: 8, inc: 2, icon: "🛍️" },
+            { id: 18, name: "Magazzino logistico", cat: "production", cost: 28, amb: -6, ben: 0, mob: -5, lav: 9, inc: 1, icon: "📦" },
+            { id: 25, name: "Inceneritore", cat: "production", cost: 25, amb: -10, ben: -3, mob: -2, lav: 6, inc: -2, icon: "🔥" },
+            { id: 26, name: "Discarica", cat: "production", cost: 20, amb: -9, ben: -3, mob: -1, lav: 4, inc: -3, icon: "🗑️" },
+            { id: 28, name: "Area abbandonata", cat: "production", cost: 0, amb: -5, ben: -4, mob: 0, lav: -2, inc: -3, icon: "🏚️" },
+            { id: 29, name: "Turismo sostenibile", cat: "production", cost: 20, amb: 6, ben: 7, mob: 3, lav: 6, inc: 7, icon: "🧳" }
+        ];
+
+        // STATO DI GIOCO INIZIALE
+        let gameState = {
+            budget: 100,
+            stats: {
+                amb: 25,
+                ben: 25,
+                mob: 25,
+                lav: 25,
+                inc: 25
+            },
+            builtItems: [], // Contiene oggetti interi costruiti
+            month: 1,
+            activeFilter: 'all'
+        };
+
+        // DATABASE DI EVENTI CASUALI
+        const events = [
+            { title: "🌧️ Alluvione Autunnale", effect: "Le fognature faticano. L'Ambiente cala ma fioriscono le aree verdi.", stats: { amb: -5, ben: -3, mob: -2 }, budget: 0 },
+            { title: "🇪🇺 Fondi di Sviluppo UE", effect: "L'Unione Europea premia i vostri piani. Bonus economico generoso!", stats: { lav: 2 }, budget: 35 },
+            { title: "😷 Picco Inquinamento", effect: "Lo smog sale alle stelle. Il benessere dei cittadini scende.", stats: { amb: -8, ben: -6 }, budget: 0 },
+            { title: "💡 Boom Tecnologico", effect: "Apertura di poli d'innovazione. Boom dei posti di lavoro.", stats: { lav: 8, mob: 2 }, budget: 10 },
+            { title: "📣 Proteste per l'Integrazione", effect: "Disordini sociali in periferia. L'Inclusione cala bruscamente.", stats: { inc: -10, ben: -4 }, budget: 0 },
+            { title: "☀️ Estate Record / Siccità", effect: "La canicola devasta le riserve idriche. Ambiente e benessere calano.", stats: { amb: -7, ben: -5 }, budget: 0 },
+            { title: "🚲 Giornata Senza Auto", effect: "Incentivi statali per l'uso di biciclette e micromobilità.", stats: { amb: 4, mob: 6, ben: 2 }, budget: 5 },
+            { title: "💼 Sciopero Nazionale", effect: "Serrata dei trasporti e dei cantieri. Calo economico immediato.", stats: { mob: -8, lav: -4 }, budget: -10 }
+        ];
+
+        // INIZIALIZZAZIONE DELLA PAGINA
+        window.onload = function() {
+            renderElements();
+            updateUI();
+        };
+
+        // FUNZIONE PER CREARE TOAST NOTIFICATION (Sostituto di alert)
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let bgColor = 'bg-slate-800 border-slate-700 text-slate-100';
+            if (type === 'success') bgColor = 'bg-emerald-950 border-emerald-500 text-emerald-200';
+            if (type === 'error') bgColor = 'bg-rose-950 border-rose-500 text-rose-200';
+            if (type === 'warning') bgColor = 'bg-amber-950 border-amber-500 text-amber-200';
+
+            toast.className = `p-3.5 rounded-xl border ${bgColor} shadow-lg transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto flex items-center gap-2 text-xs font-semibold`;
+            toast.innerHTML = `<span>💬</span> <span>${message}</span>`;
+            
+            container.appendChild(toast);
+            
+            // Trigger animation
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            // Rimuovi dopo 4 secondi
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 4000);
+        }
+
+        // COSTRUZIONE ELEMENTI DELLA LISTA
+        function renderElements() {
+            const container = document.getElementById('elements-container');
+            container.innerHTML = "";
+
+            const filtered = items.filter(item => {
+                if (gameState.activeFilter === 'all') return true;
+                return item.cat === gameState.activeFilter;
+            });
+
+            filtered.forEach(item => {
+                // Generazione Badge punteggi
+                let statBadges = [];
+                if (item.amb !== 0) statBadges.push(`<span class="text-[10px] px-1.5 py-0.5 rounded ${item.amb > 0 ? 'bg-emerald-950 text-emerald-400' : 'bg-rose-950 text-rose-400'}">🌿 ${item.amb > 0 ? '+' : ''}${item.amb}</span>`);
+                if (item.ben !== 0) statBadges.push(`<span class="text-[10px] px-1.5 py-0.5 rounded ${item.ben > 0 ? 'bg-rose-950 text-rose-400' : 'bg-rose-950 text-rose-400'}">❤️ ${item.ben > 0 ? '+' : ''}${item.ben}</span>`);
+                if (item.mob !== 0) statBadges.push(`<span class="text-[10px] px-1.5 py-0.5 rounded ${item.mob > 0 ? 'bg-amber-950 text-amber-400' : 'bg-rose-950 text-rose-400'}">🚗 ${item.mob > 0 ? '+' : ''}${item.mob}</span>`);
+                if (item.lav !== 0) statBadges.push(`<span class="text-[10px] px-1.5 py-0.5 rounded ${item.lav > 0 ? 'bg-blue-950 text-blue-400' : 'bg-rose-950 text-rose-400'}">💼 ${item.lav > 0 ? '+' : ''}${item.lav}</span>`);
+                if (item.inc !== 0) statBadges.push(`<span class="text-[10px] px-1.5 py-0.5 rounded ${item.inc > 0 ? 'bg-violet-950 text-violet-400' : 'bg-rose-950 text-rose-400'}">🤝 ${item.inc > 0 ? '+' : ''}${item.inc}</span>`);
+
+                const card = document.createElement('div');
+                card.className = "bg-slate-900/60 hover:bg-slate-900 border border-slate-700/60 p-3 rounded-xl flex flex-col justify-between transition-all duration-200 hover:border-slate-600";
+                
+                card.innerHTML = `
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="flex gap-2">
+                            <span class="text-2xl py-1">${item.icon}</span>
+                            <div>
+                                <h3 class="font-bold text-xs text-white leading-tight">${item.name}</h3>
+                                <span class="text-[10px] text-amber-400 font-semibold uppercase tracking-wider">${item.cost} M€</span>
+                            </div>
+                        </div>
+                        <button onclick="buildItem(${item.id})" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black p-1.5 px-3 rounded-lg text-xs transition-all flex items-center justify-center gap-1 shadow-sm shadow-emerald-500/10">
+                            + Costruisci
+                        </button>
+                    </div>
+                    <div class="flex flex-wrap gap-1 mt-2.5">
+                        ${statBadges.join('')}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // CAMBIO FILTRO CATEGORIA
+        function filterCategory(cat) {
+            gameState.activeFilter = cat;
+            document.querySelectorAll('.cat-tab').forEach(btn => {
+                btn.className = "cat-tab px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 transition-all";
+            });
+            
+            const activeTab = document.getElementById(`tab-${cat}`);
+            if (activeTab) {
+                activeTab.className = "cat-tab px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500 text-slate-950 transition-all";
+            }
+            renderElements();
+        }
+
+        // LOGICA DI COSTRUZIONE
+        function buildItem(itemId) {
+            const item = items.find(i => i.id === itemId);
+            if (!item) return;
+
+            // Controllo budget
+            if (gameState.budget < item.cost) {
+                showToast(`Budget insufficiente! Ti servono ${item.cost} M€ per costruire: ${item.name}`, 'error');
+                return;
+            }
+
+            // Applica modifiche
+            gameState.budget -= item.cost;
+            
+            // Aggiorna indicatori, limitandoli tra 0 e 100
+            gameState.stats.amb = Math.max(0, Math.min(100, gameState.stats.amb + item.amb));
+            gameState.stats.ben = Math.max(0, Math.min(100, gameState.stats.ben + item.ben));
+            gameState.stats.mob = Math.max(0, Math.min(100, gameState.stats.mob + item.mob));
+            gameState.stats.lav = Math.max(0, Math.min(100, gameState.stats.lav + item.lav));
+            gameState.stats.inc = Math.max(0, Math.min(100, gameState.stats.inc + item.inc));
+
+            // Aggiungi a costruiti
+            gameState.builtItems.push({ ...item, builtId: Date.now() });
+
+            showToast(`Edificato: ${item.name}! (${item.cost} M€ spesi)`, 'success');
+            updateUI();
+        }
+
+        // LOGICA DI DEMOLIZIONE
+        function demolishItem(builtId) {
+            const index = gameState.builtItems.findIndex(i => i.builtId === builtId);
+            if (index === -1) return;
+
+            const item = gameState.builtItems[index];
+            const refund = Math.floor(item.cost * 0.8); // Recupero dell'80% dei soldi
+
+            // Riaccredita budget e inverte gli indicatori statistici
+            gameState.budget += refund;
+            gameState.stats.amb = Math.max(0, Math.min(100, gameState.stats.amb - item.amb));
+            gameState.stats.ben = Math.max(0, Math.min(100, gameState.stats.ben - item.ben));
+            gameState.stats.mob = Math.max(0, Math.min(100, gameState.stats.mob - item.mob));
+            gameState.stats.lav = Math.max(0, Math.min(100, gameState.stats.lav - item.lav));
+            gameState.stats.inc = Math.max(0, Math.min(100, gameState.stats.inc - item.inc));
+
+            gameState.builtItems.splice(index, 1);
+            showToast(`Demolito: ${item.name}. Recuperati ${refund} M€`, 'warning');
+            updateUI();
+        }
+
+        // MECCANICA PROSSIMO TURNO (MESE + ENTRATE TASSE + EVENTI CASUALI)
+        function nextTurn() {
+            gameState.month += 1;
+
+            // Economia coerente: Tasse = base 5 M€ + coefficiente proporzionale alle opportunità lavorative!
+            const taxRevenue = Math.floor(5 + (gameState.stats.lav * 0.4));
+            gameState.budget += taxRevenue;
+
+            showToast(`Nuovo Mese avviato! Riscossa Tassa di Sviluppo Urbano: +${taxRevenue} M€`, 'success');
+
+            // 50% di probabilità di scatenare un evento casuale ad ogni turno
+            if (Math.random() < 0.6) {
+                triggerRandomEvent();
+            } else {
+                document.getElementById('event-display').innerHTML = `
+                    <span class="text-emerald-400">🌱 Periodo tranquillo.</span> Le tasse hanno portato <strong class="text-amber-400">+${taxRevenue} M€</strong> nelle casse pubbliche. I cittadini rimangono sereni.
+                `;
+            }
+
+            updateUI();
+        }
+
+        // TRASMETTI EVENTO CASUALE
+        function triggerRandomEvent() {
+            const rEv = events[Math.floor(Math.random() * events.length)];
+            
+            // Applica budget evento
+            gameState.budget = Math.max(0, gameState.budget + rEv.budget);
+
+            // Applica statistiche
+            if (rEv.stats) {
+                if (rEv.stats.amb) gameState.stats.amb = Math.max(0, Math.min(100, gameState.stats.amb + rEv.stats.amb));
+                if (rEv.stats.ben) gameState.stats.ben = Math.max(0, Math.min(100, gameState.stats.ben + rEv.stats.ben));
+                if (rEv.stats.mob) gameState.stats.mob = Math.max(0, Math.min(100, gameState.stats.mob + rEv.stats.mob));
+                if (rEv.stats.lav) gameState.stats.lav = Math.max(0, Math.min(100, gameState.stats.lav + rEv.stats.lav));
+                if (rEv.stats.inc) gameState.stats.inc = Math.max(0, Math.min(100, gameState.stats.inc + rEv.stats.inc));
+            }
+
+            const budgetFeedback = rEv.budget !== 0 ? ` (${rEv.budget > 0 ? '+' : ''}${rEv.budget} M€)` : '';
+            
+            document.getElementById('event-display').innerHTML = `
+                <div class="font-bold text-red-400 mb-1">${rEv.title}</div>
+                <div>${rEv.effect} <strong class="text-amber-400">${budgetFeedback}</strong></div>
+            `;
+
+            showToast(`EVENTO CASUALE: ${rEv.title}`, 'warning');
+        }
+
+        // AGGIORNAMENTO GRAFICO E HUD (PROGRESS BARS & LABELS)
+        function updateUI() {
+            // Aggiorna Budget
+            document.getElementById('budget-value').innerText = gameState.budget;
+
+            // Aggiorna contatore Mesi
+            document.getElementById('month-count').innerText = gameState.month;
+
+            // Aggiorna Valori Testuali Indicatori
+            document.getElementById('val-amb').innerText = gameState.stats.amb;
+            document.getElementById('val-ben').innerText = gameState.stats.ben;
+            document.getElementById('val-mob').innerText = gameState.stats.mob;
+            document.getElementById('val-lav').innerText = gameState.stats.lav;
+            document.getElementById('val-inc').innerText = gameState.stats.inc;
+
+            // Aggiorna Barre di Progresso Grafiche
+            document.getElementById('bar-amb').style.width = `${gameState.stats.amb}%`;
+            document.getElementById('bar-ben').style.width = `${gameState.stats.ben}%`;
+            document.getElementById('bar-mob').style.width = `${gameState.stats.mob}%`;
+            document.getElementById('bar-lav').style.width = `${gameState.stats.lav}%`;
+            document.getElementById('bar-inc').style.width = `${gameState.stats.inc}%`;
+
+            // Aggiorna Lista Edifici Costruiti nel Footer
+            const builtListDiv = document.getElementById('built-list');
+            const builtCountSpan = document.getElementById('built-count');
+            
+            builtCountSpan.innerText = gameState.builtItems.length;
+
+            if (gameState.builtItems.length === 0) {
+                builtListDiv.innerHTML = `<span class="text-xs text-slate-500 italic py-1">Nessun edificio ancora eretto. Seleziona i progetti in alto per iniziare.</span>`;
+            } else {
+                builtListDiv.innerHTML = "";
+                gameState.builtItems.forEach(item => {
+                    const badge = document.createElement('button');
+                    badge.onclick = () => demolishItem(item.builtId);
+                    badge.title = "Clicca per demolire (recupera 80% dei fondi)";
+                    badge.className = "flex items-center gap-1 bg-slate-800 hover:bg-rose-950 border border-slate-700 hover:border-rose-700 px-2 py-1 rounded text-xs text-slate-300 hover:text-rose-200 transition-all font-medium";
+                    badge.innerHTML = `<span>${item.icon}</span> <span>${item.name}</span> <span class="text-[9px] text-slate-500 group-hover:text-rose-400">✕</span>`;
+                    builtListDiv.appendChild(badge);
+                });
+            }
+
+            // Aggiorna Checkbox Requisiti Semplificati in tempo reale
+            checkSimpleRequirements();
+        }
+
+        // VERIFICA REQUISITI RAPIDA IN TEMPO REALE
+        function checkSimpleRequirements() {
+            // Ambiente >= 40
+            const ambCheck = gameState.stats.amb >= 40;
+            const reqAmb = document.getElementById('req-amb');
+            const badgeAmb = document.getElementById('badge-amb');
+            if (ambCheck) {
+                reqAmb.className = "flex items-center justify-between p-2 rounded bg-emerald-950/30 text-emerald-400";
+                badgeAmb.className = "text-emerald-400 font-bold";
+                badgeAmb.innerText = "Soddisfatto ✓";
+            } else {
+                reqAmb.className = "flex items-center justify-between p-2 rounded bg-slate-900/50";
+                badgeAmb.className = "text-rose-400 font-bold";
+                badgeAmb.innerText = "Incompleto";
+            }
+
+            // Benessere >= 40
+            const benCheck = gameState.stats.ben >= 40;
+            const reqBen = document.getElementById('req-ben');
+            const badgeBen = document.getElementById('badge-ben');
+            if (benCheck) {
+                reqBen.className = "flex items-center justify-between p-2 rounded bg-emerald-950/30 text-emerald-400";
+                badgeBen.className = "text-emerald-400 font-bold";
+                badgeBen.innerText = "Soddisfatto ✓";
+            } else {
+                reqBen.className = "flex items-center justify-between p-2 rounded bg-slate-900/50";
+                badgeBen.className = "text-rose-400 font-bold";
+                badgeBen.innerText = "Incompleto";
+            }
+
+            // Inclusione >= 35
+            const incCheck = gameState.stats.inc >= 35;
+            const reqInc = document.getElementById('req-inc');
+            const badgeInc = document.getElementById('badge-inc');
+            if (incCheck) {
+                reqInc.className = "flex items-center justify-between p-2 rounded bg-emerald-950/30 text-emerald-400";
+                badgeInc.className = "text-emerald-400 font-bold";
+                badgeInc.innerText = "Soddisfatto ✓";
+            } else {
+                reqInc.className = "flex items-center justify-between p-2 rounded bg-slate-900/50";
+                badgeInc.className = "text-rose-400 font-bold";
+                badgeInc.innerText = "Incompleto";
+            }
+
+            // Controllo Sbilanciamento (se anche solo una risorsa è < 20)
+            const lowStats = Object.keys(gameState.stats).filter(key => gameState.stats[key] < 20);
+            const unbalanceDisplay = document.getElementById('unbalance-check');
+            if (lowStats.length > 0) {
+                const names = lowStats.map(s => s.toUpperCase());
+                unbalanceDisplay.innerHTML = `
+                    <span class="text-rose-400 font-bold">⚠️ ATTENZIONE:</span> La città è sbilanciata! Gli indicatori (<strong class="text-white">${names.join(', ')}</strong>) sono sotto la soglia critica del <strong class="text-white">20</strong>! Rischio collasso sociale ed ecologico.
+                `;
+            } else {
+                unbalanceDisplay.innerHTML = `
+                    <span class="text-emerald-400 font-semibold">Stabilità Perfetta:</span> Nessun indicatore critico sotto 20. Ottimo lavoro amministrativo!
+                `;
+            }
+        }
+
+        // VERIFICA DI VITTORIA COMPLETA (METODO PRINCIPALE)
+        function checkCityStatus(showModalFlag = true) {
+            // Raccolta Dati
+            const amb = gameState.stats.amb;
+            const ben = gameState.stats.ben;
+            const inc = gameState.stats.inc;
+            const mob = gameState.stats.mob;
+            const lav = gameState.stats.lav;
+
+            // Requisiti Vittoria
+            const isBalanced = (amb >= 40 && ben >= 40 && inc >= 35);
+            
+            // Requisiti Sbilanciamento (Critico se uno qualsiasi < 20)
+            const isUnbalanced = (amb < 20 || ben < 20 || inc < 20 || mob < 20 || lav < 20);
+
+            // Scelta del verdetto
+            let title = "";
+            let desc = "";
+            let icon = "";
+            let decorationColor = "bg-gradient-to-r from-blue-500 to-indigo-500";
+
+            if (isBalanced && !isUnbalanced) {
+                title = "🎉 Città Equilibrata! (Vittoria)";
+                desc = "Congratulazioni Sindaco! Sei riuscito a coordinare un'amministrazione impeccabile. La tua città preserva l'ambiente, promuove il benessere e non lascia indietro nessuno. Un vero paradiso urbano sostenibile!";
+                icon = "🏆";
+                decorationColor = "bg-gradient-to-r from-emerald-500 to-teal-500";
+            } else if (isUnbalanced) {
+                title = "⚠️ Città Sbilanciata! (Sconfitta)";
+                desc = "Hai trascurato alcuni parametri critici! Una o più aree strategiche hanno un punteggio inferiore a 20. La discrepanza sta provocando disordini, inquinamento o crisi finanziarie incontrollate. Riorganizza i tuoi progetti.";
+                icon = "🛑";
+                decorationColor = "bg-gradient-to-r from-rose-600 to-red-500";
+            } else {
+                title = "🏙️ Città In Via di Sviluppo";
+                desc = "I tuoi piani stanno progredendo gradualmente. Continua a investire per raggiungere gli obiettivi: Ambiente (≥ 40), Benessere (≥ 40) e Inclusione (≥ 35) per sbloccare la Sostenibilità Globale.";
+                icon = "🏗️";
+                decorationColor = "bg-gradient-to-r from-amber-500 to-orange-500";
+            }
+
+            // Caricamento Dati nel Modale
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-desc').innerText = desc;
+            document.getElementById('modal-icon').innerText = icon;
+            
+            document.getElementById('m-amb').innerText = `${amb} / 100 ${amb >= 40 ? '✓' : ''}`;
+            document.getElementById('m-ben').innerText = `${ben} / 100 ${ben >= 40 ? '✓' : ''}`;
+            document.getElementById('m-inc').innerText = `${inc} / 100 ${inc >= 35 ? '✓' : ''}`;
+            document.getElementById('m-mob').innerText = `${mob} / 100`;
+            document.getElementById('m-lav').innerText = `${lav} / 100`;
+
+            const decoration = document.getElementById('modal-decoration');
+            decoration.className = `absolute top-0 left-0 right-0 h-2.5 ${decorationColor}`;
+
+            if (showModalFlag) {
+                document.getElementById('modal-status').classList.remove('hidden');
+            }
+        }
+
+        // RESET DEL GIOCO
+        function resetGame() {
+            gameState = {
+                budget: 100,
+                stats: {
+                    amb: 25,
+                    ben: 25,
+                    mob: 25,
+                    lav: 25,
+                    inc: 25
+                },
+                builtItems: [],
+                month: 1,
+                activeFilter: 'all'
+            };
+
+            filterCategory('all');
+            updateUI();
+            
+            document.getElementById('event-display').innerHTML = `
+                ✨ Benvenuto ad Urbania. Costruisci strutture sostenibili e passa i turni per guadagnare entrate dalle tasse (proporzionali al livello di <strong>Lavoro</strong>)!
+            `;
+            
+            showToast("La città è stata rasa al suolo. Nuova pianificazione avviata!", "info");
+        }
+
+        // MODALE CLOSE
+        function closeModal() {
+            document.getElementById('modal-status').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
