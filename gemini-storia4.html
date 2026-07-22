@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generatore Associazioni PRO</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: #f1f3f6;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #163a5f;
+            margin-top: 10px;
+        }
+        h2 {
+            color: #163a5f;
+            margin-top: 0;
+        }
+        .main-nav {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .nav-btn {
+            width: auto;
+            min-width: 180px;
+            padding: 12px 24px;
+            font-size: 18px;
+            border-radius: 25px;
+            background: #e2e8f0;
+            color: #2d3748;
+            border: 2px solid #cbd5e1;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .nav-btn.active {
+            background: #1769aa;
+            color: white;
+            border-color: #1769aa;
+            box-shadow: 0 4px 6px rgba(23, 105, 170, 0.3);
+        }
+        .panel {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        input, textarea, button {
+            width: 100%;
+            padding: 10px 14px;
+            margin: 8px 0;
+            font-size: 16px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+        textarea {
+            min-height: 120px;
+            font-family: inherit;
+        }
+        button {
+            background: #1769aa;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: #0d4775;
+        }
+        .btn-secondary {
+            background: #4A5568;
+        }
+        .btn-secondary:hover {
+            background: #2D3748;
+        }
+        .btn-success {
+            background: #2e7d32;
+        }
+        .btn-success:hover {
+            background: #1b5e20;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .btn-group button {
+            flex: 1;
+            min-width: 180px;
+        }
+        #timer {
+            text-align: center;
+            font-size: 26px;
+            font-weight: bold;
+            color: #b00020;
+            margin: 15px;
+        }
+        .contenitore {
+            display: flex;
+            gap: 25px;
+            margin-bottom: 20px;
+        }
+        @media (max-width: 768px) {
+            .contenitore {
+                flex-direction: column;
+            }
+        }
+        .colonna {
+            flex: 1;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        #areaTermini, #areaDefinizioni {
+            max-height: 600px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+        .termine {
+            background: #e8f4ff;
+            border: 2px solid #1769aa;
+            border-radius: 10px;
+            padding: 12px;
+            margin: 12px 0;
+        }
+        .definizione {
+            background: #fff4cc;
+            border: 2px solid #d49b00;
+            border-radius: 10px;
+            padding: 12px;
+            margin: 10px 0;
+            cursor: grab;
+            user-select: none;
+        }
+        .definizione:active {
+            cursor: grabbing;
+        }
+        .dropzone {
+            min-height: 55px;
+            border: 2px dashed #777;
+            border-radius: 8px;
+            background: #fafafa;
+            padding: 8px;
+            margin-top: 10px;
+        }
+        .dropzone .definizione {
+            margin: 0;
+        }
+        .corretta {
+            background: #b8f7b8 !important;
+            border-color: #2e7d32 !important;
+        }
+        .errata {
+            background: #ffb0b0 !important;
+            border-color: #c62828 !important;
+        }
+        #risultato {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            background: #f8fafc;
+        }
+        #titoloAlunno {
+            text-align: center;
+            font-size: 28px;
+            color: #163a5f;
+            margin-bottom: 15px;
+        }
+        .nota {
+            font-size: 14px;
+            color: #555;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .student-info {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .student-info div {
+            flex: 1;
+        }
+        .login-box {
+            max-width: 400px;
+            margin: 50px auto;
+            text-align: center;
+        }
+        .export-box {
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Generatore Esercizi di Associazione PRO</h1>
+
+<!-- MENU NAVIGAZIONE -->
+<div class="main-nav">
+    <button id="navStudenteBtn" class="nav-btn active" onclick="mostraSezione('studente')">👨‍🎓 Area Studente</button>
+    <button id="navDocenteBtn" class="nav-btn" onclick="mostraSezione('docente')">👨‍🏫 Area Docente</button>
+</div>
+
+<!-- ==================== AREA DOCENTE ==================== -->
+<div id="sezioneLoginDocente" class="panel login-box hidden">
+    <h2>🔒 Accesso Area Docente</h2>
+    <p>Inserisci la password per configurare l'esercizio:</p>
+    <input type="password" id="passDocente" placeholder="Password" onkeydown="if(event.key==='Enter') verificaPasswordDocente()">
+    <button onclick="verificaPasswordDocente()">Accedi</button>
+    <p id="errorePass" style="color:red; display:none;">Password errata. Riprova.</p>
+</div>
+
+<div id="sezioneDocente" class="panel hidden">
+    <h2>⚙️ Pannello di Controllo Docente</h2>
+    
+    <label><b>Titolo esercizio</b></label>
+    <input id="titolo" value="Prima guerra mondiale">
+
+    <label><b>Tempo massimo in minuti (0 = nessun timer)</b></label>
+    <input id="tempo" type="number" value="5">
+
+    <label><b>Termini e definizioni corrette</b></label>
+    <p class="nota">Formato obbligatorio:<br><b>Termine | Definizione</b></p>
+    <textarea id="dati">Triplice Intesa|Accordo tra Francia, Regno Unito e Russia
+Triplice Alleanza|Alleanza tra Germania, Austria-Ungheria e Italia
+Attentato di Sarajevo|Uccisione dell'arciduca Francesco Ferdinando nel 1914
+Guerra di trincea|Combattimenti nelle lunghe fortificazioni
+Armistizio|Sospensione dei combattimenti
+Vittorio Veneto|Battaglia italiana decisiva del 1918
+Trattato di Versailles|Trattato imposto alla Germania dopo la guerra</textarea>
+
+    <label><b>Definizioni distrattrici</b></label>
+    <textarea id="distrattori">Sbarco in Normandia del 1944
+Piano Marshall per la ricostruzione europea
+Caduta del Muro di Berlino</textarea>
+
+    <button onclick="salvaEPubblica()" class="btn-success">
+        🚀 GENERA E AGGIORNA ESERCIZIO PER LO STUDENTE
+    </button>
+
+    <div class="btn-group" style="margin-top: 15px;">
+        <button onclick="salvaImpostazioniLocale()" class="btn-secondary">
+            💾 SALVA IN LOCALE
+        </button>
+        <button onclick="esportaJSON()" class="btn-secondary">
+            📥 ESPORTA FILE JSON
+        </button>
+        <button onclick="document.getElementById('fileJSON').click()" class="btn-secondary">
+            📤 IMPORTA FILE JSON
+        </button>
+        <input type="file" id="fileJSON" accept=".json" style="display:none" onchange="importaJSON(event)">
+    </div>
+</div>
+
+<!-- ==================== AREA STUDENTE ==================== -->
+<div id="sezioneStudente" class="panel">
+    <div class="student-info">
+        <div>
+            <label><b>Nome Alunno:</b></label>
+            <input type="text" id="nomeAlunno" placeholder="Inserisci il tuo nome">
+        </div>
+        <div>
+            <label><b>Cognome Alunno:</b></label>
+            <input type="text" id="cognomeAlunno" placeholder="Inserisci il tuo cognome">
+        </div>
+    </div>
+
+    <h2 id="titoloAlunno"></h2>
+
+    <div id="timer"></div>
+
+    <div class="contenitore">
+        <div class="colonna">
+            <h2>Termini</h2>
+            <div id="areaTermini"></div>
+        </div>
+
+        <div class="colonna">
+            <h2>Definizioni</h2>
+            <div class="btn-group" style="margin-bottom: 10px;">
+                <button onclick="rimescola()" class="btn-secondary">🔀 RIMESCOLA DEFINIZIONI</button>
+                <button onclick="resetEsercizio()" class="btn-secondary">♻ RESET ESERCIZIO</button>
+            </div>
+            <div id="areaDefinizioni"></div>
+        </div>
+    </div>
+
+    <button onclick="verifica()" style="font-size: 20px; padding: 15px;">
+        ✅ VERIFICA RISPOSTE
+    </button>
+
+    <div id="risultato"></div>
+
+    <div id="boxEsportaRisultato" class="export-box hidden">
+        <button onclick="esportaRisultatiStudente()" class="btn-success" style="font-size: 18px; padding: 12px;">
+            📄 ESPORTA RISULTATI (TXT) CON DATA
+        </button>
+    </div>
+</div>
+
+<script>
+let soluzioni = {};
+let tempoTotale = 0;
+let timerID = null;
+let definizioniOriginali = [];
+let ultimoEsito = null;
+
+window.onload = function() {
+    caricaImpostazioniLocale();
+    creaEsercizio();
+};
+
+function mostraSezione(sezione) {
+    document.getElementById("navStudenteBtn").classList.remove("active");
+    document.getElementById("navDocenteBtn").classList.remove("active");
+
+    if (sezione === 'docente') {
+        document.getElementById("navDocenteBtn").classList.add("active");
+        document.getElementById("sezioneStudente").classList.add("hidden");
+        
+        // Ogni volta che si richiede l'area docente si resetta la maschera e si richiede la password
+        document.getElementById("passDocente").value = "";
+        document.getElementById("errorePass").style.display = "none";
+        document.getElementById("sezioneLoginDocente").classList.remove("hidden");
+        document.getElementById("sezioneDocente").classList.add("hidden");
+    } else {
+        document.getElementById("navStudenteBtn").classList.add("active");
+        document.getElementById("sezioneStudente").classList.remove("hidden");
+        document.getElementById("sezioneLoginDocente").classList.add("hidden");
+        document.getElementById("sezioneDocente").classList.add("hidden");
+    }
+}
+
+function verificaPasswordDocente() {
+    let pass = document.getElementById("passDocente").value;
+    if (pass === "doc2026") {
+        document.getElementById("errorePass").style.display = "none";
+        document.getElementById("sezioneLoginDocente").classList.add("hidden");
+        document.getElementById("sezioneDocente").classList.remove("hidden");
+        document.getElementById("passDocente").value = "";
+    } else {
+        document.getElementById("errorePass").style.display = "block";
+    }
+}
+
+function calcolaVoto(percentuale) {
+    if (percentuale < 34) {
+        return "4";
+    } else if (percentuale <= 45) {
+        return "4.5";
+    } else {
+        // Proporzione per percentuali superiori a 45% (es. 60% = 6, 65% = 6.5, 90% = 9)
+        let voto = percentuale / 10;
+        return (Math.round(voto * 10) / 10).toString().replace('.', ',');
+    }
+}
+
+function mescola(array) {
+    return array.sort(() => Math.random() - 0.5);
+}
+
+function ottieniDatiForm() {
+    return {
+        titolo: document.getElementById("titolo").value,
+        tempo: document.getElementById("tempo").value,
+        dati: document.getElementById("dati").value,
+        distrattori: document.getElementById("distrattori").value
+    };
+}
+
+function applicaDatiForm(config) {
+    if (config.titolo !== undefined) document.getElementById("titolo").value = config.titolo;
+    if (config.tempo !== undefined) document.getElementById("tempo").value = config.tempo;
+    if (config.dati !== undefined) document.getElementById("dati").value = config.dati;
+    if (config.distrattori !== undefined) document.getElementById("distrattori").value = config.distrattori;
+}
+
+function salvaImpostazioniLocale() {
+    let config = ottieniDatiForm();
+    localStorage.setItem("esercizio_associazioni_config", JSON.stringify(config));
+    alert("Impostazioni salvate nel browser!");
+}
+
+function caricaImpostazioniLocale() {
+    let salvati = localStorage.getItem("esercizio_associazioni_config");
+    if (salvati) {
+        try {
+            let config = JSON.parse(salvati);
+            applicaDatiForm(config);
+        } catch(e) {
+            console.error("Errore nel caricamento delle impostazioni locali", e);
+        }
+    }
+}
+
+function salvaEPubblica() {
+    salvaImpostazioniLocale();
+    creaEsercizio();
+    alert("Nuovo esercizio generato e pubblicato nell'Area Studente!");
+    mostraSezione('studente');
+}
+
+function esportaJSON() {
+    let config = ottieniDatiForm();
+    let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(config, null, 2));
+    let downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    let nomeFile = (config.titolo || "esercizio").replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    downloadAnchor.setAttribute("download", nomeFile + ".json");
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+}
+
+function importaJSON(event) {
+    let file = event.target.files[0];
+    if (!file) return;
+
+    let reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            let config = JSON.parse(e.target.result);
+            applicaDatiForm(config);
+            salvaImpostazioniLocale();
+            alert("Esercizio caricato con successo!");
+            creaEsercizio();
+        } catch (err) {
+            alert("Errore nel caricamento del file JSON. Verificare che il file sia valido.");
+        }
+    };
+    reader.readAsText(file);
+}
+
+function creaEsercizio() {
+    clearInterval(timerID);
+    soluzioni = {};
+    definizioniOriginali = [];
+    ultimoEsito = null;
+
+    document.getElementById("areaTermini").innerHTML = "";
+    document.getElementById("areaDefinizioni").innerHTML = "";
+    document.getElementById("risultato").innerHTML = "";
+    document.getElementById("boxEsportaRisultato").classList.add("hidden");
+
+    let titolo = document.getElementById("titolo").value;
+    document.getElementById("titoloAlunno").innerHTML = titolo;
+
+    let righe = document.getElementById("dati").value.split("\n");
+    let indice = 0;
+
+    righe.forEach(riga => {
+        if (riga.includes("|")) {
+            let parti = riga.split("|");
+            let termine = parti[0].trim();
+            let definizione = parti[1].trim();
+
+            let id = "risposta_" + indice;
+            soluzioni[id] = definizione;
+
+            let blocco = document.createElement("div");
+            blocco.className = "termine";
+            blocco.innerHTML = "<b>" + termine + "</b><div class='dropzone' data-id='" + id + "'></div>";
+
+            document.getElementById("areaTermini").appendChild(blocco);
+
+            definizioniOriginali.push({
+                id: id,
+                testo: definizione
+            });
+
+            indice++;
+        }
+    });
+
+    let distr = document.getElementById("distrattori").value.split("\n");
+    let numero = 0;
+
+    distr.forEach(d => {
+        if (d.trim() != "") {
+            definizioniOriginali.push({
+                id: "distr_" + numero,
+                testo: d.trim()
+            });
+            numero++;
+        }
+    });
+
+    rimescola();
+    attivaDrop();
+
+    let minuti = parseInt(document.getElementById("tempo").value);
+    if (minuti > 0) {
+        tempoTotale = minuti * 60;
+        avviaTimer();
+    } else {
+        document.getElementById("timer").innerHTML = "";
+    }
+}
+
+function mostraDefinizioni(lista) {
+    let area = document.getElementById("areaDefinizioni");
+    area.innerHTML = "";
+
+    lista.forEach(d => {
+        let elemento = document.createElement("div");
+        elemento.className = "definizione";
+        elemento.id = d.id;
+        elemento.draggable = true;
+        elemento.innerHTML = d.testo;
+
+        elemento.ondragstart = function(e) {
+            e.dataTransfer.setData("text/plain", this.id);
+        };
+
+        elemento.onclick = function() {
+            area.appendChild(this);
+        };
+
+        area.appendChild(elemento);
+    });
+}
+
+function rimescola() {
+    let lista = [...definizioniOriginali];
+    mescola(lista);
+    mostraDefinizioni(lista);
+}
+
+function attivaDrop() {
+    document.querySelectorAll(".dropzone").forEach(zona => {
+        zona.ondragover = function(e) {
+            e.preventDefault();
+        };
+
+        zona.ondrop = function(e) {
+            e.preventDefault();
+            let id = e.dataTransfer.getData("text/plain");
+            let elemento = document.getElementById(id);
+
+            if (this.children.length > 0) {
+                document.getElementById("areaDefinizioni").appendChild(this.children[0]);
+            }
+
+            this.innerHTML = "";
+            this.appendChild(elemento);
+        };
+    });
+}
+
+function resetEsercizio() {
+    document.querySelectorAll(".dropzone").forEach(z => {
+        if (z.children.length > 0) {
+            document.getElementById("areaDefinizioni").appendChild(z.children[0]);
+        }
+        z.className = "dropzone";
+    });
+    document.getElementById("risultato").innerHTML = "";
+    document.getElementById("boxEsportaRisultato").classList.add("hidden");
+}
+
+function avviaTimer() {
+    timerID = setInterval(() => {
+        let minuti = Math.floor(tempoTotale / 60);
+        let secondi = tempoTotale % 60;
+
+        document.getElementById("timer").innerHTML = "⏱ Tempo rimanente: " + minuti + ":" + (secondi < 10 ? "0" : "") + secondi;
+
+        tempoTotale--;
+
+        if (tempoTotale < 0) {
+            clearInterval(timerID);
+            alert("Tempo scaduto!");
+            verifica();
+        }
+    }, 1000);
+}
+
+function verifica() {
+    let nome = document.getElementById("nomeAlunno").value.trim();
+    let cognome = document.getElementById("cognomeAlunno").value.trim();
+
+    if (!nome || !cognome) {
+        alert("Per favore, inserisci Nome e Cognome prima di verificare la prova!");
+        return;
+    }
+
+    clearInterval(timerID);
+
+    let punti = 0;
+    let totale = Object.keys(soluzioni).length;
+
+    document.querySelectorAll(".dropzone").forEach(z => {
+        z.classList.remove("corretta", "errata");
+        let elemento = z.querySelector(".definizione");
+
+        if (elemento && elemento.innerText.trim() == soluzioni[z.dataset.id].trim()) {
+            z.classList.add("corretta");
+            punti++;
+        } else {
+            z.classList.add("errata");
+        }
+    });
+
+    let percentuale = Math.round((punti / totale) * 100);
+    let voto = calcolaVoto(percentuale);
+    let dataEsecuzione = new Date().toLocaleString("it-IT");
+
+    ultimoEsito = {
+        nome: nome,
+        cognome: cognome,
+        titoloEsercizio: document.getElementById("titolo").value,
+        punti: punti,
+        totale: totale,
+        percentuale: percentuale,
+        voto: voto,
+        data: dataEsecuzione
+    };
+
+    document.getElementById("risultato").innerHTML = 
+        "<b>Risultato di " + nome + " " + cognome + ":</b><br>" +
+        "Punteggio: " + punti + " / " + totale + " (" + percentuale + "%)<br>" +
+        "Voto: " + voto + " / 10<br>" +
+        "<small style='font-size:14px; font-weight:normal; color:#666;'>Data: " + dataEsecuzione + "</small>";
+
+    document.getElementById("boxEsportaRisultato").classList.remove("hidden");
+}
+
+function esportaRisultatiStudente() {
+    if (!ultimoEsito) {
+        alert("Nessun risultato da esportare. Completa prima l'esercizio!");
+        return;
+    }
+
+    let contenutoTxt = "========================================\n" +
+                       "RISULTATO ESERCIZIO DI ASSOCIAZIONE\n" +
+                       "========================================\n\n" +
+                       "Alunno: " + ultimoEsito.nome + " " + ultimoEsito.cognome + "\n" +
+                       "Esercizio: " + ultimoEsito.titoloEsercizio + "\n" +
+                       "Data e Ora: " + ultimoEsito.data + "\n" +
+                       "Punteggio: " + ultimoEsito.punti + " / " + ultimoEsito.totale + "\n" +
+                       "Percentuale Corretta: " + ultimoEsito.percentuale + "%\n" +
+                       "Voto Finale: " + ultimoEsito.voto + " / 10\n" +
+                       "========================================\n";
+
+    let dataStr = "data:text/plain;charset=utf-8," + encodeURIComponent(contenutoTxt);
+    let downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    
+    let nomeFile = ("risultato_" + ultimoEsito.cognome + "_" + ultimoEsito.nome + "_" + ultimoEsito.titoloEsercizio)
+        .replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    
+    downloadAnchor.setAttribute("download", nomeFile + ".txt");
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+}
+</script>
+
+</body>
+</html>
