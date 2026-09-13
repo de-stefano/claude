@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Allenamento digitazione</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --yellow:#FFD54A;
+    --pink:#FF7AA2;
+    --blue:#48C6E9;
+    --green:#6FCF97;
+    --red:#FF5A5A;
+    --purple:#B58BEA;
+    --orange:#FFA35C;
+    --ink:#3A3358;
+    --paper:#FFFDF7;
+    --card:#FFFFFF;
+    --shadow: 4px 4px 0 rgba(58,51,88,0.12);
+  }
+
+  *{ box-sizing:border-box; }
+
+  body{
+    margin:0;
+    font-family:'Nunito', sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(circle at 10% 10%, #FFF6D8 0%, transparent 45%),
+      radial-gradient(circle at 90% 0%, #DFF6FF 0%, transparent 40%),
+      radial-gradient(circle at 85% 90%, #FFE3EE 0%, transparent 45%),
+      var(--paper);
+    min-height:100vh;
+    padding-bottom:40px;
+  }
+
+  header{
+    text-align:center;
+    padding:30px 20px 10px;
+  }
+  header h1{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:800;
+    font-size:clamp(26px, 5vw, 40px);
+    margin:0 0 6px;
+  }
+  header p{
+    margin:0;
+    font-size:16px;
+    font-weight:600;
+    color:#6C6390;
+  }
+
+  main{
+    max-width:760px;
+    margin:0 auto;
+    padding:10px 18px;
+  }
+
+  .card{
+    background:var(--card);
+    border-radius:22px;
+    padding:22px 24px;
+    box-shadow: var(--shadow);
+    border:3px solid var(--ink);
+    margin-bottom:22px;
+  }
+
+  .card h2{
+    font-family:'Baloo 2', sans-serif;
+    margin:0 0 16px;
+    font-size:22px;
+  }
+
+  .campo{
+    margin-bottom:20px;
+  }
+  .campo-label{
+    font-weight:800;
+    font-size:15px;
+    margin-bottom:10px;
+    display:block;
+  }
+
+  .opzioni-riga{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+
+  button.opzione{
+    font-family:'Nunito', sans-serif;
+    font-weight:700;
+    font-size:15px;
+    padding:10px 18px;
+    border-radius:999px;
+    border:2.5px solid var(--ink);
+    background:#fff;
+    color:var(--ink);
+    cursor:pointer;
+    box-shadow: 2px 2px 0 rgba(58,51,88,0.18);
+    transition: transform .1s ease;
+  }
+  button.opzione:hover{ transform: translateY(-2px); }
+  button.opzione.selezionata{
+    background:var(--accent, var(--yellow));
+  }
+
+  #gruppo-caso .selezionata{ --accent:var(--purple); }
+  #gruppo-velocita .selezionata{ --accent:var(--blue); }
+
+  input[type="number"], input[type="text"], input[type="date"]{
+    font-family:'Nunito', sans-serif;
+    font-weight:700;
+    font-size:16px;
+    padding:10px 14px;
+    border-radius:12px;
+    border:2.5px solid var(--ink);
+    width:100%;
+    max-width:260px;
+  }
+
+  #btn-inizia{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:800;
+    font-size:20px;
+    padding:14px 30px;
+    border-radius:16px;
+    border:3px solid var(--ink);
+    background:var(--green);
+    color:var(--ink);
+    cursor:pointer;
+    box-shadow: 3px 3px 0 rgba(58,51,88,0.3);
+    display:block;
+    margin:0 auto;
+  }
+  #btn-inizia:hover{ transform: translateY(-2px); }
+
+  /* --- schermata gioco --- */
+  #schermata-gioco{ display:none; }
+
+  .pannello-punteggi{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-bottom:16px;
+  }
+  .punteggio-box{
+    flex:1;
+    min-width:110px;
+    background:var(--ink);
+    color:var(--paper);
+    border-radius:16px;
+    padding:12px 14px;
+    text-align:center;
+  }
+  .punteggio-box .etichetta{
+    font-size:12px;
+    font-weight:700;
+    color:#C9C2E8;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+  }
+  .punteggio-box .valore{
+    font-family:'Baloo 2', sans-serif;
+    font-size:30px;
+    font-weight:800;
+  }
+  .punteggio-box.corrette .valore{ color:var(--green); }
+  .punteggio-box.errori .valore{ color:var(--pink); }
+  .punteggio-box.omesse .valore{ color:var(--orange); }
+  .punteggio-box.timer .valore{ color:var(--yellow); }
+
+  #area-gioco{
+    position:relative;
+    width:100%;
+    height:440px;
+    background:#EFE9FF;
+    border:3px solid var(--ink);
+    border-radius:20px;
+    overflow:hidden;
+  }
+
+  .linea-fondo{
+    position:absolute;
+    left:0;
+    right:0;
+    height:4px;
+    background:var(--red);
+    box-shadow: 0 0 10px rgba(255,90,90,0.7);
+  }
+
+  .lettera-caduta{
+    position:absolute;
+    font-family:'Baloo 2', sans-serif;
+    font-weight:800;
+    font-size:34px;
+    color:var(--ink);
+    background:#fff;
+    border:2.5px solid var(--ink);
+    border-radius:12px;
+    width:46px;
+    height:46px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow: 2px 2px 0 rgba(58,51,88,0.2);
+  }
+
+  .azioni-gioco{
+    display:flex;
+    justify-content:center;
+    gap:12px;
+    margin-top:18px;
+  }
+  #btn-reset, #btn-nuovo-esercizio{
+    font-family:'Nunito', sans-serif;
+    font-weight:800;
+    font-size:15px;
+    padding:11px 20px;
+    border-radius:12px;
+    border:2.5px solid var(--ink);
+    background:#fff;
+    color:var(--ink);
+    cursor:pointer;
+  }
+
+  /* --- schermata fine --- */
+  #schermata-fine{ display:none; text-align:center; }
+  #schermata-fine h2{
+    font-family:'Baloo 2', sans-serif;
+    font-size:26px;
+    margin-bottom:14px;
+  }
+  .riepilogo-riga{
+    display:flex;
+    justify-content:space-between;
+    font-size:17px;
+    font-weight:700;
+    padding:8px 4px;
+    border-bottom:2px dashed #E2DBF5;
+  }
+  .riepilogo-riga span:last-child{ font-family:'Baloo 2', sans-serif; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⌨️ Allenamento digitazione</h1>
+  <p>Digita la lettera prima che tocchi la linea rossa!</p>
+</header>
+
+<main>
+
+  <section id="schermata-impostazioni" class="card">
+    <h2>Impostazioni</h2>
+
+    <div class="campo">
+      <span class="campo-label">Nome</span>
+      <input type="text" id="input-nome" placeholder="Nome">
+    </div>
+
+    <div class="campo">
+      <span class="campo-label">Cognome</span>
+      <input type="text" id="input-cognome" placeholder="Cognome">
+    </div>
+
+    <div class="campo">
+      <span class="campo-label">Data</span>
+      <input type="date" id="input-data">
+    </div>
+
+    <div class="campo">
+      <span class="campo-label">Lettere</span>
+      <div class="opzioni-riga" id="gruppo-caso">
+        <button class="opzione selezionata" data-valore="minuscole">minuscole</button>
+        <button class="opzione" data-valore="maiuscole">MAIUSCOLE</button>
+      </div>
+    </div>
+
+    <div class="campo">
+      <span class="campo-label">Velocità di caduta</span>
+      <div class="opzioni-riga" id="gruppo-velocita">
+        <button class="opzione" data-valore="20">Molto lenta</button>
+        <button class="opzione" data-valore="40">Lenta</button>
+        <button class="opzione selezionata" data-valore="75">Media</button>
+        <button class="opzione" data-valore="120">Veloce</button>
+        <button class="opzione" data-valore="170">Molto veloce</button>
+      </div>
+    </div>
+
+    <div class="campo">
+      <span class="campo-label">Durata dell'esercizio (in secondi)</span>
+      <input type="number" id="input-durata" value="60" min="10" max="600" step="5">
+    </div>
+
+    <button id="btn-inizia">Inizia l'esercizio</button>
+  </section>
+
+  <section id="schermata-gioco" class="card">
+    <div class="pannello-punteggi">
+      <div class="punteggio-box corrette">
+        <div class="etichetta">Corrette</div>
+        <div class="valore" id="disp-corrette">0</div>
+      </div>
+      <div class="punteggio-box errori">
+        <div class="etichetta">Errori</div>
+        <div class="valore" id="disp-errori">0</div>
+      </div>
+      <div class="punteggio-box omesse">
+        <div class="etichetta">Lettere sfuggite</div>
+        <div class="valore" id="disp-omesse">0</div>
+      </div>
+      <div class="punteggio-box timer">
+        <div class="etichetta">Tempo</div>
+        <div class="valore" id="disp-timer">60</div>
+      </div>
+    </div>
+
+    <div id="area-gioco">
+      <div class="linea-fondo" id="linea-fondo"></div>
+    </div>
+
+    <div class="azioni-gioco">
+      <button id="btn-reset">↺ Azzera e ricomincia</button>
+    </div>
+  </section>
+
+  <section id="schermata-fine" class="card">
+    <h2>Esercizio terminato!</h2>
+    <div class="riepilogo-riga"><span>Nome e cognome</span><span id="fine-nome">-</span></div>
+    <div class="riepilogo-riga"><span>Data</span><span id="fine-data">-</span></div>
+    <div class="riepilogo-riga"><span>Durata esercizio</span><span id="fine-durata">-</span></div>
+    <div class="riepilogo-riga"><span>Lettere</span><span id="fine-caso">-</span></div>
+    <div class="riepilogo-riga"><span>Velocità impostata</span><span id="fine-velocita">-</span></div>
+    <div class="riepilogo-riga"><span>Lettere corrette</span><span id="fine-corrette">0</span></div>
+    <div class="riepilogo-riga"><span>Errori</span><span id="fine-errori">0</span></div>
+    <div class="riepilogo-riga"><span>Lettere sfuggite</span><span id="fine-omesse">0</span></div>
+    <div class="riepilogo-riga"><span>Precisione</span><span id="fine-precisione">0%</span></div>
+    <div class="azioni-gioco">
+      <button id="btn-esporta">💾 Salva ed esporta</button>
+      <button id="btn-nuovo-esercizio">Nuovo esercizio</button>
+    </div>
+    <p id="esporta-msg" style="font-weight:700; color:var(--green); margin-top:10px;"></p>
+  </section>
+
+</main>
+
+<script>
+  // ---------- stato impostazioni ----------
+  let impostazioni = {
+    caso: 'minuscole',
+    velocita: 75,   // px al secondo
+    velocitaLabel: 'Media',
+    durata: 60      // secondi
+  };
+
+  document.querySelectorAll('#gruppo-caso .opzione').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#gruppo-caso .opzione').forEach(b => b.classList.remove('selezionata'));
+      btn.classList.add('selezionata');
+      impostazioni.caso = btn.dataset.valore;
+    });
+  });
+
+  document.querySelectorAll('#gruppo-velocita .opzione').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#gruppo-velocita .opzione').forEach(b => b.classList.remove('selezionata'));
+      btn.classList.add('selezionata');
+      impostazioni.velocita = parseInt(btn.dataset.valore, 10);
+      impostazioni.velocitaLabel = btn.textContent;
+    });
+  });
+
+  // ---------- stato di gioco ----------
+  const schermataImpostazioni = document.getElementById('schermata-impostazioni');
+  const schermataGioco = document.getElementById('schermata-gioco');
+  const schermataFine = document.getElementById('schermata-fine');
+  const areaGioco = document.getElementById('area-gioco');
+  const lineaFondo = document.getElementById('linea-fondo');
+
+  let punteggi = { corrette: 0, errori: 0, omesse: 0 };
+  let letterePresenti = [];   // { char, el, y }
+  let tempoRimanente = 60;
+  let idAnimazione = null;
+  let idIntervalloSpawn = null;
+  let idIntervalloTimer = null;
+  let ultimoTimestamp = null;
+  let giocoAttivo = false;
+  let altezzaLinea = 0;
+
+  function letteraCasuale(){
+    const idx = Math.floor(Math.random() * 26);
+    const carattere = String.fromCharCode(97 + idx); // a-z
+    return impostazioni.caso === 'maiuscole' ? carattere.toUpperCase() : carattere;
+  }
+
+  function aggiornaDisplay(){
+    document.getElementById('disp-corrette').textContent = punteggi.corrette;
+    document.getElementById('disp-errori').textContent = punteggi.errori;
+    document.getElementById('disp-omesse').textContent = punteggi.omesse;
+    document.getElementById('disp-timer').textContent = tempoRimanente;
+  }
+
+  function creaLettera(){
+    const larghezzaArea = areaGioco.clientWidth;
+    const el = document.createElement('div');
+    el.className = 'lettera-caduta';
+    const carattere = letteraCasuale();
+    el.textContent = carattere;
+    const x = Math.random() * (larghezzaArea - 46);
+    el.style.left = x + 'px';
+    el.style.top = '-50px';
+    areaGioco.appendChild(el);
+    letterePresenti.push({ char: carattere, el: el, y: -50 });
+  }
+
+  function ciclo(timestamp){
+    if (!giocoAttivo) return;
+    if (ultimoTimestamp === null) ultimoTimestamp = timestamp;
+    const delta = (timestamp - ultimoTimestamp) / 1000;
+    ultimoTimestamp = timestamp;
+
+    altezzaLinea = lineaFondo.offsetTop;
+
+    for (let i = letterePresenti.length - 1; i >= 0; i--) {
+      const l = letterePresenti[i];
+      l.y += impostazioni.velocita * delta;
+      l.el.style.top = l.y + 'px';
+
+      if (l.y + 46 >= altezzaLinea) {
+        // lettera omessa: arrivata in fondo senza essere digitata
+        punteggi.omesse++;
+        l.el.remove();
+        letterePresenti.splice(i, 1);
+        aggiornaDisplay();
+      }
+    }
+
+    idAnimazione = requestAnimationFrame(ciclo);
+  }
+
+  function gestisciTasto(e){
+    if (!giocoAttivo) return;
+    const tasto = e.key;
+    if (tasto.length !== 1 || !/[a-zA-Z]/.test(tasto)) return;
+
+    const indiceTrovato = letterePresenti.findIndex(l => l.char === tasto);
+    if (indiceTrovato !== -1) {
+      const l = letterePresenti[indiceTrovato];
+      l.el.remove();
+      letterePresenti.splice(indiceTrovato, 1);
+      punteggi.corrette++;
+    } else {
+      punteggi.errori++;
+    }
+    aggiornaDisplay();
+  }
+
+  function avviaEsercizio(){
+    // reset stato
+    punteggi = { corrette: 0, errori: 0, omesse: 0 };
+    letterePresenti.forEach(l => l.el.remove());
+    letterePresenti = [];
+    ultimoTimestamp = null;
+
+    const durataInput = parseInt(document.getElementById('input-durata').value, 10);
+    impostazioni.durata = isNaN(durataInput) || durataInput <= 0 ? 60 : durataInput;
+    tempoRimanente = impostazioni.durata;
+
+    schermataImpostazioni.style.display = 'none';
+    schermataFine.style.display = 'none';
+    schermataGioco.style.display = 'block';
+
+    // posiziona la linea rossa al 85% dell'altezza dell'area di gioco
+    lineaFondo.style.top = (areaGioco.clientHeight * 0.85) + 'px';
+
+    aggiornaDisplay();
+
+    giocoAttivo = true;
+    idAnimazione = requestAnimationFrame(ciclo);
+
+    // spawn di nuove lettere ogni intervallo (più lettere se veloce, meno se lenta)
+    const intervalloSpawn = Math.max(600, 1400 - impostazioni.velocita * 3);
+    idIntervalloSpawn = setInterval(creaLettera, intervalloSpawn);
+    creaLettera();
+
+    idIntervalloTimer = setInterval(() => {
+      tempoRimanente--;
+      aggiornaDisplay();
+      if (tempoRimanente <= 0) {
+        terminaEsercizio();
+      }
+    }, 1000);
+  }
+
+  function fermaTimersEAnimazione(){
+    giocoAttivo = false;
+    if (idAnimazione) cancelAnimationFrame(idAnimazione);
+    if (idIntervalloSpawn) clearInterval(idIntervalloSpawn);
+    if (idIntervalloTimer) clearInterval(idIntervalloTimer);
+    idAnimazione = null;
+    idIntervalloSpawn = null;
+    idIntervalloTimer = null;
+  }
+
+  function formattaData(valoreInput){
+    if (!valoreInput) return '-';
+    const [anno, mese, giorno] = valoreInput.split('-');
+    return giorno + '/' + mese + '/' + anno;
+  }
+
+  function terminaEsercizio(){
+    fermaTimersEAnimazione();
+    letterePresenti.forEach(l => l.el.remove());
+    letterePresenti = [];
+
+    const totaleDigitazioni = punteggi.corrette + punteggi.errori;
+    const precisione = totaleDigitazioni === 0 ? 0 : Math.round((punteggi.corrette / totaleDigitazioni) * 100);
+
+    const nome = document.getElementById('input-nome').value.trim();
+    const cognome = document.getElementById('input-cognome').value.trim();
+    const dataValore = document.getElementById('input-data').value;
+
+    document.getElementById('fine-nome').textContent = (nome + ' ' + cognome).trim() || '-';
+    document.getElementById('fine-data').textContent = formattaData(dataValore);
+    document.getElementById('fine-durata').textContent = impostazioni.durata + ' secondi';
+    document.getElementById('fine-caso').textContent = impostazioni.caso === 'maiuscole' ? 'MAIUSCOLE' : 'minuscole';
+    document.getElementById('fine-velocita').textContent = impostazioni.velocitaLabel;
+    document.getElementById('fine-corrette').textContent = punteggi.corrette;
+    document.getElementById('fine-errori').textContent = punteggi.errori;
+    document.getElementById('fine-omesse').textContent = punteggi.omesse;
+    document.getElementById('fine-precisione').textContent = precisione + '%';
+
+    document.getElementById('esporta-msg').textContent = '';
+    schermataGioco.style.display = 'none';
+    schermataFine.style.display = 'block';
+  }
+
+  document.getElementById('btn-esporta').addEventListener('click', () => {
+    const nome = document.getElementById('input-nome').value.trim();
+    const cognome = document.getElementById('input-cognome').value.trim();
+    const dataValore = document.getElementById('input-data').value;
+    const totaleDigitazioni = punteggi.corrette + punteggi.errori;
+    const precisione = totaleDigitazioni === 0 ? 0 : Math.round((punteggi.corrette / totaleDigitazioni) * 100);
+
+    const contenuto =
+      'RISULTATO ESERCIZIO DI DIGITAZIONE\n' +
+      '===================================\n' +
+      'Nome: ' + (nome || '-') + '\n' +
+      'Cognome: ' + (cognome || '-') + '\n' +
+      'Data: ' + formattaData(dataValore) + '\n\n' +
+      'IMPOSTAZIONI\n' +
+      '------------\n' +
+      'Durata esercizio: ' + impostazioni.durata + ' secondi\n' +
+      'Lettere: ' + (impostazioni.caso === 'maiuscole' ? 'MAIUSCOLE' : 'minuscole') + '\n' +
+      'Velocità impostata: ' + impostazioni.velocitaLabel + '\n\n' +
+      'RISULTATI\n' +
+      '---------\n' +
+      'Lettere corrette: ' + punteggi.corrette + '\n' +
+      'Errori: ' + punteggi.errori + '\n' +
+      'Lettere sfuggite: ' + punteggi.omesse + '\n' +
+      'Precisione: ' + precisione + '%\n';
+
+    const blob = new Blob([contenuto], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const nomeFile = 'digitazione_' + (cognome || 'risultato').replace(/\s+/g, '_') + '_' + (dataValore || 'data') + '.txt';
+    a.href = url;
+    a.download = nomeFile;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    document.getElementById('esporta-msg').textContent = 'Salvato!';
+    setTimeout(() => document.getElementById('esporta-msg').textContent = '', 2500);
+  });
+
+  function azzeraETornaImpostazioni(){
+    fermaTimersEAnimazione();
+    letterePresenti.forEach(l => l.el.remove());
+    letterePresenti = [];
+    punteggi = { corrette: 0, errori: 0, omesse: 0 };
+
+    schermataGioco.style.display = 'none';
+    schermataFine.style.display = 'none';
+    schermataImpostazioni.style.display = 'block';
+  }
+
+  document.getElementById('btn-inizia').addEventListener('click', avviaEsercizio);
+  document.getElementById('btn-reset').addEventListener('click', azzeraETornaImpostazioni);
+  document.getElementById('btn-nuovo-esercizio').addEventListener('click', azzeraETornaImpostazioni);
+
+  document.addEventListener('keydown', gestisciTasto);
+
+  // imposta la data odierna come valore predefinito
+  (function impostaDataOdierna(){
+    const oggi = new Date();
+    const yyyy = oggi.getFullYear();
+    const mm = String(oggi.getMonth() + 1).padStart(2, '0');
+    const dd = String(oggi.getDate()).padStart(2, '0');
+    document.getElementById('input-data').value = yyyy + '-' + mm + '-' + dd;
+  })();
+</script>
+
+</body>
+</html>
