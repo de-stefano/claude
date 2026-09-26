@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Digitazione Veloce — Lavagna delle sillabe</title>
+<style>
+  :root{
+    --board:#2c4234;
+    --board-dark:#213328;
+    --wood:#8a5a34;
+    --wood-dark:#5f3c20;
+    --wood-light:#a9713f;
+    --chalk:#f4f1e6;
+    --chalk-dim:#cfd6c9;
+    --chalk-yellow:#e7c369;
+    --chalk-red:#d16a4a;
+    --chalk-green:#93c07d;
+    --mono: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+    --hand: "Bradley Hand", "Segoe Print", "Chalkboard SE", "Comic Sans MS", cursive;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:
+      repeating-linear-gradient(90deg, var(--wood-dark) 0 6px, var(--wood) 6px 46px, var(--wood-light) 46px 48px);
+    font-family:var(--hand);
+    color:var(--chalk);
+    padding:24px;
+  }
+  #frame{
+    width:min(880px, 100%);
+    background:var(--wood-dark);
+    border-radius:14px;
+    padding:14px;
+    box-shadow:0 20px 50px rgba(0,0,0,.45), inset 0 0 0 3px var(--wood-light);
+  }
+  #board{
+    background:var(--board);
+    border-radius:8px;
+    box-shadow:inset 0 0 40px rgba(0,0,0,.45);
+    padding:28px;
+    min-height:560px;
+    display:flex;
+    flex-direction:column;
+    position:relative;
+  }
+  h1{
+    margin:0 0 6px;
+    font-family:var(--hand);
+    font-weight:400;
+    font-size:2.1rem;
+    letter-spacing:.5px;
+    color:var(--chalk);
+    text-align:center;
+  }
+  .sub{
+    text-align:center;
+    color:var(--chalk-dim);
+    margin:0 0 22px;
+    font-size:1.05rem;
+  }
+  .screen{display:none;}
+  .screen.active{display:flex; flex-direction:column; flex:1;}
+
+  /* ---- Setup screen ---- */
+  .card{
+    background:rgba(244,241,230,.06);
+    border:1.5px dashed var(--chalk-dim);
+    border-radius:10px;
+    padding:20px 24px;
+    margin-bottom:16px;
+  }
+  .row{
+    display:flex;
+    gap:18px;
+    flex-wrap:wrap;
+    margin-bottom:14px;
+  }
+  .field{flex:1; min-width:160px;}
+  label{
+    display:block;
+    font-size:1rem;
+    color:var(--chalk-yellow);
+    margin-bottom:6px;
+  }
+  input[type=text], input[type=number]{
+    width:100%;
+    padding:9px 10px;
+    font-family:var(--mono);
+    font-size:1rem;
+    border-radius:6px;
+    border:none;
+    background:var(--chalk);
+    color:var(--board-dark);
+  }
+  .segmented{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .segmented button{
+    font-family:var(--hand);
+    font-size:.95rem;
+    padding:8px 14px;
+    border-radius:20px;
+    border:1.5px solid var(--chalk-dim);
+    background:transparent;
+    color:var(--chalk);
+    cursor:pointer;
+  }
+  .segmented button.active{
+    background:var(--chalk-yellow);
+    color:var(--board-dark);
+    border-color:var(--chalk-yellow);
+    font-weight:bold;
+  }
+  .checks{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .checks label{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    color:var(--chalk);
+    font-size:1rem;
+    cursor:pointer;
+  }
+  .checks input{transform:scale(1.2);}
+  .instructions{
+    font-size:.95rem;
+    line-height:1.5;
+    color:var(--chalk-dim);
+    background:rgba(0,0,0,.18);
+    border-left:3px solid var(--chalk-yellow);
+    padding:12px 14px;
+    border-radius:6px;
+    margin-bottom:16px;
+  }
+  .instructions b{color:var(--chalk-yellow);}
+  .big-btn{
+    font-family:var(--hand);
+    font-size:1.25rem;
+    padding:14px;
+    border-radius:10px;
+    border:none;
+    background:var(--chalk-green);
+    color:#183018;
+    cursor:pointer;
+    font-weight:bold;
+  }
+  .big-btn:hover{filter:brightness(1.08);}
+  .err{color:var(--chalk-red); font-size:.9rem; margin-top:6px; min-height:1.2em;}
+
+  /* ---- Game screen ---- */
+  #topbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-family:var(--mono);
+    font-size:1.1rem;
+    margin-bottom:10px;
+    color:var(--chalk);
+  }
+  #timerDisplay{color:var(--chalk-yellow); font-weight:bold;}
+  #playfield{
+    position:relative;
+    flex:1;
+    min-height:360px;
+    border-radius:6px;
+    overflow:hidden;
+    background:
+      linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px) 0 0/100% 40px;
+  }
+  .falling-word{
+    position:absolute;
+    left:50%;
+    transform:translateX(-50%);
+    top:0;
+    font-family:var(--mono);
+    font-size:2rem;
+    letter-spacing:2px;
+    color:var(--chalk);
+    padding:4px 14px;
+    white-space:nowrap;
+  }
+  #baseline{
+    position:absolute;
+    left:0; right:0;
+    bottom:54px;
+    height:3px;
+    background:var(--chalk-red);
+    box-shadow:0 0 8px var(--chalk-red);
+  }
+  #typeInput{
+    margin-top:10px;
+    width:100%;
+    padding:12px;
+    font-family:var(--mono);
+    font-size:1.3rem;
+    text-align:center;
+    border-radius:8px;
+    border:2px solid var(--chalk-yellow);
+    background:var(--chalk);
+    color:var(--board-dark);
+  }
+  .hint{
+    text-align:center;
+    color:var(--chalk-dim);
+    font-size:.9rem;
+    margin-top:6px;
+  }
+
+  /* ---- Result screen ---- */
+  .stats{
+    background:rgba(244,241,230,.06);
+    border:1.5px dashed var(--chalk-dim);
+    border-radius:10px;
+    padding:20px 24px;
+    font-family:var(--mono);
+    font-size:1rem;
+    line-height:1.9;
+  }
+  .stats .label{color:var(--chalk-dim);}
+  .stats .val{color:var(--chalk-yellow); font-weight:bold;}
+  .actions{
+    display:flex;
+    gap:14px;
+    margin-top:18px;
+  }
+  .actions button{
+    flex:1;
+    font-family:var(--hand);
+    font-size:1.1rem;
+    padding:12px;
+    border-radius:8px;
+    border:none;
+    cursor:pointer;
+  }
+  #btnReport{background:var(--chalk-yellow); color:#3a2c0f;}
+  #btnReplay{background:var(--chalk-dim); color:var(--board-dark);}
+</style>
+</head>
+<body>
+<div id="frame">
+  <div id="board">
+
+    <!-- SETUP -->
+    <div class="screen active" id="screen-setup">
+      <h1>Digitazione Veloce</h1>
+      <p class="sub">Allenati a scrivere sillabe e parole prima che raggiungano la riga rossa</p>
+
+      <div class="instructions">
+        <b>Come si gioca:</b> una sillaba o una parola scende dall'alto della lavagna. Scrivila nel campo di digitazione
+        e premi <b>INVIO</b> per confermarla: solo a quel punto la parola successiva inizierà a scendere.
+        Se la parola raggiunge la riga rossa in fondo prima che tu prema Invio, viene conteggiata come errata.
+      </div>
+
+      <div class="card">
+        <div class="row">
+          <div class="field">
+            <label for="inpNome">Nome</label>
+            <input type="text" id="inpNome" placeholder="Nome del giocatore">
+          </div>
+          <div class="field">
+            <label for="inpCognome">Cognome</label>
+            <input type="text" id="inpCognome" placeholder="Cognome del giocatore">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label for="inpTempo">Durata partita (secondi)</label>
+            <input type="number" id="inpTempo" value="120" min="10" max="600" step="5">
+          </div>
+          <div class="field">
+            <label>Testo mostrato</label>
+            <div class="segmented" id="caseButtons">
+              <button type="button" data-val="minuscolo" class="active">minuscolo</button>
+              <button type="button" data-val="maiuscolo">MAIUSCOLO</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field" style="flex-basis:100%;">
+            <label>Velocità di caduta</label>
+            <div class="segmented" id="speedButtons">
+              <button type="button" data-val="molto-lento">molto lento</button>
+              <button type="button" data-val="lento">lento</button>
+              <button type="button" data-val="medio" class="active">medio</button>
+              <button type="button" data-val="veloce">veloce</button>
+              <button type="button" data-val="molto-veloce">molto veloce</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field" style="flex-basis:100%;">
+            <label>Liste da usare (il sistema pescherà a caso tra quelle spuntate)</label>
+            <div class="checks">
+              <label><input type="checkbox" value="sillabe2" checked> Sillabe di 2 lettere</label>
+              <label><input type="checkbox" value="sillabe3" checked> Sillabe di 3 lettere</label>
+              <label><input type="checkbox" value="parole4" checked> Parole di 4 lettere</label>
+              <label><input type="checkbox" value="parole5" checked> Parole di 5 lettere</label>
+              <label><input type="checkbox" value="parole6" checked> Parole di 6 lettere</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="err" id="setupErr"></div>
+        <button class="big-btn" id="btnStart">Inizia a giocare</button>
+      </div>
+    </div>
+
+    <!-- GAME -->
+    <div class="screen" id="screen-game">
+      <div id="topbar">
+        <span id="playerDisplay"></span>
+        <span>Tempo: <span id="timerDisplay">120</span>s</span>
+      </div>
+      <div id="playfield">
+        <div id="baseline"></div>
+      </div>
+      <input type="text" id="typeInput" autocomplete="off" spellcheck="false" placeholder="Scrivi qui e premi Invio...">
+      <div class="hint">Premi <b>INVIO</b> per confermare la sillaba/parola e far scendere la successiva</div>
+    </div>
+
+    <!-- RESULT -->
+    <div class="screen" id="screen-result">
+      <h1>Partita terminata</h1>
+      <div class="stats" id="statsBox"></div>
+      <div class="actions">
+        <button id="btnReport">Scarica report</button>
+        <button id="btnReplay">Rigioca (azzera le scelte)</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // ---- Liste fornite ----
+  const LISTE = {
+    sillabe2: "ba be bi bo bu ca ce ci co cu da de di do du fa fe fi fo fu ga ge gi go gu la le li lo lu ma me mi mo mu na ne ni no nu pa pe pi po pu ra re ri ro ru".split(" "),
+    sillabe3: "bra bre bri bro bru cra cre cri cro cru dra dre dri dro dru fra fre fri fro fru gra gre gri gro gru pra pre pri pro pru tra tre tri tro tru sta ste sti sto stu spa spe spi spo spu sca sce sci sco scu".split(" "),
+    parole4: "casa mano pane sole luna mare cane sale rosa vino riso aria dado dito muro orso pero moto rete nave lupo lago buio faro gelo nido zero mela pera sera cera tela vela gita lite remi rate rana nano dono cavo sono capo lato muto nero vero bene male dopo".split(" "),
+    parole5: "gatto carta porta testa mondo campo tempo libro dolce verde rosso nonno nonna treno banco lampo corpo fungo sasso passo fiore cuore sogno monte lieve dieta serie borsa gonna penna torta gomma mucca barca carro corda forno sedia vetro ferro burro fiume pesce latte pollo sette lento denti anima acqua".split(" "),
+    parole6: "quadro strada scuola denaro numero albero giorno estate sedano canale natale legume cinema teatro musica matita camera cucina limone divano salone tavolo dolore calore colore valore sapore rumore favore medico logico tipico antico veloce felice audace potere sapere volere venire dovere vedere sedere cadere tenere tacere temere cedere godere vivere".split(" ")
+  };
+
+  const SPEED_MS = {
+    "molto-lento": 10000,
+    "lento": 7500,
+    "medio": 5500,
+    "veloce": 4000,
+    "molto-veloce": 2500
+  };
+  const SPEED_LABEL = {
+    "molto-lento": "molto lento",
+    "lento": "lento",
+    "medio": "medio",
+    "veloce": "veloce",
+    "molto-veloce": "molto veloce"
+  };
+
+  // ---- Stato ----
+  let state = {
+    nome: "", cognome: "", tempoImpostato: 120, caso: "minuscolo",
+    velocita: "medio", liste: ["sillabe2","sillabe3","parole4","parole5","parole6"]
+  };
+  let session = null;
+
+  const $ = (id) => document.getElementById(id);
+  const setupErr = $("setupErr");
+
+  function showScreen(id){
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+    $(id).classList.add("active");
+  }
+
+  // segmented buttons behaviour
+  function wireSegmented(containerId, onPick){
+    const buttons = document.querySelectorAll("#" + containerId + " button");
+    buttons.forEach(b => {
+      b.addEventListener("click", () => {
+        buttons.forEach(x => x.classList.remove("active"));
+        b.classList.add("active");
+        onPick(b.dataset.val);
+      });
+    });
+  }
+  wireSegmented("caseButtons", v => state.caso = v);
+  wireSegmented("speedButtons", v => state.velocita = v);
+
+  $("btnStart").addEventListener("click", () => {
+    state.nome = $("inpNome").value.trim() || "Giocatore";
+    state.cognome = $("inpCognome").value.trim();
+    const t = parseInt($("inpTempo").value, 10);
+    state.tempoImpostato = (isNaN(t) || t < 10) ? 120 : t;
+    state.liste = Array.from(document.querySelectorAll("#screen-setup .checks input:checked")).map(i => i.value);
+
+    if (state.liste.length === 0){
+      setupErr.textContent = "Seleziona almeno una lista di sillabe o parole prima di iniziare.";
+      return;
+    }
+    setupErr.textContent = "";
+    startGame();
+  });
+
+  function pickWord(){
+    const listKey = state.liste[Math.floor(Math.random() * state.liste.length)];
+    const arr = LISTE[listKey];
+    const word = arr[Math.floor(Math.random() * arr.length)];
+    return word;
+  }
+
+  function displayWord(w){
+    return state.caso === "maiuscolo" ? w.toUpperCase() : w.toLowerCase();
+  }
+
+  function startGame(){
+    session = {
+      correctLetters: 0,
+      incorrectLetters: 0,
+      wordsTyped: 0,
+      timeLeft: state.tempoImpostato,
+      currentWord: "",
+      wordStartTs: 0,
+      raf: null,
+      timerInterval: null,
+      running: true
+    };
+
+    $("playerDisplay").textContent = (state.nome + " " + state.cognome).trim();
+    $("timerDisplay").textContent = session.timeLeft;
+    $("typeInput").value = "";
+    clearFallingWord();
+
+    showScreen("screen-game");
+    $("typeInput").focus();
+
+    session.timerInterval = setInterval(() => {
+      session.timeLeft--;
+      $("timerDisplay").textContent = session.timeLeft;
+      if (session.timeLeft <= 0){
+        endGame();
+      }
+    }, 1000);
+
+    spawnWord();
+  }
+
+  function clearFallingWord(){
+    const pf = $("playfield");
+    const old = pf.querySelector(".falling-word");
+    if (old) old.remove();
+  }
+
+  function spawnWord(){
+    if (!session || !session.running) return;
+    clearFallingWord();
+    const word = pickWord();
+    session.currentWord = word;
+
+    const pf = $("playfield");
+    const el = document.createElement("div");
+    el.className = "falling-word";
+    el.textContent = displayWord(word);
+    pf.appendChild(el);
+
+    const duration = SPEED_MS[state.velocita] || SPEED_MS.medio;
+    const maxTop = pf.clientHeight - el.offsetHeight - 60; // stop just above baseline
+    const start = performance.now();
+    session.wordStartTs = start;
+
+    function step(now){
+      if (!session || !session.running) return;
+      const elapsed = now - start;
+      const frac = Math.min(elapsed / duration, 1);
+      el.style.top = (frac * maxTop) + "px";
+      if (frac >= 1){
+        resolveWord(false); // tempo scaduto: non digitata in tempo
+      } else {
+        session.raf = requestAnimationFrame(step);
+      }
+    }
+    session.raf = requestAnimationFrame(step);
+  }
+
+  function resolveWord(byEnter){
+    if (!session || !session.running) return;
+    if (session.raf) cancelAnimationFrame(session.raf);
+
+    const typed = $("typeInput").value;
+    const target = session.currentWord;
+    const maxLen = Math.max(typed.length, target.length);
+    for (let i = 0; i < maxLen; i++){
+      const t = (typed[i] || "").toLowerCase();
+      const g = (target[i] || "").toLowerCase();
+      if (t && t === g){
+        session.correctLetters++;
+      } else {
+        session.incorrectLetters++;
+      }
+    }
+    session.wordsTyped++;
+    $("typeInput").value = "";
+    if (session.running) spawnWord();
+  }
+
+  $("typeInput").addEventListener("keydown", (e) => {
+    if (e.key === "Enter"){
+      e.preventDefault();
+      resolveWord(true);
+    }
+  });
+
+  function endGame(){
+    if (!session) return;
+    session.running = false;
+    if (session.raf) cancelAnimationFrame(session.raf);
+    if (session.timerInterval) clearInterval(session.timerInterval);
+    clearFallingWord();
+    showResults();
+  }
+
+  function showResults(){
+    const totalLetters = session.correctLetters + session.incorrectLetters;
+    const pctCorrect = totalLetters ? ((session.correctLetters / totalLetters) * 100).toFixed(1) : "0.0";
+    const pctIncorrect = totalLetters ? ((session.incorrectLetters / totalLetters) * 100).toFixed(1) : "0.0";
+
+    const html = `
+      <div><span class="label">Giocatore:</span> <span class="val">${escapeHtml((state.nome + " " + state.cognome).trim())}</span></div>
+      <div><span class="label">Tempo impostato:</span> <span class="val">${state.tempoImpostato} s</span></div>
+      <div><span class="label">Testo mostrato:</span> <span class="val">${state.caso}</span></div>
+      <div><span class="label">Velocità:</span> <span class="val">${SPEED_LABEL[state.velocita]}</span></div>
+      <div><span class="label">Lettere corrette:</span> <span class="val">${session.correctLetters} / ${totalLetters} (${pctCorrect}%)</span></div>
+      <div><span class="label">Lettere errate:</span> <span class="val">${session.incorrectLetters} / ${totalLetters} (${pctIncorrect}%)</span></div>
+      <div><span class="label">Sillabe/parole digitate:</span> <span class="val">${session.wordsTyped}</span></div>
+    `;
+    $("statsBox").innerHTML = html;
+    showScreen("screen-result");
+  }
+
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+
+  $("btnReport").addEventListener("click", () => {
+    const totalLetters = session.correctLetters + session.incorrectLetters;
+    const pctCorrect = totalLetters ? ((session.correctLetters / totalLetters) * 100).toFixed(1) : "0.0";
+    const pctIncorrect = totalLetters ? ((session.incorrectLetters / totalLetters) * 100).toFixed(1) : "0.0";
+    const now = new Date();
+    const report =
+`REPORT DIGITAZIONE VELOCE
+Data: ${now.toLocaleDateString("it-IT")} ${now.toLocaleTimeString("it-IT")}
+
+Nome: ${state.nome}
+Cognome: ${state.cognome}
+Tempo impostato: ${state.tempoImpostato} secondi
+Testo mostrato: ${state.caso}
+Velocità impostata: ${SPEED_LABEL[state.velocita]}
+
+Lettere corrette: ${session.correctLetters} / ${totalLetters} (${pctCorrect}%)
+Lettere errate: ${session.incorrectLetters} / ${totalLetters} (${pctIncorrect}%)
+Sillabe/parole digitate: ${session.wordsTyped}
+`;
+    const blob = new Blob([report], {type: "text/plain;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const safeName = ((state.nome + "_" + state.cognome).trim().replace(/\s+/g,"_") || "report");
+    a.href = url;
+    a.download = `report_digitazione_${safeName}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  $("btnReplay").addEventListener("click", () => {
+    // azzera tutte le scelte precedenti
+    $("inpNome").value = "";
+    $("inpCognome").value = "";
+    $("inpTempo").value = 120;
+    document.querySelectorAll("#caseButtons button").forEach(b => b.classList.remove("active"));
+    document.querySelector("#caseButtons button[data-val='minuscolo']").classList.add("active");
+    document.querySelectorAll("#speedButtons button").forEach(b => b.classList.remove("active"));
+    document.querySelector("#speedButtons button[data-val='medio']").classList.add("active");
+    document.querySelectorAll("#screen-setup .checks input").forEach(i => i.checked = true);
+    state = {nome:"", cognome:"", tempoImpostato:120, caso:"minuscolo", velocita:"medio",
+             liste:["sillabe2","sillabe3","parole4","parole5","parole6"]};
+    setupErr.textContent = "";
+    showScreen("screen-setup");
+  });
+</script>
+</body>
+</html>
