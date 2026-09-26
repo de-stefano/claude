@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La mia descrizione — scriviamola insieme</title>
+<style>
+  :root{
+    --bg:#e9f3ef;
+    --card:#ffffff;
+    --ink:#2b3a3a;
+    --ink-soft:#5b6a6a;
+    --accent:#ef9457;
+    --accent-dark:#c96f37;
+    --ok:#5fa483;
+    --ok-dark:#3f7a5e;
+    --soft:#f6d374;
+    --line:#d9e6e1;
+    --font: system-ui, "Segoe UI", Verdana, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:var(--bg);
+    font-family:var(--font);
+    color:var(--ink);
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    padding:20px;
+  }
+  #app{
+    width:min(760px, 100%);
+  }
+  .card{
+    background:var(--card);
+    border-radius:22px;
+    padding:26px 28px 22px;
+    box-shadow:0 10px 30px rgba(43,58,58,.10);
+    border:2px solid var(--line);
+  }
+
+  /* progress dots */
+  #progress{
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    margin-bottom:18px;
+  }
+  #progress .dot{
+    width:16px; height:16px;
+    border-radius:50%;
+    background:var(--line);
+  }
+  #progress .dot.done{background:var(--ok);}
+  #progress .dot.current{background:var(--accent); box-shadow:0 0 0 4px rgba(239,148,87,.25);}
+
+  /* foto sempre visibile */
+  #photoBar{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    margin-bottom:14px;
+  }
+  #photoPersistent{
+    width:64px; height:64px;
+    border-radius:14px;
+    object-fit:cover;
+    border:3px solid var(--line);
+  }
+  #photoBarPlaceholder{
+    font-size:.95rem;
+    color:var(--ink-soft);
+    font-style:italic;
+  }
+
+  h1{
+    text-align:center;
+    font-size:1.7rem;
+    margin:0 0 4px;
+  }
+  .step-title{
+    text-align:center;
+    font-size:1.55rem;
+    margin:0 0 6px;
+  }
+  .instruction{
+    text-align:center;
+    color:var(--ink-soft);
+    font-size:1.15rem;
+    margin:0 0 20px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .speak-btn{
+    border:none;
+    background:var(--soft);
+    color:var(--ink);
+    width:38px; height:38px;
+    border-radius:50%;
+    font-size:1.1rem;
+    cursor:pointer;
+  }
+
+  .screen{display:none;}
+  .screen.active{display:block;}
+
+  /* option grid */
+  .group-label{
+    font-size:1.05rem;
+    color:var(--ink-soft);
+    margin:14px 0 10px;
+    text-align:center;
+  }
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:12px;
+    margin-bottom:8px;
+  }
+  @media (max-width:480px){ .grid{grid-template-columns:1fr;} }
+
+  .opt{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:14px 14px;
+    border-radius:16px;
+    border:3px solid var(--line);
+    background:#fbfdfc;
+    font-family:var(--font);
+    font-size:1.15rem;
+    color:var(--ink);
+    cursor:pointer;
+    text-align:left;
+  }
+  .opt .emoji{font-size:1.8rem;}
+  .opt.selected{
+    border-color:var(--ok);
+    background:#eaf6f0;
+    font-weight:bold;
+  }
+  .opt:active{transform:scale(.98);}
+
+  /* text field step */
+  .field-row{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin-bottom:18px;
+  }
+  .field-row label{font-size:1.1rem; color:var(--ink-soft);}
+  .field-row input[type=text]{
+    font-family:var(--font);
+    font-size:1.3rem;
+    padding:12px 14px;
+    border-radius:14px;
+    border:3px solid var(--line);
+  }
+  .photo-box{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    margin-bottom:10px;
+  }
+  #photoPreview{
+    width:84px; height:84px;
+    border-radius:14px;
+    object-fit:cover;
+    border:3px solid var(--line);
+    display:none;
+    background:#fff;
+  }
+  .filebtn{
+    font-family:var(--font);
+    font-size:1rem;
+    padding:10px 14px;
+    border-radius:12px;
+    border:3px solid var(--line);
+    background:#fbfdfc;
+    cursor:pointer;
+  }
+
+  /* living description */
+  #liveDesc{
+    margin-top:18px;
+    background:#fbfaf3;
+    border:2px dashed var(--soft);
+    border-radius:14px;
+    padding:12px 16px;
+    font-size:1.05rem;
+    color:var(--ink-soft);
+    min-height:1.4em;
+  }
+  #liveDesc b{color:var(--ink);}
+
+  /* nav */
+  .nav{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    margin-top:22px;
+  }
+  .nav button{
+    flex:1;
+    font-family:var(--font);
+    font-size:1.2rem;
+    padding:14px;
+    border-radius:16px;
+    border:none;
+    cursor:pointer;
+  }
+  #btnBack{background:var(--line); color:var(--ink);}
+  #btnNext{background:var(--accent); color:#3a2210; font-weight:bold;}
+  #btnNext:hover, #btnBack:hover{filter:brightness(1.05);}
+
+  /* summary screen */
+  #summaryText{
+    font-size:1.25rem;
+    line-height:1.7;
+    background:#fbfdfc;
+    border:2px solid var(--line);
+    border-radius:16px;
+    padding:18px 20px;
+    margin-bottom:16px;
+  }
+  #summaryPhoto{
+    display:block;
+    max-width:140px;
+    border-radius:16px;
+    margin:0 auto 16px;
+    border:3px solid var(--line);
+  }
+  .actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .actions button{
+    flex:1;
+    min-width:140px;
+    font-family:var(--font);
+    font-size:1.1rem;
+    padding:13px;
+    border-radius:14px;
+    border:none;
+    cursor:pointer;
+  }
+  #btnReadAll{background:var(--soft); color:#3a2210;}
+  #btnDownload{background:var(--ok); color:#0f2b1e; font-weight:bold;}
+  #btnRestart{background:var(--line); color:var(--ink);}
+
+  @media print{
+    body{background:#fff; padding:0;}
+    #progress, .nav, #btnReadAll, #btnRestart, #btnDownload, .speak-btn{display:none !important;}
+    .card{box-shadow:none; border:none;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="card">
+    <h1 id="mainTitle">La mia descrizione</h1>
+    <div id="photoBar">
+      <img id="photoPersistent" alt="Foto della persona" style="display:none;">
+      <span id="photoBarPlaceholder">Nessuna foto caricata</span>
+    </div>
+    <div id="progress"></div>
+
+    <!-- STEP 0: chi è -->
+    <div class="screen active" data-step="0">
+      <div class="step-title">👤 Chi vuoi descrivere?</div>
+      <div class="instruction">
+        <span>Scrivi il nome e dì se è un maschio o una femmina.</span>
+        <button class="speak-btn" data-say="Scrivi il nome della persona e dì se è un maschio o una femmina.">🔊</button>
+      </div>
+      <div class="field-row">
+        <label for="inpNome">Nome della persona</label>
+        <input type="text" id="inpNome" placeholder="Es. Marco">
+      </div>
+      <div class="group-label">È un maschio o una femmina?</div>
+      <div class="grid" id="genereGrid"></div>
+      <div class="group-label">Vuoi aggiungere una foto? (facoltativo)</div>
+      <div class="photo-box">
+        <img id="photoPreview" alt="Anteprima foto">
+        <label class="filebtn">📷 Scegli una foto
+          <input type="file" id="inpFoto" accept="image/*" style="display:none;">
+        </label>
+      </div>
+    </div>
+
+    <!-- STEP 1: aspetto fisico -->
+    <div class="screen" data-step="1">
+      <div class="step-title">💇 Com'è il suo aspetto?</div>
+      <div class="instruction">
+        <span>Scegli come sono i capelli e gli occhi.</span>
+        <button class="speak-btn" data-say="Scegli come sono i capelli e gli occhi della persona.">🔊</button>
+      </div>
+      <div class="group-label">Capelli — lunghezza</div>
+      <div class="grid" id="capelliLunghezzaGrid"></div>
+      <div class="group-label">Capelli — aspetto</div>
+      <div class="grid" id="capelliAspettoGrid"></div>
+      <div class="group-label">Capelli — colore</div>
+      <div class="grid" id="capelliColoreGrid"></div>
+      <div class="group-label">Occhi — colore</div>
+      <div class="grid" id="occhiGrid"></div>
+    </div>
+
+    <!-- STEP 2: altezza -->
+    <div class="screen" data-step="2">
+      <div class="step-title">📏 Altezza e corporatura</div>
+      <div class="instruction">
+        <span>Scegli quanto è alta la persona e com'è il suo corpo.</span>
+        <button class="speak-btn" data-say="Scegli quanto è alta la persona e com'è il suo corpo.">🔊</button>
+      </div>
+      <div class="group-label">Altezza</div>
+      <div class="grid" id="altezzaGrid"></div>
+      <div class="group-label">Corporatura</div>
+      <div class="grid" id="corporaturaGrid"></div>
+    </div>
+
+    <!-- STEP 3: vestiti -->
+    <div class="screen" data-step="3">
+      <div class="step-title">👕 Cosa indossa oggi?</div>
+      <div class="instruction">
+        <span>Scegli tutti i capi di vestiario che indossa (puoi sceglierne più di uno).</span>
+        <button class="speak-btn" data-say="Scegli tutti i capi di vestiario che indossa. Puoi sceglierne più di uno.">🔊</button>
+      </div>
+      <div class="grid" id="capoGrid"></div>
+    </div>
+
+    <!-- STEP 4: carattere -->
+    <div class="screen" data-step="4">
+      <div class="step-title">😊 Com'è il suo carattere?</div>
+      <div class="instruction">
+        <span>Scegli fino a 3 parole che descrivono il suo carattere.</span>
+        <button class="speak-btn" data-say="Scegli fino a tre parole che descrivono il suo carattere.">🔊</button>
+      </div>
+      <div class="grid" id="carattereGrid"></div>
+    </div>
+
+    <!-- STEP 5: attività -->
+    <div class="screen" data-step="5">
+      <div class="step-title">⚽ Cosa gli/le piace fare?</div>
+      <div class="instruction">
+        <span>Scegli fino a 3 cose che gli/le piace fare.</span>
+        <button class="speak-btn" data-say="Scegli fino a tre cose che le piace o gli piace fare.">🔊</button>
+      </div>
+      <div class="grid" id="attivitaGrid"></div>
+    </div>
+
+    <!-- STEP 6: rapporto -->
+    <div class="screen" data-step="6">
+      <div class="step-title">💛 Perché ti piace questa persona?</div>
+      <div class="instruction">
+        <span>Scegli fino a 2 frasi che spiegano perché ti piace.</span>
+        <button class="speak-btn" data-say="Scegli fino a due frasi che spiegano perché ti piace questa persona.">🔊</button>
+      </div>
+      <div class="grid" id="rapportoGrid"></div>
+    </div>
+
+    <div id="liveDesc"></div>
+
+    <div class="nav" id="navBar">
+      <button id="btnBack">⬅ Indietro</button>
+      <button id="btnNext">Avanti ➡</button>
+    </div>
+
+    <!-- SUMMARY -->
+    <div class="screen" data-step="7">
+      <div class="step-title">🎉 Ecco la tua descrizione!</div>
+      <img id="summaryPhoto" alt="Foto della persona">
+      <div id="summaryText"></div>
+      <div class="actions">
+        <button id="btnReadAll">🔊 Leggi tutto</button>
+        <button id="btnDownload">⬇ Scarica</button>
+        <button onclick="window.print()">🖨 Stampa</button>
+        <button id="btnRestart">🔄 Ricomincia</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  // ---------- dati opzioni ----------
+  const GENERE = [
+    {id:'m', emoji:'👦', label:'Maschio'},
+    {id:'f', emoji:'👧', label:'Femmina'}
+  ];
+  const CAPELLI_LUNGHEZZA = [
+    {id:'corti', emoji:'✂️', label:'Corti', testo:'corti'},
+    {id:'medi', emoji:'💇', label:'Medi', testo:'di media lunghezza'},
+    {id:'lunghi', emoji:'💁', label:'Lunghi', testo:'lunghi'}
+  ];
+  const CAPELLI_COLORE = [
+    {id:'neri', emoji:'⚫', label:'Neri', testo:'neri'},
+    {id:'castani', emoji:'🟤', label:'Castani', testo:'castani'},
+    {id:'biondi', emoji:'🟡', label:'Biondi', testo:'biondi'},
+    {id:'rossi', emoji:'🔴', label:'Rossi', testo:'rossi'},
+    {id:'grigi', emoji:'⚪', label:'Grigi', testo:'grigi'},
+    {id:'blu', emoji:'🔵', label:'Blu', testo:'blu'},
+    {id:'viola', emoji:'🟣', label:'Viola', testo:'viola'},
+    {id:'verdi', emoji:'🟢', label:'Verdi', testo:'verdi'}
+  ];
+  const CAPELLI_ASPETTO = [
+    {id:'lisci', emoji:'➖', label:'Lisci', testo:'lisci'},
+    {id:'ricci', emoji:'🌀', label:'Ricci', testo:'ricci'},
+    {id:'mossi', emoji:'〰️', label:'Mossi/ondulati', testo:'mossi'},
+    {id:'crespi', emoji:'🧶', label:'Crespi', testo:'crespi'},
+    {id:'treccine', emoji:'🎀', label:'Con treccine', testo:'con le treccine'},
+    {id:'coda', emoji:'🐴', label:'Con coda di cavallo', testo:'con la coda di cavallo'},
+    {id:'chignon', emoji:'🔘', label:'Con uno chignon', testo:'con uno chignon'},
+    {id:'rasta', emoji:'🟤', label:'Rasta', testo:'rasta'},
+    {id:'rasati', emoji:'🚫', label:'Rasati a zero', testo:'rasati a zero'}
+  ];
+  const OCCHI = [
+    {id:'azzurri', emoji:'🔵', label:'Azzurri', testo:'azzurri'},
+    {id:'verdi', emoji:'🟢', label:'Verdi', testo:'verdi'},
+    {id:'marroni', emoji:'🟤', label:'Marroni', testo:'marroni'},
+    {id:'neri', emoji:'⚫', label:'Neri', testo:'neri'}
+  ];
+  const ALTEZZA = [
+    {id:'alto', emoji:'📏⬆️', label:'Alto/a', m:'alto', f:'alta'},
+    {id:'medio', emoji:'📏', label:'Altezza media', m:'di altezza media', f:'di altezza media'},
+    {id:'basso', emoji:'📏⬇️', label:'Basso/a', m:'basso', f:'bassa'}
+  ];
+  const CORPORATURA = [
+    {id:'magro', emoji:'🥢', label:'Magro/a', m:'magro', f:'magra'},
+    {id:'grassottello', emoji:'🍩', label:'Grassottello/a', m:'grassottello', f:'grassottella'},
+    {id:'palestrato', emoji:'💪', label:'Palestrato/a', m:'palestrato', f:'palestrata'},
+    {id:'longilineo', emoji:'📐', label:'Longilineo/a', m:'longilineo', f:'longilinea'},
+    {id:'tonico', emoji:'🤸', label:'Tonico/a', m:'tonico', f:'tonica'},
+    {id:'atletico', emoji:'🏃', label:'Atletico/a', m:'atletico', f:'atletica'},
+    {id:'robusto', emoji:'🧱', label:'Robusto/a', m:'robusto', f:'robusta'}
+  ];
+  const CAPO = [
+    {id:'maglietta', emoji:'👕', label:'Maglietta', art:'una', noun:'maglietta'},
+    {id:'felpa', emoji:'🧥', label:'Felpa', art:'una', noun:'felpa'},
+    {id:'vestito', emoji:'👗', label:'Vestito', art:'un', noun:'vestito'},
+    {id:'pantaloni', emoji:'👖', label:'Pantaloni', art:'dei', noun:'pantaloni'},
+    {id:'gonna', emoji:'👗', label:'Gonna', art:'una', noun:'gonna'},
+    {id:'maglione', emoji:'🧶', label:'Maglione', art:'un', noun:'maglione'},
+    {id:'camicia', emoji:'👔', label:'Camicia', art:'una', noun:'camicia'},
+    {id:'giacca', emoji:'🧥', label:'Giacca', art:'una', noun:'giacca'},
+    {id:'sciarpa', emoji:'🧣', label:'Sciarpa', art:'una', noun:'sciarpa'},
+    {id:'cappotto', emoji:'🧥', label:'Cappotto', art:'un', noun:'cappotto'},
+    {id:'cappello', emoji:'🎩', label:'Cappello', art:'un', noun:'cappello'},
+    {id:'cappellino', emoji:'🧢', label:'Cappellino', art:'un', noun:'cappellino'},
+    {id:'foulard', emoji:'🧣', label:'Foulard', art:'un', noun:'foulard'},
+    {id:'tacchi', emoji:'👠', label:'Scarpe con il tacco', art:'delle', noun:'scarpe con il tacco'},
+    {id:'stivali', emoji:'👢', label:'Stivali', art:'degli', noun:'stivali'},
+    {id:'scarpepasseggio', emoji:'👞', label:'Scarpe da passeggio', art:'delle', noun:'scarpe da passeggio'},
+    {id:'scarpeginnastica', emoji:'👟', label:'Scarpe da ginnastica', art:'delle', noun:'scarpe da ginnastica'}
+  ];
+  const CARATTERE = [
+    {id:'allegro', emoji:'😄', label:'Allegro/a', m:'allegro', f:'allegra'},
+    {id:'simpatico', emoji:'😁', label:'Simpatico/a', m:'simpatico', f:'simpatica'},
+    {id:'timido', emoji:'😳', label:'Timido/a', m:'timido', f:'timida'},
+    {id:'gentile', emoji:'🤗', label:'Gentile', m:'gentile', f:'gentile'},
+    {id:'curioso', emoji:'🧐', label:'Curioso/a', m:'curioso', f:'curiosa'},
+    {id:'coraggioso', emoji:'🦁', label:'Coraggioso/a', m:'coraggioso', f:'coraggiosa'},
+    {id:'divertente', emoji:'😆', label:'Divertente', m:'divertente', f:'divertente'},
+    {id:'arrabbiato', emoji:'😠', label:'Arrabbiato/a', m:'arrabbiato', f:'arrabbiata'},
+    {id:'nervoso', emoji:'😤', label:'Nervoso/a', m:'nervoso', f:'nervosa'},
+    {id:'triste', emoji:'😢', label:'Triste', m:'triste', f:'triste'},
+    {id:'preoccupato', emoji:'😟', label:'Preoccupato/a', m:'preoccupato', f:'preoccupata'},
+    {id:'concentrato', emoji:'🤔', label:'Concentrato/a', m:'concentrato', f:'concentrata'}
+  ];
+  const ATTIVITA = [
+    {id:'disegnare', emoji:'🎨', label:'Disegnare', testo:'disegnare'},
+    {id:'leggere', emoji:'📖', label:'Leggere', testo:'leggere'},
+    {id:'cantare', emoji:'🎤', label:'Cantare', testo:'cantare'},
+    {id:'ballare', emoji:'💃', label:'Ballare', testo:'ballare'},
+    {id:'cartoni', emoji:'📺', label:'Guardare i cartoni', testo:'guardare i cartoni'},
+    {id:'bici', emoji:'🚲', label:'Andare in bici', testo:'andare in bicicletta'},
+    {id:'amici', emoji:'🧑‍🤝‍🧑', label:'Giocare con gli amici', testo:'giocare con gli amici'},
+    {id:'sport', emoji:'🏃', label:'Fare sport', testo:'fare sport'},
+    {id:'videogiochi', emoji:'🎮', label:'Giocare ai videogiochi', testo:'giocare ai videogiochi'},
+    {id:'computer', emoji:'💻', label:'Giocare con il computer', testo:'giocare con il computer'},
+    {id:'shopping', emoji:'🛍️', label:'Fare shopping', testo:'fare shopping'},
+    {id:'giro', emoji:'🚶', label:'Andare in giro', testo:'andare in giro'}
+  ];
+  const RAPPORTO = [
+    {id:'amico', emoji:'🤝', m:'il mio migliore amico', f:'la mia migliore amica', label:'È il mio/la mia migliore amico/a'},
+    {id:'ridere', emoji:'😂', m:'mi fa sempre ridere', f:'mi fa sempre ridere', label:'Mi fa sempre ridere'},
+    {id:'aiuta', emoji:'🫶', m:'mi aiuta quando ho bisogno', f:'mi aiuta quando ho bisogno', label:'Mi aiuta quando ho bisogno'},
+    {id:'gioca', emoji:'🎲', m:'gioca sempre con me', f:'gioca sempre con me', label:'Gioca sempre con me'}
+  ];
+
+  // ---------- stato ----------
+  let sel = {
+    nome:'', genere:'m', foto:null,
+    capelliLunghezza:null, capelliAspetto:null, capelliColore:null, occhi:null,
+    altezza:null, corporatura:null,
+    capo:[],
+    carattere:[], attivita:[], rapporto:[]
+  };
+  let currentStep = 0;
+  const TOTAL_STEPS = 7; // step 0..6, poi 7 = riepilogo
+
+  function say(text){
+    try{
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'it-IT';
+      u.rate = 0.95;
+      window.speechSynthesis.speak(u);
+    }catch(e){ /* sintesi vocale non disponibile: si prosegue comunque */ }
+  }
+
+  document.querySelectorAll('.speak-btn').forEach(b=>{
+    b.addEventListener('click', ()=> say(b.dataset.say));
+  });
+
+  // ---------- costruzione bottoni ----------
+  function buildSingle(containerId, options, stateKey, onPick){
+    const c = $(containerId);
+    c.innerHTML = '';
+    options.forEach(o=>{
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'opt';
+      btn.innerHTML = `<span class="emoji">${o.emoji}</span><span>${o.label}</span>`;
+      btn.addEventListener('click', ()=>{
+        sel[stateKey] = o.id;
+        Array.from(c.children).forEach(x=>x.classList.remove('selected'));
+        btn.classList.add('selected');
+        say(o.label);
+        onPick && onPick(o);
+        updateLiveDesc();
+      });
+      c.appendChild(btn);
+    });
+  }
+
+  function buildMulti(containerId, options, stateKey, max){
+    const c = $(containerId);
+    c.innerHTML = '';
+    options.forEach(o=>{
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'opt';
+      btn.innerHTML = `<span class="emoji">${o.emoji}</span><span>${o.label}</span>`;
+      btn.addEventListener('click', ()=>{
+        const arr = sel[stateKey];
+        const idx = arr.indexOf(o.id);
+        if (idx >= 0){
+          arr.splice(idx,1);
+          btn.classList.remove('selected');
+        } else {
+          if (arr.length >= max) return; // limite raggiunto
+          arr.push(o.id);
+          btn.classList.add('selected');
+        }
+        say(o.label);
+        updateLiveDesc();
+      });
+      c.appendChild(btn);
+    });
+  }
+
+  buildSingle('genereGrid', GENERE, 'genere');
+  // preseleziona maschio come default visivo
+  document.querySelector('#genereGrid .opt').classList.add('selected');
+
+  buildSingle('capelliLunghezzaGrid', CAPELLI_LUNGHEZZA, 'capelliLunghezza');
+  buildSingle('capelliAspettoGrid', CAPELLI_ASPETTO, 'capelliAspetto');
+  buildSingle('capelliColoreGrid', CAPELLI_COLORE, 'capelliColore');
+  buildSingle('occhiGrid', OCCHI, 'occhi');
+  buildSingle('altezzaGrid', ALTEZZA, 'altezza');
+  buildSingle('corporaturaGrid', CORPORATURA, 'corporatura');
+  buildMulti('capoGrid', CAPO, 'capo', 6);
+  buildMulti('carattereGrid', CARATTERE, 'carattere', 3);
+  buildMulti('attivitaGrid', ATTIVITA, 'attivita', 3);
+  buildMulti('rapportoGrid', RAPPORTO, 'rapporto', 2);
+
+  $('inpNome').addEventListener('input', ()=>{ sel.nome = $('inpNome').value; updateLiveDesc(); });
+
+  $('inpFoto').addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      sel.foto = reader.result;
+      $('photoPreview').src = sel.foto;
+      $('photoPreview').style.display = 'block';
+      $('photoPersistent').src = sel.foto;
+      $('photoPersistent').style.display = 'block';
+      $('photoBarPlaceholder').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // ---------- frasi ----------
+  function join(list){
+    if (list.length === 0) return '';
+    if (list.length === 1) return list[0];
+    return list.slice(0,-1).join(', ') + ' e ' + list[list.length-1];
+  }
+
+  function buildSentences(){
+    const nome = sel.nome.trim() || 'Questa persona';
+    const isF = sel.genere === 'f';
+    const frasi = [];
+
+    if (sel.capelliLunghezza || sel.capelliAspetto || sel.capelliColore){
+      const lung = CAPELLI_LUNGHEZZA.find(x=>x.id===sel.capelliLunghezza);
+      const asp = CAPELLI_ASPETTO.find(x=>x.id===sel.capelliAspetto);
+      const col = CAPELLI_COLORE.find(x=>x.id===sel.capelliColore);
+      let parti = [];
+      if (lung) parti.push(lung.testo);
+      if (asp) parti.push(asp.testo);
+      if (col) parti.push(col.testo);
+      if (parti.length) frasi.push(`${nome} ha i capelli ${parti.join(' e ')}.`);
+    }
+    if (sel.occhi){
+      const o = OCCHI.find(x=>x.id===sel.occhi);
+      frasi.push(`Ha gli occhi ${o.testo}.`);
+    }
+    if (sel.altezza || sel.corporatura){
+      const a = ALTEZZA.find(x=>x.id===sel.altezza);
+      const c = CORPORATURA.find(x=>x.id===sel.corporatura);
+      let parti = [];
+      if (a) parti.push(isF ? a.f : a.m);
+      if (c) parti.push(isF ? c.f : c.m);
+      if (parti.length) frasi.push(`È ${parti.join(' e ')}.`);
+    }
+    if (sel.capo.length){
+      const lista = sel.capo.map(id=>{
+        const c = CAPO.find(x=>x.id===id);
+        return `${c.art} ${c.noun}`;
+      });
+      frasi.push(`Indossa ${join(lista)}.`);
+    }
+    if (sel.carattere.length){
+      const lista = sel.carattere.map(id=>{
+        const c = CARATTERE.find(x=>x.id===id);
+        return isF ? c.f : c.m;
+      });
+      frasi.push(`Il suo carattere è ${join(lista)}.`);
+    }
+    if (sel.attivita.length){
+      const lista = sel.attivita.map(id => ATTIVITA.find(x=>x.id===id).testo);
+      const pronome = isF ? 'Le' : 'Gli';
+      frasi.push(`${pronome} piace ${join(lista)}.`);
+    }
+    if (sel.rapporto.length){
+      const lista = sel.rapporto.map(id=>{
+        const r = RAPPORTO.find(x=>x.id===id);
+        return isF ? r.f : r.m;
+      });
+      lista.forEach((fr,i)=>{
+        const cap = fr.charAt(0).toUpperCase() + fr.slice(1);
+        frasi.push(cap + '.');
+      });
+    }
+    return frasi;
+  }
+
+  function updateLiveDesc(){
+    const frasi = buildSentences();
+    $('liveDesc').innerHTML = frasi.length
+      ? '<b>La tua descrizione fin qui:</b> ' + frasi.join(' ')
+      : 'Le tue scelte compariranno qui, man mano che le fai.';
+  }
+
+  // ---------- navigazione ----------
+  function renderProgress(){
+    const p = $('progress');
+    p.innerHTML = '';
+    for (let i=0; i<TOTAL_STEPS; i++){
+      const d = document.createElement('div');
+      d.className = 'dot' + (i<currentStep ? ' done' : (i===currentStep ? ' current' : ''));
+      p.appendChild(d);
+    }
+  }
+
+  function showStep(n){
+    currentStep = n;
+    document.querySelectorAll('.screen').forEach(s=>{
+      s.classList.toggle('active', parseInt(s.dataset.step,10) === n);
+    });
+    const isSummary = (n === TOTAL_STEPS);
+    $('navBar').style.display = isSummary ? 'none' : 'flex';
+    $('liveDesc').style.display = isSummary ? 'none' : 'block';
+    $('progress').style.display = isSummary ? 'none' : 'flex';
+    $('btnBack').disabled = (n === 0);
+    $('btnBack').style.visibility = (n === 0) ? 'hidden' : 'visible';
+
+    if (!isSummary){
+      renderProgress();
+      const instr = document.querySelector(`.screen[data-step="${n}"] .instruction span`);
+      if (instr) say(instr.textContent);
+      updateLiveDesc();
+    } else {
+      renderSummary();
+    }
+  }
+
+  $('btnNext').addEventListener('click', ()=>{
+    if (currentStep < TOTAL_STEPS) showStep(currentStep+1);
+  });
+  $('btnBack').addEventListener('click', ()=>{
+    if (currentStep > 0) showStep(currentStep-1);
+  });
+
+  function renderSummary(){
+    const frasi = buildSentences();
+    const testo = frasi.length ? frasi.join(' ') : 'Non hai ancora fatto nessuna scelta.';
+    $('summaryText').textContent = testo;
+    if (sel.foto){
+      $('summaryPhoto').src = sel.foto;
+      $('summaryPhoto').style.display = 'block';
+    } else {
+      $('summaryPhoto').style.display = 'none';
+    }
+  }
+
+  $('btnReadAll').addEventListener('click', ()=> say($('summaryText').textContent));
+
+  $('btnDownload').addEventListener('click', ()=>{
+    const nome = sel.nome.trim() || 'descrizione';
+    const testo = "LA MIA DESCRIZIONE\n\n" + $('summaryText').textContent + "\n";
+    const blob = new Blob([testo], {type:'text/plain;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `descrizione_${nome.replace(/\s+/g,'_')}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  $('btnRestart').addEventListener('click', ()=>{
+    sel = {
+      nome:'', genere:'m', foto:null,
+      capelliLunghezza:null, capelliAspetto:null, capelliColore:null, occhi:null,
+      altezza:null, corporatura:null,
+      capo:[],
+      carattere:[], attivita:[], rapporto:[]
+    };
+    $('inpNome').value = '';
+    $('photoPreview').style.display = 'none';
+    $('photoPersistent').style.display = 'none';
+    $('photoBarPlaceholder').style.display = 'inline';
+    $('inpFoto').value = '';
+    document.querySelectorAll('.opt').forEach(b=>b.classList.remove('selected'));
+    document.querySelector('#genereGrid .opt').classList.add('selected');
+    showStep(0);
+  });
+
+  // avvio
+  showStep(0);
+</script>
+</body>
+</html>
