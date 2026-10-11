@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Generatore Associazioni PRO</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: #f1f3f6;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #163a5f;
+            margin-top: 10px;
+        }
+        h2 {
+            color: #163a5f;
+            margin-top: 0;
+        }
+        .main-nav {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .nav-btn {
+            width: auto;
+            min-width: 180px;
+            padding: 12px 24px;
+            font-size: 18px;
+            border-radius: 25px;
+            background: #e2e8f0;
+            color: #2d3748;
+            border: 2px solid #cbd5e1;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .nav-btn.active {
+            background: #1769aa;
+            color: white;
+            border-color: #1769aa;
+            box-shadow: 0 4px 6px rgba(23, 105, 170, 0.3);
+        }
+        .panel {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        input, textarea, button {
+            width: 100%;
+            padding: 10px 14px;
+            margin: 8px 0;
+            font-size: 16px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+        textarea {
+            min-height: 120px;
+            font-family: inherit;
+        }
+        button {
+            background: #1769aa;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: #0d4775;
+        }
+        .btn-secondary {
+            background: #4A5568;
+        }
+        .btn-secondary:hover {
+            background: #2D3748;
+        }
+        .btn-success {
+            background: #2e7d32;
+        }
+        .btn-success:hover {
+            background: #1b5e20;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .btn-group button {
+            flex: 1;
+            min-width: 180px;
+        }
+        #timer {
+            text-align: center;
+            font-size: 26px;
+            font-weight: bold;
+            color: #b00020;
+            margin: 15px;
+        }
+        .contenitore {
+            display: flex;
+            gap: 25px;
+            margin-bottom: 20px;
+        }
+        @media (max-width: 768px) {
+            .contenitore {
+                flex-direction: column;
+            }
+        }
+        .colonna {
+            flex: 1;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        #areaTermini, #areaDefinizioni {
+            max-height: 600px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+        .termine {
+            background: #e8f4ff;
+            border: 2px solid #1769aa;
+            border-radius: 10px;
+            padding: 12px;
+            margin: 12px 0;
+        }
+        .definizione {
+            background: #fff4cc;
+            border: 2px solid #d49b00;
+            border-radius: 10px;
+            padding: 12px;
+            margin: 10px 0;
+            cursor: grab;
+            user-select: none;
+        }
+        .definizione:active {
+            cursor: grabbing;
+        }
+        .dropzone {
+            min-height: 55px;
+            border: 2px dashed #777;
+            border-radius: 8px;
+            background: #fafafa;
+            padding: 8px;
+            margin-top: 10px;
+        }
+        .dropzone .definizione {
+            margin: 0;
+        }
+        .corretta {
+            background: #b8f7b8 !important;
+            border-color: #2e7d32 !important;
+        }
+        .errata {
+            background: #ffb0b0 !important;
+            border-color: #c62828 !important;
+        }
+        .soluzione-corretta-nota {
+            margin-top: 8px;
+            padding: 8px 10px;
+            background-color: #e8f5e9;
+            color: #1b5e20;
+            border: 1px solid #a5d6a7;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        #risultato {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            background: #f8fafc;
+        }
+        #titoloAlunno {
+            text-align: center;
+            font-size: 28px;
+            color: #163a5f;
+            margin-bottom: 15px;
+        }
+        .nota {
+            font-size: 14px;
+            color: #555;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .student-info {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .student-info div {
+            flex: 1;
+            min-width: 160px;
+        }
+        .ingresso-box {
+            max-width: 600px;
+        }
+        .separatore {
+            border: none;
+            border-top: 1px solid #dde3ea;
+            margin: 22px 0 12px;
+        }
+        #intestazioneAlunno {
+            text-align: center;
+            color: #555;
+            margin: 0 0 5px;
+            font-size: 16px;
+        }
+        .login-box {
+            max-width: 400px;
+            margin: 50px auto;
+            text-align: center;
+        }
+        .export-box {
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Generatore Esercizi di Associazione PRO</h1>
+
+<!-- MENU NAVIGAZIONE -->
+<div class="main-nav">
+    <button id="navStudenteBtn" class="nav-btn active" onclick="mostraSezione('studente')">👨‍🎓 Area Studente</button>
+    <button id="navDocenteBtn" class="nav-btn" onclick="mostraSezione('docente')">👨‍🏫 Area Docente</button>
+</div>
+
+<!-- ==================== AREA DOCENTE ==================== -->
+<div id="sezioneLoginDocente" class="panel login-box hidden">
+    <h2>🔒 Accesso Area Docente</h2>
+    <p>Inserisci la password per configurare l'esercizio:</p>
+    <input type="password" id="passDocente" placeholder="Password" onkeydown="if(event.key==='Enter') verificaPasswordDocente()">
+    <button onclick="verificaPasswordDocente()">Accedi</button>
+    <p id="errorePass" style="color:red; display:none;">Password errata. Riprova.</p>
+</div>
+
+<div id="sezioneDocente" class="panel hidden">
+    <h2>⚙️ Pannello di Controllo Docente</h2>
+    
+    <label><b>Titolo esercizio</b></label>
+    <input id="titolo" value="Prima guerra mondiale">
+
+    <label><b>Tempo massimo in minuti (0 = nessun timer)</b></label>
+    <input id="tempo" type="number" value="5">
+
+    <label><b>Termini e definizioni corrette</b></label>
+    <p class="nota">Formato obbligatorio:<br><b>Termine | Definizione</b></p>
+    <textarea id="dati">Triplice Intesa|Accordo tra Francia, Regno Unito e Russia
+Triplice Alleanza|Alleanza tra Germania, Austria-Ungheria e Italia
+Attentato di Sarajevo|Uccisione dell'arciduca Francesco Ferdinando nel 1914
+Guerra di trincea|Combattimenti nelle lunghe fortificazioni
+Armistizio|Sospensione dei combattimenti
+Vittorio Veneto|Battaglia italiana decisiva del 1918
+Trattato di Versailles|Trattato imposto alla Germania dopo la guerra</textarea>
+
+    <label><b>Definizioni distrattrici</b></label>
+    <textarea id="distrattori">Sbarco in Normandia del 1944
+Piano Marshall per la ricostruzione europea
+Caduta del Muro di Berlino</textarea>
+
+    <button onclick="salvaEPubblica()" class="btn-success">
+        🚀 GENERA E AGGIORNA ESERCIZIO PER LO STUDENTE
+    </button>
+
+    <div class="btn-group" style="margin-top: 15px;">
+        <button onclick="salvaImpostazioniLocale()" class="btn-secondary">
+            💾 SALVA IN LOCALE
+        </button>
+        <button onclick="esportaJSON()" class="btn-secondary">
+            🔒 ESPORTA FILE JSON PROTETTO
+        </button>
+        <button onclick="document.getElementById('fileJSON').click()" class="btn-secondary">
+            📤 IMPORTA FILE JSON
+        </button>
+        <input type="file" id="fileJSON" accept=".json" style="display:none" onchange="importaJSON(event)">
+    </div>
+</div>
+
+<!-- ==================== AREA STUDENTE ==================== -->
+<div id="sezioneStudente">
+
+<!-- Schermata 1: dati alunno (il timer NON è ancora partito) -->
+<div id="schermataIngresso" class="panel ingresso-box">
+    <h2>👋 Prima di iniziare</h2>
+    <p id="titoloIngresso" style="font-size:18px; font-weight:bold; color:#163a5f;"></p>
+    <p class="nota">Inserisci i tuoi dati. Il tempo parte solo quando premi "Inizia l'esercizio".</p>
+
+    <div class="student-info">
+        <div>
+            <label><b>Nome:</b></label>
+            <input type="text" id="nomeAlunno" placeholder="Il tuo nome" autocomplete="off">
+        </div>
+        <div>
+            <label><b>Cognome:</b></label>
+            <input type="text" id="cognomeAlunno" placeholder="Il tuo cognome" autocomplete="off">
+        </div>
+        <div>
+            <label><b>Classe:</b></label>
+            <input type="text" id="classeAlunno" placeholder="Es. 3A" autocomplete="off" onkeydown="if(event.key==='Enter') iniziaGioco()">
+        </div>
+    </div>
+
+    <button onclick="iniziaGioco()" class="btn-success" style="font-size: 20px; padding: 15px;">
+        ▶️ INIZIA L'ESERCIZIO
+    </button>
+
+    <hr class="separatore">
+    <p class="nota">Hai ricevuto un file dall'insegnante? Caricalo qui (non può essere letto, solo caricato).</p>
+    <button onclick="document.getElementById('fileJSONStudente').click()" class="btn-secondary">
+        📤 CARICA FILE ESERCIZIO (JSON)
+    </button>
+    <input type="file" id="fileJSONStudente" accept=".json" style="display:none" onchange="caricaDaStudente(event)">
+</div>
+
+<!-- Schermata 2: gioco (visibile solo dopo l'inserimento dei dati) -->
+<div id="schermataGioco" class="panel hidden">
+    <p id="intestazioneAlunno"></p>
+    <h2 id="titoloAlunno"></h2>
+
+    <div id="timer"></div>
+
+    <div class="contenitore">
+        <div class="colonna">
+            <h2>Termini</h2>
+            <div id="areaTermini"></div>
+        </div>
+
+        <div class="colonna">
+            <h2>Definizioni</h2>
+            <div class="btn-group" style="margin-bottom: 10px;">
+                <button onclick="rimescola()" class="btn-secondary">🔀 RIMESCOLA DEFINIZIONI</button>
+                <button onclick="resetEsercizio()" class="btn-secondary">♻ RESET ESERCIZIO</button>
+            </div>
+            <div id="areaDefinizioni"></div>
+        </div>
+    </div>
+
+    <button onclick="verifica()" style="font-size: 20px; padding: 15px;">
+        ✅ VERIFICA RISPOSTE
+    </button>
+
+    <div id="risultato"></div>
+
+    <div id="boxEsportaRisultato" class="export-box hidden">
+        <button onclick="scaricaReportPrestazione()" class="btn-success" style="font-size: 18px; padding: 12px;">
+            📋 SCARICA REPORT DELLA PRESTAZIONE
+        </button>
+        <button onclick="nuovoAlunno()" class="btn-secondary" style="font-size: 16px;">
+            🔄 NUOVO ALUNNO
+        </button>
+    </div>
+</div>
+
+</div>
+
+<script>
+let soluzioni = {};
+let tempoTotale = 0;
+let timerID = null;
+let definizioniOriginali = [];
+let datiAlunno = null;
+let tentativi = [];
+let inizioTentativo = null;
+let provaConclusa = false;
+
+// Chiave interna dell'app: serve a cifrare/decifrare i file JSON esportati.
+// Cambiala se vuoi (ma i file creati con una chiave diversa non si apriranno più).
+const CHIAVE_APP = "storia-builder::chiave-interna::v1::cambia-questa-frase";
+
+function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+window.onload = function() {
+    caricaImpostazioniLocale();
+    creaEsercizio();
+};
+
+function mostraSezione(sezione) {
+    document.getElementById("navStudenteBtn").classList.remove("active");
+    document.getElementById("navDocenteBtn").classList.remove("active");
+
+    if (sezione === 'docente') {
+        document.getElementById("navDocenteBtn").classList.add("active");
+        document.getElementById("sezioneStudente").classList.add("hidden");
+        
+        document.getElementById("passDocente").value = "";
+        document.getElementById("errorePass").style.display = "none";
+        document.getElementById("sezioneLoginDocente").classList.remove("hidden");
+        document.getElementById("sezioneDocente").classList.add("hidden");
+    } else {
+        document.getElementById("navStudenteBtn").classList.add("active");
+        document.getElementById("sezioneStudente").classList.remove("hidden");
+        document.getElementById("sezioneLoginDocente").classList.add("hidden");
+        document.getElementById("sezioneDocente").classList.add("hidden");
+    }
+}
+
+function verificaPasswordDocente() {
+    let pass = document.getElementById("passDocente").value;
+    if (pass === "doc2026") {
+        document.getElementById("errorePass").style.display = "none";
+        document.getElementById("sezioneLoginDocente").classList.add("hidden");
+        document.getElementById("sezioneDocente").classList.remove("hidden");
+        document.getElementById("passDocente").value = "";
+    } else {
+        document.getElementById("errorePass").style.display = "block";
+    }
+}
+
+function mescola(array) {
+    return array.sort(() => Math.random() - 0.5);
+}
+
+function ottieniDatiForm() {
+    return {
+        titolo: document.getElementById("titolo").value,
+        tempo: document.getElementById("tempo").value,
+        dati: document.getElementById("dati").value,
+        distrattori: document.getElementById("distrattori").value
+    };
+}
+
+function applicaDatiForm(config) {
+    if (config.titolo !== undefined) document.getElementById("titolo").value = config.titolo;
+    if (config.tempo !== undefined) document.getElementById("tempo").value = config.tempo;
+    if (config.dati !== undefined) document.getElementById("dati").value = config.dati;
+    if (config.distrattori !== undefined) document.getElementById("distrattori").value = config.distrattori;
+}
+
+function salvaImpostazioniLocale() {
+    let config = ottieniDatiForm();
+    try {
+        localStorage.setItem("esercizio_associazioni_config", JSON.stringify(config));
+        alert("Impostazioni salvate nel browser!");
+    } catch (e) {
+        alert("Impossibile salvare nel browser in questo ambiente.");
+    }
+}
+
+function caricaImpostazioniLocale() {
+    let salvati = null;
+    try { salvati = localStorage.getItem("esercizio_associazioni_config"); } catch (e) {}
+    if (salvati) {
+        try {
+            let config = JSON.parse(salvati);
+            applicaDatiForm(config);
+        } catch(e) {
+            console.error("Errore nel caricamento delle impostazioni locali", e);
+        }
+    }
+}
+
+function salvaEPubblica() {
+    salvaImpostazioniLocale();
+    creaEsercizio();
+    alert("Nuovo esercizio generato e pubblicato nell'Area Studente!");
+    mostraSezione('studente');
+}
+
+// ---------- Cifratura file (AES-GCM, chiave derivata con PBKDF2) ----------
+function bytesToB64(bytes) {
+    let bin = "";
+    for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin);
+}
+
+function b64ToBytes(b64) {
+    let bin = atob(b64);
+    let bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes;
+}
+
+async function derivaChiave(salt) {
+    let base = await crypto.subtle.importKey(
+        "raw", new TextEncoder().encode(CHIAVE_APP), "PBKDF2", false, ["deriveKey"]
+    );
+    return crypto.subtle.deriveKey(
+        { name: "PBKDF2", salt: salt, iterations: 100000, hash: "SHA-256" },
+        base,
+        { name: "AES-GCM", length: 256 },
+        false,
+        ["encrypt", "decrypt"]
+    );
+}
+
+async function cifraConfig(config) {
+    let salt = crypto.getRandomValues(new Uint8Array(16));
+    let iv = crypto.getRandomValues(new Uint8Array(12));
+    let chiave = await derivaChiave(salt);
+    let cifrato = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv: iv },
+        chiave,
+        new TextEncoder().encode(JSON.stringify(config))
+    );
+    return {
+        formato: "storia-builder-cifrato",
+        versione: 1,
+        salt: bytesToB64(salt),
+        iv: bytesToB64(iv),
+        dati: bytesToB64(new Uint8Array(cifrato))
+    };
+}
+
+async function decifraConfig(oggetto) {
+    let chiave = await derivaChiave(b64ToBytes(oggetto.salt));
+    let chiaro = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: b64ToBytes(oggetto.iv) },
+        chiave,
+        b64ToBytes(oggetto.dati)
+    );
+    return JSON.parse(new TextDecoder().decode(chiaro));
+}
+
+// Legge un file JSON (cifrato o, per compatibilità, vecchio formato in chiaro)
+async function leggiFileConfig(file) {
+    let testo = await file.text();
+    let oggetto = JSON.parse(testo);
+    let config;
+
+    if (oggetto && oggetto.formato === "storia-builder-cifrato") {
+        if (!window.crypto || !crypto.subtle) throw new Error("Cifratura non disponibile in questo browser");
+        config = await decifraConfig(oggetto);
+    } else {
+        config = oggetto;
+    }
+
+    if (!config || typeof config.dati !== "string") throw new Error("File non valido");
+    return config;
+}
+
+async function scaricaFile(contenuto, nomeFile) {
+    // Nella pagina pubblicata usa il sistema di download della piattaforma;
+    // nel file HTML scaricato sul computer usa il normale download del browser.
+    let downloads = null;
+    try {
+        if (typeof claude !== "undefined" && claude.use) downloads = await claude.use("downloads");
+    } catch (e) {}
+
+    if (downloads) {
+        try {
+            await downloads.save({ filename: nomeFile, data: contenuto });
+        } catch (e) {
+            if (e && e.code !== "declined") alert("Impossibile salvare il file.");
+        }
+        return;
+    }
+
+    let blob = new Blob([contenuto], { type: "application/octet-stream" });
+    let url = URL.createObjectURL(blob);
+    let a = document.createElement("a");
+    a.href = url;
+    a.download = nomeFile;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+async function esportaJSON() {
+    let config = ottieniDatiForm();
+    let nomeFile = (config.titolo || "esercizio").replace(/[^a-z0-9]/gi, '_').toLowerCase() + ".json";
+
+    if (!window.crypto || !crypto.subtle) {
+        if (!confirm("Questo browser non supporta la cifratura: il file verrebbe salvato IN CHIARO (leggibile da chiunque). Vuoi continuare?")) return;
+        scaricaFile(JSON.stringify(config, null, 2), nomeFile);
+        return;
+    }
+
+    try {
+        let protetto = await cifraConfig(config);
+        scaricaFile(JSON.stringify(protetto, null, 2), nomeFile);
+    } catch (err) {
+        alert("Errore durante la creazione del file protetto.");
+    }
+}
+
+async function importaJSON(event) {
+    let file = event.target.files[0];
+    event.target.value = "";
+    if (!file) return;
+
+    try {
+        let config = await leggiFileConfig(file);
+        applicaDatiForm(config);
+        salvaImpostazioniLocale();
+        alert("Esercizio caricato con successo!");
+        creaEsercizio();
+    } catch (err) {
+        alert("Errore nel caricamento del file JSON. Verificare che il file sia valido.");
+    }
+}
+
+// Upload da parte dello studente: carica l'esercizio senza mostrarne il contenuto
+async function caricaDaStudente(event) {
+    let file = event.target.files[0];
+    event.target.value = "";
+    if (!file) return;
+
+    try {
+        let config = await leggiFileConfig(file);
+        applicaDatiForm(config);
+        creaEsercizio();
+        alert("Esercizio caricato: " + (config.titolo || "senza titolo") + "\nInserisci i tuoi dati e premi INIZIA.");
+    } catch (err) {
+        alert("Impossibile caricare il file. Controlla di aver scelto il file giusto inviato dall'insegnante.");
+    }
+}
+
+function creaEsercizio() {
+    clearInterval(timerID);
+    soluzioni = {};
+    definizioniOriginali = [];
+    datiAlunno = null;
+    tentativi = [];
+    provaConclusa = false;
+
+    // Torna alla schermata di ingresso: il gioco resta nascosto e il timer fermo
+    document.getElementById("schermataGioco").classList.add("hidden");
+    document.getElementById("schermataIngresso").classList.remove("hidden");
+    document.getElementById("timer").innerHTML = "";
+
+    document.getElementById("areaTermini").innerHTML = "";
+    document.getElementById("areaDefinizioni").innerHTML = "";
+    document.getElementById("risultato").innerHTML = "";
+    document.getElementById("boxEsportaRisultato").classList.add("hidden");
+
+    let titolo = document.getElementById("titolo").value;
+    document.getElementById("titoloAlunno").innerHTML = titolo;
+    document.getElementById("titoloIngresso").textContent = titolo ? "📘 " + titolo : "";
+
+    let righe = document.getElementById("dati").value.split("\n");
+    let indice = 0;
+
+    righe.forEach(riga => {
+        if (riga.includes("|")) {
+            let parti = riga.split("|");
+            let termine = parti[0].trim();
+            let definizione = parti[1].trim();
+
+            let id = "risposta_" + indice;
+            soluzioni[id] = definizione;
+
+            let blocco = document.createElement("div");
+            blocco.className = "termine";
+            blocco.innerHTML = "<b>" + termine + "</b><div class='dropzone' data-id='" + id + "'></div><div class='soluzione-container'></div>";
+
+            document.getElementById("areaTermini").appendChild(blocco);
+
+            definizioniOriginali.push({
+                id: id,
+                testo: definizione
+            });
+
+            indice++;
+        }
+    });
+
+    let distr = document.getElementById("distrattori").value.split("\n");
+    let numero = 0;
+
+    distr.forEach(d => {
+        if (d.trim() != "") {
+            definizioniOriginali.push({
+                id: "distr_" + numero,
+                testo: d.trim()
+            });
+            numero++;
+        }
+    });
+
+    rimescola();
+    attivaDrop();
+}
+
+// Chiamata dal pulsante "Inizia": solo ora parte il timer
+function iniziaGioco() {
+    let nome = document.getElementById("nomeAlunno").value.trim();
+    let cognome = document.getElementById("cognomeAlunno").value.trim();
+    let classe = document.getElementById("classeAlunno").value.trim();
+
+    if (!nome || !cognome || !classe) {
+        alert("Per favore, inserisci Nome, Cognome e Classe prima di iniziare!");
+        return;
+    }
+    if (Object.keys(soluzioni).length === 0) {
+        alert("Nessun esercizio disponibile. Carica il file dell'insegnante o chiedi aiuto.");
+        return;
+    }
+
+    datiAlunno = { nome: nome, cognome: cognome, classe: classe };
+    tentativi = [];
+    provaConclusa = false;
+    inizioTentativo = new Date();
+
+    document.getElementById("intestazioneAlunno").textContent = "👤 " + nome + " " + cognome + " — Classe " + classe;
+    document.getElementById("schermataIngresso").classList.add("hidden");
+    document.getElementById("schermataGioco").classList.remove("hidden");
+
+    clearInterval(timerID);
+    let minuti = parseInt(document.getElementById("tempo").value);
+    if (minuti > 0) {
+        tempoTotale = minuti * 60;
+        avviaTimer();
+    } else {
+        document.getElementById("timer").innerHTML = "";
+    }
+}
+
+function nuovoAlunno() {
+    document.getElementById("nomeAlunno").value = "";
+    document.getElementById("cognomeAlunno").value = "";
+    document.getElementById("classeAlunno").value = "";
+    creaEsercizio();
+}
+
+function mostraDefinizioni(lista) {
+    let area = document.getElementById("areaDefinizioni");
+    area.innerHTML = "";
+
+    lista.forEach(d => {
+        let elemento = document.createElement("div");
+        elemento.className = "definizione";
+        elemento.id = d.id;
+        elemento.draggable = true;
+        elemento.innerHTML = d.testo;
+
+        elemento.ondragstart = function(e) {
+            e.dataTransfer.setData("text/plain", this.id);
+        };
+
+        elemento.onclick = function() {
+            area.appendChild(this);
+        };
+
+        area.appendChild(elemento);
+    });
+}
+
+function rimescola() {
+    let lista = [...definizioniOriginali];
+    mescola(lista);
+    mostraDefinizioni(lista);
+}
+
+function attivaDrop() {
+    document.querySelectorAll(".dropzone").forEach(zona => {
+        zona.ondragover = function(e) {
+            e.preventDefault();
+        };
+
+        zona.ondrop = function(e) {
+            e.preventDefault();
+            let id = e.dataTransfer.getData("text/plain");
+            let elemento = document.getElementById(id);
+
+            if (this.children.length > 0) {
+                document.getElementById("areaDefinizioni").appendChild(this.children[0]);
+            }
+
+            this.innerHTML = "";
+            this.appendChild(elemento);
+        };
+    });
+}
+
+function resetEsercizio() {
+    document.querySelectorAll(".dropzone").forEach(z => {
+        if (z.children.length > 0) {
+            document.getElementById("areaDefinizioni").appendChild(z.children[0]);
+        }
+        z.className = "dropzone";
+    });
+    document.querySelectorAll(".soluzione-container").forEach(s => {
+        s.innerHTML = "";
+    });
+    document.getElementById("risultato").innerHTML = "";
+
+    // Se la prova era già stata verificata, il reset avvia un nuovo tentativo
+    if (datiAlunno && provaConclusa) {
+        provaConclusa = false;
+        inizioTentativo = new Date();
+        clearInterval(timerID);
+        let minuti = parseInt(document.getElementById("tempo").value);
+        if (minuti > 0) {
+            tempoTotale = minuti * 60;
+            avviaTimer();
+        }
+    }
+}
+
+function mostraTempo() {
+    let minuti = Math.floor(tempoTotale / 60);
+    let secondi = tempoTotale % 60;
+    document.getElementById("timer").innerHTML = "⏱ Tempo rimanente: " + minuti + ":" + (secondi < 10 ? "0" : "") + secondi;
+}
+
+function avviaTimer() {
+    mostraTempo();
+    timerID = setInterval(() => {
+        tempoTotale--;
+
+        if (tempoTotale < 0) {
+            clearInterval(timerID);
+            document.getElementById("timer").innerHTML = "⏱ Tempo scaduto!";
+            alert("Tempo scaduto!");
+            verifica();
+            return;
+        }
+        mostraTempo();
+    }, 1000);
+}
+
+function verifica() {
+    if (!datiAlunno || provaConclusa) return;
+    provaConclusa = true;
+
+    let nome = datiAlunno.nome;
+    let cognome = datiAlunno.cognome;
+    let classe = datiAlunno.classe;
+
+    clearInterval(timerID);
+
+    let punti = 0;
+    let totale = Object.keys(soluzioni).length;
+    let dettaglioCorrette = [];
+    let dettaglioErrate = [];
+
+    document.querySelectorAll(".dropzone").forEach(z => {
+        z.classList.remove("corretta", "errata");
+        let contenitoreSoluzione = z.parentElement.querySelector(".soluzione-container");
+        contenitoreSoluzione.innerHTML = ""; // Pulizia eventuali note precedenti
+
+        let elemento = z.querySelector(".definizione");
+        let rispostaCorretta = soluzioni[z.dataset.id];
+        let etichettaTermine = z.parentElement.querySelector("b").innerText.trim();
+
+        if (elemento && elemento.innerText.trim() === rispostaCorretta.trim()) {
+            z.classList.add("corretta");
+            punti++;
+            dettaglioCorrette.push({ termine: etichettaTermine, risposta: rispostaCorretta.trim() });
+        } else {
+            dettaglioErrate.push({
+                termine: etichettaTermine,
+                data: elemento ? elemento.innerText.trim() : "(nessuna risposta)",
+                corretta: rispostaCorretta.trim()
+            });
+            z.classList.add("errata");
+            // Mostra la risposta corretta in caso di errore o mancata risposta
+            contenitoreSoluzione.innerHTML = "<div class='soluzione-corretta-nota'>💡 <b>Risposta corretta:</b> " + rispostaCorretta + "</div>";
+        }
+    });
+
+    let percentuale = Math.round((punti / totale) * 100);
+    let fine = new Date();
+    let dataEsecuzione = fine.toLocaleString("it-IT");
+
+    tentativi.push({
+        numero: tentativi.length + 1,
+        inizio: inizioTentativo.toLocaleString("it-IT"),
+        fine: dataEsecuzione,
+        durataSec: Math.round((fine - inizioTentativo) / 1000),
+        punti: punti,
+        totale: totale,
+        percentuale: percentuale,
+        corrette: dettaglioCorrette,
+        errate: dettaglioErrate
+    });
+
+    document.getElementById("risultato").innerHTML = 
+        "<b>Risultato di " + esc(nome) + " " + esc(cognome) + " (" + esc(classe) + "):</b><br>" +
+        "Punteggio: " + punti + " / " + totale + " (" + percentuale + "%)<br>" +
+        "<small style='font-size:14px; font-weight:normal; color:#666;'>Data: " + dataEsecuzione + "</small>";
+
+    document.getElementById("boxEsportaRisultato").classList.remove("hidden");
+}
+
+function formatDurata(sec) {
+    let m = Math.floor(sec / 60);
+    let s = sec % 60;
+    return m + " min " + (s < 10 ? "0" : "") + s + " sec";
+}
+
+function scaricaReportPrestazione() {
+    if (!datiAlunno || tentativi.length === 0) {
+        alert("Nessun report disponibile. Completa prima l'esercizio e premi VERIFICA!");
+        return;
+    }
+
+    let linea = "========================================\n";
+    let sottolinea = "----------------------------------------\n";
+    let titolo = document.getElementById("titolo").value;
+
+    let r = linea +
+            "REPORT DELLA PRESTAZIONE\n" +
+            linea + "\n" +
+            "Alunno: " + datiAlunno.nome + " " + datiAlunno.cognome + "\n" +
+            "Classe: " + datiAlunno.classe + "\n" +
+            "Esercizio: " + titolo + "\n" +
+            "Data e ora di svolgimento: " + tentativi[0].inizio + "\n" +
+            "Numero di tentativi effettuati: " + tentativi.length + "\n\n";
+
+    if (tentativi.length > 1) {
+        r += "RIEPILOGO TENTATIVI\n" + sottolinea;
+        tentativi.forEach(t => {
+            r += "Tentativo " + t.numero + ": " + t.punti + "/" + t.totale +
+                 " (" + t.percentuale + "%)\n";
+        });
+        r += "\n";
+    }
+
+    tentativi.forEach(t => {
+        r += linea +
+             "TENTATIVO " + t.numero + " di " + tentativi.length + "\n" +
+             linea +
+             "Inizio: " + t.inizio + "\n" +
+             "Fine: " + t.fine + "\n" +
+             "Durata: " + formatDurata(t.durataSec) + "\n" +
+             "Risposte corrette: " + t.corrette.length + "\n" +
+             "Risposte errate: " + t.errate.length + "\n" +
+             "Punteggio: " + t.punti + " / " + t.totale + " (" + t.percentuale + "%)\n\n";
+
+        r += "RISPOSTE CORRETTE\n" + sottolinea;
+        if (t.corrette.length === 0) {
+            r += "(nessuna)\n";
+        } else {
+            t.corrette.forEach(c => { r += "- " + c.termine + " -> " + c.risposta + "\n"; });
+        }
+
+        r += "\nRISPOSTE ERRATE\n" + sottolinea;
+        if (t.errate.length === 0) {
+            r += "(nessuna)\n";
+        } else {
+            t.errate.forEach(e => {
+                r += "- " + e.termine + "\n" +
+                     "    Risposta data: " + e.data + "\n" +
+                     "    Risposta corretta: " + e.corretta + "\n";
+            });
+        }
+        r += "\n";
+    });
+
+    let nomeFile = ("report_" + datiAlunno.classe + "_" + datiAlunno.cognome + "_" + datiAlunno.nome + "_" + titolo)
+        .replace(/[^a-z0-9]/gi, '_').toLowerCase();
+
+    scaricaFile(r, nomeFile + ".txt");
+}
+</script>
+
+</body>
+</html>
