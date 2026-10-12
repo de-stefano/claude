@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Esercizio di digitazione</title>
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--tx:#1d2433;--mut:#667;--ac:#2f5bd8;--bd:#d5dbe8;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#171b26;--card:#222838;--tx:#e8ebf4;--mut:#9aa3b8;--ac:#6f93ff;--bd:#38405a}}
+:root[data-theme="dark"]{--bg:#171b26;--card:#222838;--tx:#e8ebf4;--mut:#9aa3b8;--ac:#6f93ff;--bd:#38405a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:16px}
+h1{font-size:1.4rem;margin:0 0 12px}
+.tabs{display:flex;gap:6px;margin-bottom:12px}
+.tab{flex:1;padding:10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:8px;font-size:.95rem;cursor:pointer}
+.tab.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.tab:disabled{opacity:.45;cursor:not-allowed}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:18px}
+.page{display:none}.page.on{display:block}
+label{display:block;font-weight:600;margin:12px 0 4px}
+input,textarea{width:100%;padding:10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font:inherit}
+textarea.big{min-height:180px}
+button.b{padding:10px 16px;border:0;border-radius:8px;background:var(--ac);color:#fff;font-size:.95rem;cursor:pointer}
+button.b.sec{background:transparent;color:var(--tx);border:1px solid var(--bd)}
+button.b:disabled{opacity:.4;cursor:not-allowed}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;align-items:center}
+.msg{color:#c62828;margin-top:8px;min-height:1.2em}
+.stat{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:10px;font-weight:600}
+.stat span{color:var(--mut);font-weight:400}
+#show{height:190px;overflow-y:auto;border:1px solid var(--bd);border-radius:8px;padding:12px;font:20px/1.7 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;word-wrap:break-word;user-select:none;-webkit-user-select:none;cursor:default;background:var(--bg)}
+#show .cur{background:#ffe600;color:#000;border-radius:3px}
+.ov{position:relative;height:150px;margin-top:12px}
+.ov>*{position:absolute;inset:0;margin:0;padding:12px;border:1px solid var(--bd);border-radius:8px;font:20px/1.7 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;word-wrap:break-word;overflow:hidden;letter-spacing:0}
+#mir{background:var(--bg);color:var(--tx)}
+#inp{background:transparent;color:transparent;caret-color:var(--tx);resize:none;width:100%}
+.err{color:#e11d1d;background:rgba(225,29,29,.18)}
+#report{display:none}
+#report h3{margin:22px 0 0;page-break-after:avoid}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);align-items:center;justify-content:center;z-index:99;padding:16px}
+.modal>div{background:var(--card);color:var(--tx);border-radius:14px;padding:26px 30px;text-align:center;max-width:380px}
+.modal h2{margin:0 0 8px}
+#report table{border-collapse:collapse;width:100%;margin-top:14px}
+#report td{border:1px solid #888;padding:8px 10px}
+#report td:first-child{font-weight:600;width:55%}
+@media print{.modal{display:none!important}body>.wrap{display:none}#report{display:block;color:#000;background:#fff;padding:20px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>⌨️ Esercizio di digitazione</h1>
+<div class="tabs">
+<button class="tab on" id="t1">1 · Alunno</button>
+<button class="tab" id="t2" disabled>2 · Testo</button>
+<button class="tab" id="t3" disabled>3 · Esercizio</button>
+</div>
+
+<div class="card page on" id="p1">
+<label for="cog">Cognome</label><input id="cog" autocomplete="off">
+<label for="nom">Nome</label><input id="nom" autocomplete="off">
+<label for="cla">Classe</label><input id="cla" autocomplete="off">
+<div class="msg" id="m1"></div>
+<div class="row"><button class="b" id="go1">Avanti →</button></div>
+</div>
+
+<div class="card page" id="p2">
+<label for="tit">Titolo dell'esercizio</label><input id="tit" autocomplete="off">
+<label for="txt">Testo da digitare (incolla o scrivi)</label><textarea id="txt" class="big"></textarea>
+<label for="tim">Timer in secondi (0 = nessun timer)</label><input id="tim" type="number" min="0" value="300" style="max-width:160px">
+<div class="msg" id="m2"></div>
+<div class="row"><button class="b sec" id="back2">← Indietro</button><button class="b" id="go2">Inizia l'esercizio →</button></div>
+</div>
+
+<div class="card page" id="p3">
+<div class="stat">
+<div><span>Tempo: </span><b id="clk">0:00</b></div>
+<div><span>Tentativo n. </span><b id="att">1</b></div>
+<div><span>Errori: </span><b id="ner">0</b></div>
+</div>
+<div id="show" oncopy="return false" oncut="return false" oncontextmenu="return false" ondragstart="return false"></div>
+<div class="ov"><div id="mir" aria-hidden="true"></div><textarea id="inp" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" placeholder=""></textarea></div>
+<div class="msg" id="m3" style="color:var(--mut)">Clicca nel campo e comincia a scrivere: il tempo parte dal primo tasto.</div>
+<div class="row">
+<button class="b" id="bPrint" disabled>🖨️ Stampa / salva report</button>
+<button class="b sec" id="bFin">Termina ora</button>
+<button class="b sec" id="bReset">🔄 Gioca di nuovo</button>
+<button class="b sec" id="bNew">📝 Nuovo testo</button>
+<button class="b sec" id="bExit" disabled>🚪 Esci</button>
+</div>
+</div>
+</div>
+
+<div class="modal" id="modal" role="alertdialog" aria-live="assertive"><div><h2>⏰ Tempo scaduto!</h2><p>Il tempo a disposizione è terminato. Puoi stampare il report, giocare di nuovo o scegliere un nuovo testo.</p><button class="b" id="modalOk">OK</button></div></div>
+<div id="report"></div>
+
+<script>
+const $=id=>document.getElementById(id);
+let S={runs:[],cog:'',nom:'',cla:'',tit:'',text:'',limit:300,words:[],att:0,start:0,end:0,ok:0,bad:0,total:0,prev:'',running:false,done:false,printed:false,iv:null,date:null,newText:true};
+
+function goTab(n){
+  [1,2,3].forEach(i=>{$('p'+i).classList.toggle('on',i===n);$('t'+i).classList.toggle('on',i===n)});
+}
+$('t1').onclick=()=>goTab(1);
+$('t2').onclick=()=>goTab(2);
+$('t3').onclick=()=>goTab(3);
+
+$('go1').onclick=()=>{
+  const c=$('cog').value.trim(),n=$('nom').value.trim(),k=$('cla').value.trim();
+  if(!c||!n||!k){$('m1').textContent='Compila cognome, nome e classe.';return}
+  $('m1').textContent='';S.cog=c;S.nom=n;S.cla=k;
+  $('t2').disabled=false;goTab(2);
+};
+$('back2').onclick=()=>goTab(1);
+
+$('go2').onclick=()=>{
+  const t=$('txt').value.replace(/\s+/g,' ').trim();
+  const lim=parseInt($('tim').value,10);
+  if(!t){$('m2').textContent='Inserisci il testo da digitare.';return}
+  if(isNaN(lim)||lim<0){$('m2').textContent='Il timer deve essere un numero maggiore o uguale a zero.';return}
+  $('m2').textContent='';
+  if(t!==S.text){S.att=0}
+  S.text=t;S.tit=$('tit').value.trim()||'(senza titolo)';S.limit=lim;
+  $('t3').disabled=false;
+  buildShow();resetEx();goTab(3);
+};
+
+function buildShow(){
+  const box=$('show');box.textContent='';S.words=[];
+  const re=/\S+/g;let m;
+  while((m=re.exec(S.text))){S.words.push({s:m.index,e:m.index+m[0].length})}
+  let last=0;
+  S.words.forEach((w,i)=>{
+    if(w.s>last)box.appendChild(document.createTextNode(S.text.slice(last,w.s)));
+    const sp=document.createElement('span');sp.textContent=S.text.slice(w.s,w.e);sp.id='w'+i;box.appendChild(sp);last=w.e;
+  });
+}
+
+function resetEx(){
+  clearInterval(S.iv);
+  Object.assign(S,{start:0,end:0,ok:0,bad:0,total:0,prev:'',running:false,done:false,printed:false});
+  const inp=$('inp');inp.value='';inp.disabled=false;
+  $('mir').textContent='';$('ner').textContent='0';
+  $('bPrint').disabled=true;$('bExit').disabled=true;$('bFin').disabled=false;
+  $('att').textContent=Math.max(S.att,1);
+  $('clk').textContent=S.limit>0?fmt(S.limit*1000):'0:00';
+  $('m3').textContent='Clicca nel campo e comincia a scrivere: il tempo parte dal primo tasto.';
+  $('show').scrollTop=0;
+  mark(0);inp.focus();
+}
+function fmt(ms){const s=Math.max(0,Math.round(ms/1000));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+
+function mark(pos){
+  const box=$('show');
+  box.querySelectorAll('.cur').forEach(e=>e.classList.remove('cur'));
+  if(!S.words.length)return;
+  let idx=S.words.findIndex(w=>pos>=w.s&&pos<w.e);
+  if(idx<0){
+    // posizione su uno spazio: resta sulla parola appena finita
+    idx=S.words.findIndex(w=>pos<w.s);
+    idx=idx<0?S.words.length-1:Math.max(0,idx-1);
+    if(pos<S.words[0].s)idx=0;
+  }
+  const el=$('w'+idx);
+  if(el&&!S.done){
+    el.classList.add('cur');
+    const top=el.offsetTop,h=el.offsetHeight;
+    if(top<box.scrollTop+10||top+h>box.scrollTop+box.clientHeight-10)box.scrollTop=top-box.clientHeight/2;
+  }
+}
+
+function render(v){
+  const mir=$('mir');mir.textContent='';
+  const frag=document.createDocumentFragment();
+  let run='',cls=null;
+  const flush=()=>{if(run){const s=document.createElement('span');if(cls)s.className=cls;s.textContent=run;frag.appendChild(s);run=''}};
+  for(let i=0;i<v.length;i++){
+    const c=(v[i]===S.text[i])?null:'err';
+    if(c!==cls){flush();cls=c}
+    run+=v[i];
+  }
+  flush();
+  frag.appendChild(document.createTextNode('\u200b'));
+  mir.appendChild(frag);
+}
+
+$('inp').addEventListener('input',e=>{
+  if(S.done){return}
+  let v=$('inp').value.replace(/[\r\n]+/g,' ');
+  if(v!==$('inp').value)$('inp').value=v;
+  if(!S.running&&v.length>0){
+    S.running=true;S.start=Date.now();
+    if(S.newAttempt!==false){S.att++;$('att').textContent=S.att}
+    S.iv=setInterval(tick,200);
+  }
+  // conteggio dei caratteri inseriti (anche a metà testo, dopo uno spostamento con le frecce)
+  const pv=S.prev;let p=0;
+  while(p<pv.length&&p<v.length&&pv[p]===v[p])p++;
+  let s=0;
+  while(s<pv.length-p&&s<v.length-p&&pv[pv.length-1-s]===v[v.length-1-s])s++;
+  for(let i=p;i<v.length-s;i++){
+    S.total++;
+    if(v[i]===S.text[i])S.ok++;else S.bad++;
+  }
+  S.prev=v;
+  $('ner').textContent=S.bad;
+  render(v);
+  markCaret();
+  $('mir').scrollTop=$('inp').scrollTop;
+  if(v.length>=S.text.length&&v===S.text)finish();
+});
+$('inp').addEventListener('scroll',()=>{$('mir').scrollTop=$('inp').scrollTop});
+['paste','drop','cut'].forEach(ev=>$('inp').addEventListener(ev,e=>e.preventDefault()));
+// spostamento libero del cursore (frecce, Home/Fine, mouse): la parola gialla segue il cursore
+function markCaret(){if(!S.done)mark($('inp').selectionStart)}
+['keyup','mouseup','click','focus'].forEach(ev=>$('inp').addEventListener(ev,()=>setTimeout(markCaret,0)));
+$('inp').addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&['v','x'].includes(e.key.toLowerCase()))e.preventDefault();
+  if(e.key==='Enter')e.preventDefault();
+});
+
+function tick(){
+  const el=Date.now()-S.start;
+  if(S.limit>0){
+    const left=S.limit*1000-el;
+    $('clk').textContent=fmt(left);
+    if(left<=0)finish('timeout');
+  }else $('clk').textContent=fmt(el);
+}
+function finish(why){
+  if(S.done)return;
+  S.done=true;S.end=Date.now();clearInterval(S.iv);
+  if(!S.running){S.start=S.end}
+  const el=S.limit>0?Math.min(S.end-S.start,S.limit*1000):S.end-S.start;
+  S.end=S.start+el;
+  $('inp').disabled=true;$('bFin').disabled=true;$('bPrint').disabled=false;
+  $('show').querySelectorAll('.cur').forEach(e=>e.classList.remove('cur'));
+  $('clk').textContent=fmt(el);
+  $('m3').textContent=($('inp').value===S.text?'Esercizio completato!':'Tempo scaduto / esercizio terminato.')+' Stampa il report per poter uscire.';
+  S.date=new Date(S.start||Date.now());
+  if(S.running){
+    S.runs.push({tit:S.tit,n:S.att,date:S.date,el:el,ok:S.ok,bad:S.bad,total:S.total,fin:[...$('inp').value].filter((c,i)=>c===S.text[i]).length,len:S.text.length,limit:S.limit,why:why});
+  }
+  if(why==='timeout')$('modal').style.display='flex';
+}
+$('bFin').onclick=()=>finish('manual');
+$('modalOk').onclick=()=>{$('modal').style.display='none'};
+$('bReset').onclick=()=>{if(S.running&&!S.done)finish('manual');S.newAttempt=true;resetEx()};
+$('bNew').onclick=()=>{
+  if(S.running&&!S.done)finish('manual');
+  clearInterval(S.iv);S.running=false;goTab(2);
+};
+
+function buildReport(){
+  const rep=$('report');rep.textContent='';
+  const add=(tag,txt)=>{const e=document.createElement(tag);e.textContent=txt;rep.appendChild(e);return e};
+  add('h2','Report esercizio di digitazione');
+  add('p','Alunno: '+S.cog+' '+S.nom+' – Classe: '+S.cla+' – Tentativi totali: '+S.runs.length);
+  if(!S.runs.length)add('p','Nessun tentativo effettuato.');
+  S.runs.forEach(r=>{
+    add('h3','Tentativo n. '+r.n+' – '+r.tit);
+    const sec=r.el/1000,avg=r.ok>0?sec/r.ok:0;
+    const esito=r.why==='timeout'?'Tempo scaduto':(r.fin===r.len&&r.total>=r.len?'Esercizio completato':'Terminato prima della fine');
+    const rows=[
+      ['Data e ora del gioco',r.date.toLocaleDateString('it-IT')+' '+r.date.toLocaleTimeString('it-IT')],
+      ['Titolo dell\'esercizio',r.tit],
+      ['Esito',esito],
+      ['Tempo di esecuzione',fmt(r.el)+' ('+sec.toFixed(1).replace('.',',')+' secondi)'+(r.limit>0?' su '+r.limit+' s di timer':' – senza timer')],
+      ['Tentativo numero',r.n],
+      ['Caratteri digitati correttamente (spazi compresi)',r.ok],
+      ['Caratteri digitati in modo errato',r.bad],
+      ['Totale caratteri digitati (corretti + errati)',r.total],
+      ['Caratteri totali corretti nel testo finale',r.fin+' su '+r.len],
+      ['Tempo medio per carattere corretto',avg.toFixed(2).replace('.',',')+' secondi']
+    ];
+    const t=document.createElement('table');
+    rows.forEach(([a,b])=>{const tr=t.insertRow();tr.insertCell().textContent=a;tr.insertCell().textContent=b});
+    rep.appendChild(t);
+  });
+}
+function buildReportOld(){
+  const el=S.end-S.start;
+  const sec=el/1000;
+  const avg=S.ok>0?(sec/S.ok):0;
+  const d=S.date||new Date();
+  const r=[
+    ['Cognome',S.cog],['Nome',S.nom],['Classe',S.cla],
+    ['Data e ora dell\'esercizio',d.toLocaleDateString('it-IT')+' '+d.toLocaleTimeString('it-IT')],
+    ['Titolo dell\'esercizio',S.tit],
+    ['Tempo di esecuzione',fmt(el)+' ('+sec.toFixed(1).replace('.',',')+' secondi)'+(S.limit>0?' su '+S.limit+' s di timer':' – senza timer')],
+    ['Volte in cui è stato effettuato l\'esercizio',S.att],
+    ['Caratteri digitati correttamente (spazi compresi)',S.ok],
+    ['Caratteri digitati in modo errato',S.bad],
+    ['Totale caratteri digitati (corretti + errati)',S.total],
+    ['Caratteri totali corretti nel testo finale',[...$('inp').value].filter((c,i)=>c===S.text[i]).length+' su '+S.text.length],
+    ['Tempo medio per carattere corretto',avg.toFixed(2).replace('.',',')+' secondi']
+  ];
+  const rep=$('report');rep.textContent='';
+  const h=document.createElement('h2');h.textContent='Report esercizio di digitazione';rep.appendChild(h);
+  const t=document.createElement('table');
+  r.forEach(([a,b])=>{const tr=t.insertRow();tr.insertCell().textContent=a;tr.insertCell().textContent=b});
+  rep.appendChild(t);
+}
+$('bPrint').onclick=()=>{
+  buildReport();
+  S.printed=true;$('bExit').disabled=false;
+  window.print();
+};
+$('bExit').onclick=()=>{
+  if(!S.printed)return;
+  clearInterval(S.iv);
+  Object.assign(S,{cog:'',nom:'',cla:'',tit:'',text:'',att:0,printed:false,runs:[]});
+  ['cog','nom','cla','tit','txt'].forEach(i=>$(i).value='');
+  $('tim').value=300;$('inp').value='';$('mir').textContent='';
+  $('t2').disabled=true;$('t3').disabled=true;
+  goTab(1);
+};
+window.addEventListener('beforeprint',()=>{if(S.done)buildReport()});
+</script>
+</body>
+</html>
