@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>COMPORTARSI BENE: SCHEDE DI LAVORO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F2F6F9;--ink:#1F2A37;--muted:#4B5B6B;--card:#fff;--line:#C5D3DF;--main:#1B6CA8;--main-d:#14527F;--ok:#2E7D4F;--now:#F2B134}
+*{box-sizing:border-box}
+body,input,textarea,button{text-transform:uppercase}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Atkinson Hyperlegible",Verdana,Arial,sans-serif;font-size:20px;line-height:1.5}
+header{padding:18px 16px 6px;text-align:center}
+header h1{margin:0;font-size:1.5rem}
+.steps{display:flex;justify-content:center;gap:10px;margin:14px 0 4px;padding:0 10px}
+.dot{width:46px;height:46px;border-radius:50%;border:3px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--muted)}
+.dot.done{background:var(--ok);border-color:var(--ok);color:#fff}
+.dot.now{border-color:var(--now);background:var(--now);color:var(--ink)}
+main{max-width:920px;margin:0 auto;padding:12px 16px 40px}
+section{display:none;background:var(--card);border:2px solid var(--line);border-radius:14px;padding:22px}
+section.active{display:block}
+h2{margin:0 0 14px;font-size:1.6rem}
+label{display:block;font-weight:700;margin:18px 0 6px}
+input[type=text],textarea{width:100%;font:inherit;padding:12px 14px;border:3px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+textarea{min-height:130px;resize:vertical}
+input:focus,textarea:focus,button:focus-visible{outline:4px solid var(--now);outline-offset:2px;border-color:var(--main)}
+.foto{display:block;width:100%;max-height:62vh;object-fit:contain;background:#E8EEF3;border-radius:10px;border:2px solid var(--line)}
+.nav{display:flex;justify-content:space-between;gap:12px;margin-top:26px;flex-wrap:wrap}
+button{font:inherit;font-weight:700;padding:14px 26px;border-radius:10px;border:3px solid var(--main);cursor:pointer}
+.avanti{background:var(--main);color:#fff}
+.avanti:hover:not(:disabled){background:var(--main-d)}
+.indietro{background:#fff;color:var(--main)}
+.avanti:disabled{background:#B8C4CF;border-color:#B8C4CF;cursor:not-allowed}
+.hint{color:var(--muted);font-size:.9rem;margin:8px 0 0;min-height:1.3em}
+.scarica+.scarica{margin-left:10px}
+.scarica{background:var(--ok);border-color:var(--ok);color:#fff;font-size:1.2rem;padding:18px 30px}
+#rep{display:none}
+@media print{header,main{display:none!important}#rep{display:block;font-size:14pt;color:#000}#rep h1{font-size:20pt}#rep h2{font-size:15pt;margin-top:18pt}body{background:#fff}}
+@media(max-width:560px){body{font-size:18px}.dot{width:38px;height:38px}}
+</style>
+</head>
+<body>
+<header><h1>Comportarsi bene: schede di lavoro</h1><div class="steps" id="steps"></div></header>
+<main id="main"></main>
+<div id="rep"></div>
+
+<script>
+const SCHEDE=[
+ {titolo:"I tuoi dati",campi:[["nome","Nome","text"],["cognome","Cognome","text"],["classe","Classe","text"]]},
+ {titolo:"UNA COPPIA",img:"https://www.sarapanigalli.it/wp-content/uploads/2015/11/coppia-che-litiga.png",alt:"Una coppia che litiga",
+  campi:[["s2a","Descrivi cosa accade","area"],["s2b","Come fare per comportarsi meglio?","area"]]},
+ {titolo:"IN TRENO",img:"https://c8.alamy.com/compit/dxpm2d/giovane-donna-con-i-piedi-appoggiati-sui-sedili-sulla-metropolitana-regno-unito-dxpm2d.jpg",alt:"Una giovane donna con i piedi appoggiati sui sedili della metropolitana",
+  campi:[["s3a","Descrivi cosa accade","area"],["s3b","Come fare per comportarsi meglio?","area"]]},
+ {titolo:"Il cartello sull’autobus",img:"https://www.scaleperdisabili.com/wp-content/uploads/2017/10/sedili_pullman_genova.jpg",alt:"I sedili di un autobus con un cartello",
+  campi:[["s4a","Spiega cosa significa il cartello presente sull’autobus","area"],["s4b","Qual è il comportamento giusto da mantenere sull’autobus, quando vedi un anziano?","area"]]},
+ {titolo:"Il parco",img:"https://primatreviglio.it/media/2023/08/parco.png",alt:"Un parco",
+  campi:[["s5a","Descrivi cosa vedi","area"],["s5b","Come fare per comportarsi meglio?","area"]]},
+ {titolo:"SCARICA IL REPORT",fine:true}
+];
+const dati={};let corrente=0;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+// costruzione schede
+$("main").innerHTML=SCHEDE.map((s,i)=>{
+  let h=`<section id="sc${i}"><h2>Scheda ${i+1}: ${s.titolo}</h2>`;
+  if(s.img)h+=`<img class="foto" src="${s.img}" alt="${s.alt}">`;
+  if(s.fine)h+=`<p>Hai finito tutte le schede. Premi il pulsante per scaricare il tuo report.</p><p><button class="scarica" id="dl">Scarica il report (TXT)</button> <button class="scarica" id="pdf">Salva il report in PDF</button></p>`;
+  (s.campi||[]).forEach(([id,et,tipo])=>{
+    h+=`<label for="${id}">${et}</label>`+(tipo==="area"?`<textarea id="${id}"></textarea>`:`<input type="text" id="${id}" autocomplete="off">`);
+  });
+  h+=`<p class="hint" id="h${i}"></p><div class="nav">`;
+  h+=i>0?`<button class="indietro" data-go="-1">Indietro</button>`:`<span></span>`;
+  if(!s.fine)h+=`<button class="avanti" id="av${i}" data-go="1" disabled>Avanti</button>`;
+  return h+`</div></section>`;
+}).join("");
+$("steps").innerHTML=SCHEDE.map((_,i)=>`<div class="dot" id="d${i}">${i+1}</div>`).join("");
+
+// i testi restano in memoria nell'oggetto "dati"; tornando indietro si possono modificare
+document.querySelectorAll("input,textarea").forEach(el=>el.addEventListener("input",()=>{const a=el.selectionStart,b=el.selectionEnd,m=el.value.toUpperCase();if(m!==el.value){el.value=m;el.setSelectionRange(a,b)}dati[el.id]=el.value;controlla()}));
+
+function completa(i){return (SCHEDE[i].campi||[]).every(([id])=>(dati[id]||"").trim()!=="");}
+function controlla(){
+  const ok=completa(corrente),b=$("av"+corrente);
+  if(b)b.disabled=!ok;
+  $("h"+corrente).textContent=(!ok&&!SCHEDE[corrente].fine)?"Compila tutti i campi per andare avanti.":"";
+}
+function mostra(n){
+  corrente=n;
+  SCHEDE.forEach((_,i)=>{
+    $("sc"+i).classList.toggle("active",i===n);
+    const d=$("d"+i);d.className="dot"+(i<n?" done":i===n?" now":"");
+  });
+  controlla();window.scrollTo({top:0});
+}
+document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>{
+  const v=+b.dataset.go;
+  if(v>0&&!completa(corrente))return;
+  mostra(corrente+v);
+}));
+
+// report: TXT scaricabile oppure PDF (dalla finestra di stampa)
+function costruisciReport(){
+  const n=new Date();
+  const dataOra=n.toLocaleDateString("it-IT")+", ORE "+n.toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"});
+  const anagrafica=[["NOME",dati.nome],["COGNOME",dati.cognome],["CLASSE",dati.classe]];
+  const sezioni=[];
+  SCHEDE.forEach((sc,i)=>{
+    if(i===0||sc.fine)return;
+    sezioni.push({titolo:`SCHEDA ${i+1}: ${sc.titolo}`,qa:sc.campi.map(([id,et])=>[et,dati[id]||""])});
+  });
+  return {dataOra,anagrafica,sezioni};
+}
+function nomeFile(){return `REPORT_${(dati.cognome||"").trim()}_${(dati.nome||"").trim()}`.toUpperCase().replace(/[^\wÀ-ÿ-]+/g,"_");}
+$("dl").addEventListener("click",()=>{
+  const r=costruisciReport();
+  let t=`REPORT: COMPORTARSI BENE\r\nDATA E ORA DI COMPILAZIONE: ${r.dataOra}\r\n\r\n`;
+  r.anagrafica.forEach(([k,v])=>{t+=`${k}: ${v.trim()}\r\n`});
+  r.sezioni.forEach(sz=>{
+    t+=`\r\n${sz.titolo}\r\n`;
+    sz.qa.forEach(([q,a])=>{t+=`\r\n${q.toUpperCase()}\r\n${a.trim()}\r\n`});
+  });
+  const blob=new Blob(["\ufeff",t.toUpperCase()],{type:"text/plain;charset=utf-8"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);a.download=nomeFile()+".txt";
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+});
+$("pdf").addEventListener("click",()=>{
+  const r=costruisciReport();
+  let h=`<h1>REPORT: COMPORTARSI BENE</h1><p><b>DATA E ORA DI COMPILAZIONE:</b> ${r.dataOra}</p><p>`;
+  h+=r.anagrafica.map(([k,v])=>`<b>${k}:</b> ${esc(v.trim())}`).join("<br>")+"</p>";
+  r.sezioni.forEach(sz=>{
+    h+=`<h2>${esc(sz.titolo)}</h2>`;
+    sz.qa.forEach(([q,a])=>{h+=`<p><b>${esc(q)}</b><br>${esc(a.trim()).replace(/\n/g,"<br>")}</p>`});
+  });
+  $("rep").innerHTML=h.toUpperCase().replace(/&[A-Z]+;/g,m=>m.toLowerCase());
+  const titoloPrima=document.title;document.title=nomeFile();
+  window.print();document.title=titoloPrima;
+});
+mostra(0);
+</script>
+</body>
+</html>
