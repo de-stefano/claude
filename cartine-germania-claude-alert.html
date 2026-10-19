@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Cartine Storiche della Germania</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:#f0f4ff;color:#1a1a2e;min-height:100vh}
+
+/* SCREENS */
+.screen{display:none;min-height:100vh;padding:24px}
+.screen.active{display:flex;flex-direction:column;align-items:center;justify-content:center}
+
+/* INTRO */
+#screen-intro{background:linear-gradient(135deg,#e8f4fd,#fef9e7,#fde8f0)}
+.intro-box{background:#fff;border-radius:20px;padding:44px 40px;max-width:700px;box-shadow:0 8px 32px rgba(0,0,0,.12);text-align:center}
+.intro-box h1{font-size:2.1em;color:#d63031;margin-bottom:10px}
+.intro-title-sub{color:#0984e3;font-size:1.1em;font-weight:600;margin-bottom:20px}
+.intro-box p{line-height:1.8;color:#444;margin-bottom:10px;font-size:1em}
+.intro-rules{background:#fff8e1;border-left:4px solid #fdcb6e;border-radius:8px;padding:14px 18px;margin:18px 0;text-align:left}
+.intro-rules li{margin-bottom:6px;color:#555;font-size:.95em}
+.btn{border:none;padding:13px 30px;border-radius:10px;font-size:1em;font-weight:700;cursor:pointer;transition:all .2s;margin:6px;display:inline-block}
+.btn-primary{background:linear-gradient(135deg,#d63031,#e17055);color:#fff;box-shadow:0 4px 14px rgba(214,48,49,.35)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(214,48,49,.45)}
+.btn-study{background:linear-gradient(135deg,#0984e3,#74b9ff);color:#fff;box-shadow:0 4px 14px rgba(9,132,227,.3)}
+.btn-study:hover{transform:translateY(-2px)}
+.btn-next{background:linear-gradient(135deg,#00b894,#55efc4);color:#fff;box-shadow:0 4px 14px rgba(0,184,148,.3)}
+.btn-next:hover{transform:translateY(-2px)}
+.btn-check{background:linear-gradient(135deg,#6c5ce7,#a29bfe);color:#fff;box-shadow:0 4px 14px rgba(108,92,231,.3)}
+.btn-check:hover{transform:translateY(-2px)}
+.btn-replay{background:linear-gradient(135deg,#fdcb6e,#e17055);color:#fff;box-shadow:0 4px 14px rgba(253,203,110,.4)}
+.btn-replay:hover{transform:translateY(-2px)}
+
+/* PDF MODAL */
+#pdf-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px}
+#pdf-modal.open{display:flex}
+.pdf-inner{background:#fff;border-radius:16px;width:100%;max-width:820px;margin:auto;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.3)}
+.pdf-header{background:linear-gradient(135deg,#d63031,#e17055);color:#fff;padding:14px 22px;display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:1.05em;position:sticky;top:0}
+.close-btn{background:#fff3;border:none;color:#fff;font-size:1.4em;cursor:pointer;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center}
+.close-btn:hover{background:#fff5}
+.pdf-content{color:#333;padding:30px 36px;line-height:1.8;font-size:.96em}
+.pdf-content h2{color:#d63031;margin:26px 0 8px;font-size:1.15em;border-bottom:2px solid #fad9d9;padding-bottom:4px}
+.pdf-content p{margin-bottom:12px}
+.pdf-content ol{margin-left:22px;margin-bottom:12px}
+.pdf-content li{margin-bottom:7px}
+
+/* GAME */
+#screen-game{background:linear-gradient(135deg,#e8f4fd,#fef9e7);align-items:stretch;padding:0}
+.game-wrap{display:flex;flex-direction:column;min-height:100vh;max-width:1200px;margin:0 auto;padding:16px;gap:12px}
+
+.top-bar{display:flex;justify-content:space-between;align-items:center;background:#fff;border-radius:12px;padding:12px 20px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+.level-label{color:#d63031;font-weight:800;font-size:1.15em}
+.attempts-label{color:#555;font-size:.95em;display:flex;align-items:center;gap:8px}
+.attempt-dots{display:inline-flex;gap:7px}
+.dot{width:16px;height:16px;border-radius:50%;background:#ddd;border:2px solid #bbb}
+.dot.used{background:#e17055;border-color:#d63031}
+.dot.avail{background:#b2f0e0;border-color:#00b894}
+
+.main-area{display:flex;gap:14px;flex:1}
+
+.map-col{flex:1.2;display:flex;flex-direction:column;gap:10px}
+.map-card{background:#fff;border-radius:14px;padding:14px;box-shadow:0 4px 16px rgba(0,0,0,.1)}
+.map-card img{width:100%;border-radius:8px;object-fit:contain;max-height:300px;border:2px solid #e0e0e0}
+
+.date-card{background:#fff;border-radius:14px;padding:14px 18px;box-shadow:0 4px 16px rgba(0,0,0,.1)}
+.date-card label{color:#6c5ce7;font-weight:700;font-size:.95em;display:block;margin-bottom:8px}
+.date-input{width:100%;background:#f8f0ff;color:#1a1a2e;border:2px solid #a29bfe;border-radius:8px;padding:10px 14px;font-size:1.2em;text-align:center;font-weight:700}
+.date-input:focus{outline:none;border-color:#6c5ce7;background:#f0e8ff}
+
+.msg-bar{background:#fff;border-radius:10px;padding:12px 16px;font-size:.92em;min-height:42px;color:#555;box-shadow:0 2px 8px rgba(0,0,0,.07);border-left:4px solid #a29bfe}
+.check-btn-row{display:flex;gap:10px;flex-wrap:wrap}
+
+.right-col{flex:1;display:flex;flex-direction:column;gap:10px}
+
+.hint-card{background:linear-gradient(135deg,#fff9e6,#fffde7);border:2px solid #fdcb6e;border-radius:12px;padding:10px 16px;font-size:.9em;color:#856404;font-weight:600;text-align:center}
+
+.pool-card{background:#fff;border-radius:14px;padding:14px;box-shadow:0 4px 16px rgba(0,0,0,.1);overflow-y:auto;max-height:240px}
+.pool-card h3{color:#0984e3;font-size:.8em;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;font-weight:800}
+.elements-grid{display:flex;flex-wrap:wrap;gap:7px}
+.elem-chip{background:linear-gradient(135deg,#dfe6fd,#e8f4fd);color:#0984e3;border:2px solid #74b9ff;border-radius:8px;padding:6px 11px;font-size:.82em;cursor:grab;user-select:none;transition:all .2s;font-weight:600}
+.elem-chip:hover{background:linear-gradient(135deg,#74b9ff,#0984e3);color:#fff;border-color:#0984e3;transform:scale(1.03)}
+.elem-chip.dragging{opacity:.3}
+
+.drop-card{background:#fff;border-radius:14px;padding:14px;box-shadow:0 4px 16px rgba(0,0,0,.1);flex:1;min-height:100px}
+.drop-card h3{color:#00b894;font-size:.8em;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;font-weight:800}
+.drop-zone{border:2.5px dashed #00b894;border-radius:10px;padding:10px;min-height:80px;background:#f0faf7;transition:background .2s}
+.drop-zone.over{background:#c8f5ea;border-color:#00b894}
+.dropped-chips{display:flex;flex-wrap:wrap;gap:7px}
+.dropped-chip{background:linear-gradient(135deg,#c8f5ea,#e8faf5);color:#00856a;border:2px solid #00b894;border-radius:8px;padding:6px 11px;font-size:.82em;cursor:grab;display:flex;align-items:center;gap:6px;font-weight:600}
+.remove-x{cursor:pointer;font-size:.85em;opacity:.6;font-weight:900}
+.remove-x:hover{opacity:1;color:#d63031}
+
+/* FINAL */
+#screen-final{background:linear-gradient(135deg,#fef9e7,#e8fdf5,#fde8f0)}
+.final-box{background:#fff;border-radius:20px;padding:44px 40px;max-width:580px;box-shadow:0 10px 40px rgba(0,0,0,.12);text-align:center}
+.final-box h2{font-size:1.9em;color:#d63031;margin-bottom:16px}
+.steps-label{color:#888;font-size:1em}
+.steps-display{font-size:4em;font-weight:900;color:#d63031;margin:8px 0;line-height:1}
+.steps-sub{color:#888;font-size:.95em;margin-bottom:20px}
+.final-msg{color:#444;line-height:1.7;font-size:1.05em;margin:20px 0;padding:16px;background:#fff9e6;border-radius:10px;border-left:4px solid #fdcb6e}
+.stars{font-size:2.5em;margin-bottom:8px}
+
+/* STUDENT FORM */
+.student-form{background:#f0f8ff;border:2px solid #74b9ff;border-radius:12px;padding:14px 18px;margin:16px 0 8px;text-align:left}
+.student-form h3{color:#0984e3;font-size:.95em;margin-bottom:10px}
+.student-row{display:flex;gap:10px;flex-wrap:wrap}
+.student-row input{flex:1;min-width:140px;padding:10px 12px;border:2px solid #a29bfe;border-radius:8px;font-size:1em}
+.student-row input:focus{outline:none;border-color:#6c5ce7;background:#f8f0ff}
+#form-err{color:#c0392b;font-weight:700;font-size:.9em;margin-top:8px;min-height:1.2em}
+
+/* AWAY ALERT */
+#away-overlay,#fs-gate{display:none;position:fixed;inset:0;background:rgba(120,10,10,.88);z-index:5000;align-items:center;justify-content:center;padding:20px}
+#away-overlay.open,#fs-gate.open{display:flex}
+.away-box{background:#fff;border-radius:20px;max-width:560px;width:100%;padding:36px 34px;text-align:center;box-shadow:0 12px 50px rgba(0,0,0,.5);border:6px solid #d63031}
+.away-box.ok{border-color:#e17055}
+.away-icon{font-size:3.4em;line-height:1}
+.away-box h2{color:#d63031;margin:10px 0 12px;font-size:1.7em}
+.away-box p{color:#444;line-height:1.6;font-size:1.05em;margin-bottom:10px}
+.away-count{font-size:4.2em;font-weight:900;color:#d63031;line-height:1;margin:10px 0}
+.away-count small{display:block;font-size:.2em;color:#888;font-weight:600;margin-top:4px}
+
+/* FINAL extra */
+.final-interrupted h2{color:#c0392b}
+.btn-report{background:linear-gradient(135deg,#0984e3,#6c5ce7);color:#fff;box-shadow:0 4px 14px rgba(9,132,227,.35)}
+.btn-report:hover{transform:translateY(-2px)}
+</style>
+</head>
+<body>
+
+<!-- INTRO -->
+<div id="screen-intro" class="screen active">
+  <div class="intro-box">
+    <h1>🗺️ Cartine Storiche della Germania</h1>
+    <div class="intro-title-sub">Quiz interattivo – Trascina, indovina, impara!</div>
+    <p>Ti saranno mostrate delle <strong>cartine storiche della Germania</strong> e dovrai indovinare l'anno di riferimento; inoltre dovrai trascinare nell'area apposita tutte le affermazioni corrette che si riferiscono alla cartina.</p>
+    <ul class="intro-rules">
+      <li>🎯 Per ogni cartina hai al massimo <strong>3 tentativi</strong></li>
+      <li>🔀 Gli elementi e le cartine sono sempre in ordine <strong>casuale</strong></li>
+      <li>📊 In totale ci sono <strong>6 cartine</strong> (livelli) da superare</li>
+      <li>💡 Ti viene indicato quanti elementi trascinare per ogni cartina</li>
+      <li>🚫 Durante il quiz <strong>non puoi uscire</strong> dalla pagina, cambiare scheda o aprire altre finestre: se esci hai <strong>10 secondi</strong> per rientrare, altrimenti l'attività viene <strong>interrotta</strong> e ciò sarà scritto nel report</li>
+      <li>🖥️ Il quiz si svolge a <strong>schermo intero</strong>. Quando il browser lo chiede, <strong>consenti le notifiche</strong></li>
+    </ul>
+    <p>Se supererai tutti e 6 i livelli diventerai uno <strong>Storico a tutti gli effetti!</strong></p>
+    <div class="student-form">
+      <h3>✏️ Inserisci i tuoi dati prima di iniziare</h3>
+      <div class="student-row">
+        <input type="text" id="st-nome" placeholder="Nome" autocomplete="off">
+        <input type="text" id="st-cognome" placeholder="Cognome" autocomplete="off">
+        <input type="text" id="st-classe" placeholder="Classe (es. 3A)" autocomplete="off" maxlength="12">
+      </div>
+      <div id="form-err"></div>
+    </div>
+    <button class="btn btn-study" onclick="openPdf()">📄 Studia il materiale prima</button>
+    <button class="btn btn-primary" onclick="startGame()">▶ Inizia il Quiz</button>
+  </div>
+</div>
+
+<!-- PDF MODAL -->
+<div id="pdf-modal">
+  <div class="pdf-inner">
+    <div class="pdf-header">
+      <span>📘 Confini della Germania – Materiale di studio</span>
+      <button class="close-btn" onclick="closePdf()">✕</button>
+    </div>
+    <iframe src="https://de-stefano.github.io/claude/cartine-germania/confini-germania.pdf" style="width:100%;height:75vh;border:none;display:block;"></iframe>
+  </div>
+</div>
+
+<!-- GAME -->
+<div id="screen-game" class="screen">
+  <div class="game-wrap">
+    <div class="top-bar">
+      <span class="level-label" id="level-label">🏅 Livello 1 / 6</span>
+      <span class="attempts-label">Tentativi rimasti: <span class="attempt-dots" id="dots"></span></span>
+    </div>
+
+    <div class="main-area">
+      <div class="map-col">
+        <div class="map-card">
+          <img id="map-img" src="" alt="Cartina storica della Germania">
+        </div>
+        <div class="date-card">
+          <label>📅 A quale anno si riferisce questa cartina?</label>
+          <input type="text" id="date-input" class="date-input" placeholder="Scrivi l'anno…" maxlength="4">
+        </div>
+        <div class="msg-bar" id="msg-bar">Inserisci l'anno e trascina nell'area DROP gli elementi corretti.</div>
+        <div class="check-btn-row">
+          <button class="btn btn-check" onclick="checkAnswer()">✔ Controlla risposta</button>
+          <button class="btn btn-next" id="next-btn" style="display:none" onclick="nextLevel()">Livello successivo ➜</button>
+        </div>
+      </div>
+
+      <div class="right-col">
+        <div class="hint-card" id="hint-card">💡 Trascina <strong id="hint-num">?</strong> elementi nell'area DROP</div>
+
+        <div class="pool-card">
+          <h3>🧩 Elementi disponibili – trascina quelli corretti</h3>
+          <div class="elements-grid" id="pool"></div>
+        </div>
+
+        <div class="drop-card">
+          <h3>✅ Area DROP – rilascia qui gli elementi corretti</h3>
+          <div class="drop-zone" id="drop-zone">
+            <div class="dropped-chips" id="dropped"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FINAL -->
+<div id="screen-final" class="screen">
+  <div class="final-box" id="final-box">
+    <div class="stars" id="final-stars"></div>
+    <h2 id="final-title">Fine del Quiz!</h2>
+    <div class="steps-label">Hai superato in totale</div>
+    <div class="steps-display" id="final-steps">0</div>
+    <div class="steps-sub">livelli su 6</div>
+    <div class="final-msg" id="final-msg"></div>
+    <button class="btn btn-report" onclick="downloadReport()">📄 Scarica il report in PDF</button>
+    <button class="btn btn-replay" onclick="restartGame()">🔄 Gioca ancora</button>
+  </div>
+</div>
+
+<!-- ALERT USCITA -->
+<div id="away-overlay">
+  <div class="away-box" id="away-box">
+    <div class="away-icon" id="away-icon">⚠️</div>
+    <h2 id="away-title">ATTENZIONE!</h2>
+    <p id="away-text"></p>
+    <div class="away-count" id="away-count-wrap"><span id="away-count">10</span><small>secondi rimasti</small></div>
+    <button class="btn btn-primary" id="away-fs-btn" style="display:none" onclick="backToFullscreen()">⛶ Torna a schermo intero</button>
+    <button class="btn btn-primary" id="away-btn" style="display:none" onclick="dismissAway()">Ho capito, torna all'esercizio</button>
+  </div>
+</div>
+
+<!-- GATE SCHERMO INTERO -->
+<div id="fs-gate">
+  <div class="away-box ok">
+    <div class="away-icon">⛶</div>
+    <h2>Schermo intero</h2>
+    <p>Il quiz si svolge a <strong>schermo intero</strong>. Premi il pulsante per entrare e iniziare.</p>
+    <button class="btn btn-primary" onclick="gateGo()">Entra a schermo intero e inizia</button>
+  </div>
+</div>
+
+<script>
+// ── PDF content ───────────────────────────────────────────────────────────────
+const PDF_HTML = `
+<h2>1871 – Unificazione Tedesca</h2>
+<p>La Germania dopo la guerra dei Trent'anni si era ridotta ad essere suddivisa in 300 piccole città o province. Nel XIX secolo si realizzò dapprima una Confederazione Tedesca (39 principati), poi un'unità doganale.</p>
+<p>Lo stato più forte era la <strong>Prussia orientale</strong>, che nel 1870 mosse guerra alla Francia, sconfiggendola a <strong>Sedan</strong>, e dando vita al secondo Reich. Con la <strong>guerra franco-prussiana</strong> nasce la Nazione Tedesca Unificata (<strong>18 gennaio 1871</strong>) sotto l'egemonia della Prussia. I confini comprendono l'<strong>Alsazia e la Lorena</strong>.</p>
+<h2>1919 – La Pace di Versailles</h2>
+<p>La Germania partecipò alla Prima Guerra Mondiale a fianco dell'Austria-Ungheria. Uscì sconfitta. La <strong>Pace di Versailles (1919)</strong> fu definita una "pace punitiva":</p>
+<ol>
+  <li>Restituire alla Francia l'<strong>Alsazia e la Lorena</strong></li>
+  <li>Rinunciare alla città di <strong>Danzica</strong></li>
+  <li>Accettare il <strong>"Corridoio polacco"</strong> che divideva il territorio tedesco in due</li>
+</ol>
+<h2>1939 – Espansionismo Nazista</h2>
+<p>Hitler occupa la Renania, poi nel 1938 l'Austria (<strong>Anschluss</strong>) con referendum al 99%. Si annette i <strong>Sudeti</strong>; le potenze organizzarono la <strong>Conferenza di Monaco</strong> lasciando mano libera a Hitler. Il <strong>1° settembre 1939</strong> Hitler invade la <strong>Polonia</strong>: inizia la Seconda Guerra Mondiale.</p>
+<h2>1949 – La Divisione della Germania</h2>
+<p>Dopo la Seconda Guerra Mondiale la Germania fu divisa in quattro zone di occupazione. Nelle zone occidentali fu introdotto il <strong>Piano Marshall</strong>. Nel 1949 nacquero la <strong>Repubblica Federale Tedesca</strong> (ovest) e la <strong>DDR</strong> (est, comunista). Berlino fu anch'essa divisa in zona est e zona ovest.</p>
+<h2>1961 – Il Muro di Berlino</h2>
+<p>L'emigrazione verso ovest divenne una vera emorragia. Nella notte tra il 12 e il 13 agosto 1961 il presidente <strong>Walter Ulbricht</strong> fece costruire il <strong>Muro di Berlino</strong> (166 km). Nel 1963 il presidente USA <strong>John F. Kennedy</strong> pronunciò: <em>"Ich bin ein Berliner"</em>.</p>
+<h2>1989 – Caduta del Muro e Riunificazione</h2>
+<p>Il presidente sovietico <strong>Michail Gorbaciov</strong> avviò nel 1987 la <strong>Perestroika</strong>. Il 10 settembre 1989 l'<strong>Ungheria aprì i valichi con l'Austria</strong>. Il <strong>9 novembre 1989</strong> cadde il Muro di Berlino. Il <strong>3 ottobre 1990</strong> le due Germanie si riunificarono.</p>
+`;
+
+// ── Game data ─────────────────────────────────────────────────────────────────
+const BASE = 'https://de-stefano.github.io/claude/cartine-germania/';
+const DATA = [
+  { img: BASE+'germania1.png', year:'1871', correct:['Guerra franco-prussiana','Sconfitta della Francia a Sedan','Conquista di Alsazia e Lorena da parte tedesca','Unificazione della Germania','Egemonia della Prussia'] },
+  { img: BASE+'germania2.png', year:'1919', correct:['Pace di Versailles','Restituzione di Alsazia e Lorena','Istituzione del "Corridoio polacco"','Cessione della città di Danzica'] },
+  { img: BASE+'germania3.png', year:'1939', correct:['Espansionismo nazista','Anschluss dell\'Austria','Invasione dei Sudeti','Invasione della Polonia','Referendum in Austria','Conferenza di Monaco'] },
+  { img: BASE+'germania4.png', year:'1949', correct:['Separazione della Germania in zona est e zona ovest','Piano Marshall','Egemonia russa sulla Germania Est','Egemonia statunitense sulla Germania ovest','Separazione di Berlino in zona est ed ovest'] },
+  { img: BASE+'germania5.png', year:'1961', correct:['Costruzione del muro di Berlino','Presidente Ulbricht','Ich bin ein berliner','Presidente J. F. Kennedy'] },
+  { img: BASE+'germania6.png', year:'1989', correct:['Riunificazione della Germania','Caduta del muro di Berlino','M. Gorbaciov e politica della Perestroika','Apertura dei valichi tra Ungheria e Austria'] }
+];
+const ALL_ELEMENTS = [...new Set(DATA.flatMap(d=>d.correct))]; // 28 elementi
+
+let order=[], levelIdx=0, attempts=0, stepsCleared=0, dragging=null;
+let student={}, sessionLog=[], awayEvents=[], awayInfo=null;
+let gameActive=false, interrupted=false, startTime=null, endTime=null;
+const AWAY_LIMIT=10; // secondi
+let fsRequired=false, fsAtStart=false, startingGame=false, audioCtx=null, notif=null, notifStatus='non supportati', titleTimer=null;
+const ORIG_TITLE=document.title;
+
+function shuffle(a){ return [...a].sort(()=>Math.random()-.5); }
+
+// ── PDF ───────────────────────────────────────────────────────────────────────
+function openPdf(){
+  document.getElementById('pdf-modal').classList.add('open');
+}
+function closePdf(){ document.getElementById('pdf-modal').classList.remove('open'); }
+
+// ── Screens ───────────────────────────────────────────────────────────────────
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ── Game ──────────────────────────────────────────────────────────────────────
+async function startGame(){
+  if(gameActive||startingGame) return;
+  const nome=document.getElementById('st-nome').value.trim();
+  const cognome=document.getElementById('st-cognome').value.trim();
+  const classe=document.getElementById('st-classe').value.trim();
+  if(!nome||!cognome||!classe){
+    document.getElementById('form-err').textContent='⚠️ Inserisci nome, cognome e classe per iniziare.';
+    return;
+  }
+  document.getElementById('form-err').textContent='';
+  student={nome,cognome,classe};
+  startingGame=true;
+  initAudio();
+  if('Notification' in window && Notification.permission==='default'){
+    try{ await Notification.requestPermission(); }catch(e){}
+  }
+  notifStatus = !('Notification' in window) ? 'non supportati' : (Notification.permission==='granted' ? 'attivi' : 'non consentiti');
+  if(fsSupported()){
+    const ok=await enterFs();
+    if(!ok){ document.getElementById('fs-gate').classList.add('open'); return; }
+    fsRequired=true;
+  } else { fsRequired=false; }
+  beginGame();
+}
+
+async function gateGo(){
+  const ok=await enterFs();
+  fsRequired=ok;
+  document.getElementById('fs-gate').classList.remove('open');
+  beginGame();
+}
+
+function beginGame(){
+  startingGame=false;
+  fsAtStart=fsRequired;
+  order = shuffle([0,1,2,3,4,5]);
+  levelIdx=0; stepsCleared=0;
+  sessionLog = order.map(i=>({year:DATA[i].year, status:'non svolta', tries:[]}));
+  awayEvents=[]; awayInfo=null; interrupted=false;
+  startTime=new Date(); endTime=null;
+  gameActive=true;
+  show('screen-game');
+  loadLevel();
+}
+
+function loadLevel(){
+  attempts=0;
+  const d = DATA[order[levelIdx]];
+  document.getElementById('level-label').textContent = `🏅 Livello ${levelIdx+1} / 6`;
+  document.getElementById('map-img').src = d.img;
+  document.getElementById('date-input').value = '';
+  document.getElementById('date-input').disabled = false;
+  document.getElementById('hint-num').textContent = d.correct.length;
+  setMsg('Inserisci l\'anno e trascina nell\'area DROP esattamente '+d.correct.length+' elementi corretti.','#555');
+  document.getElementById('next-btn').style.display='none';
+  updateDots();
+  renderPool();
+  renderDropped([]);
+}
+
+function updateDots(){
+  const c=document.getElementById('dots'); c.innerHTML='';
+  for(let i=0;i<3;i++){
+    const d=document.createElement('span');
+    d.className='dot'+(i<attempts?' used':' avail');
+    c.appendChild(d);
+  }
+}
+
+function renderPool(){
+  const pool=document.getElementById('pool'); pool.innerHTML='';
+  shuffle(ALL_ELEMENTS).forEach(el=>{
+    const chip=document.createElement('div');
+    chip.className='elem-chip'; chip.textContent=el; chip.draggable=true; chip.dataset.el=el;
+    chip.addEventListener('dragstart',()=>{ dragging={el,from:'pool'}; chip.classList.add('dragging'); });
+    chip.addEventListener('dragend',()=>chip.classList.remove('dragging'));
+    pool.appendChild(chip);
+  });
+}
+
+function getDropped(){ return [...document.querySelectorAll('#dropped .dropped-chip')].map(c=>c.dataset.el); }
+
+function renderDropped(items){
+  const area=document.getElementById('dropped'); area.innerHTML='';
+  items.forEach(el=>{
+    const chip=document.createElement('div');
+    chip.className='dropped-chip'; chip.draggable=true; chip.dataset.el=el;
+    chip.innerHTML=`<span>${el}</span><span class="remove-x" title="Rimuovi">✕</span>`;
+    chip.querySelector('.remove-x').onclick=()=>renderDropped(getDropped().filter(e=>e!==el));
+    chip.addEventListener('dragstart',()=>{ dragging={el,from:'drop'}; });
+    area.appendChild(chip);
+  });
+}
+
+// Drop zone
+const dz=document.getElementById('drop-zone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('over');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('over'));
+dz.addEventListener('drop',e=>{
+  e.preventDefault(); dz.classList.remove('over');
+  if(!dragging) return;
+  const items=getDropped();
+  if(dragging.from==='pool'&&!items.includes(dragging.el)){ items.push(dragging.el); renderDropped(items); }
+  dragging=null;
+});
+document.getElementById('pool').addEventListener('dragover',e=>e.preventDefault());
+document.getElementById('pool').addEventListener('drop',e=>{
+  e.preventDefault();
+  if(dragging&&dragging.from==='drop') renderDropped(getDropped().filter(el=>el!==dragging.el));
+  dragging=null;
+});
+
+function setMsg(txt,color){
+  const b=document.getElementById('msg-bar');
+  b.textContent=txt; b.style.color=color||'#555';
+  b.style.borderLeftColor = color==='#00856a'?'#00b894':color==='#c0392b'?'#e74c3c':'#a29bfe';
+}
+
+function checkAnswer(){
+  if(!gameActive) return;
+  const log=sessionLog[levelIdx];
+  if(log.status==='superata'||log.status==='tentativi esauriti') return;
+  const d=DATA[order[levelIdx]];
+  const yearVal=document.getElementById('date-input').value.trim();
+  const dropped=getDropped();
+  const yearOk = yearVal===d.year;
+  const correctSet=new Set(d.correct);
+  const elemOk = d.correct.every(e=>new Set(dropped).has(e)) && dropped.every(e=>correctSet.has(e));
+
+  attempts++; updateDots();
+
+  log.tries.push({
+    n:attempts, yearGiven:yearVal, yearOk, elemOk, ok:(yearOk&&elemOk),
+    right:dropped.filter(e=>correctSet.has(e)).length,
+    wrong:dropped.filter(e=>!correctSet.has(e)),
+    missing:d.correct.filter(e=>!dropped.includes(e)).length
+  });
+  log.status='in corso';
+
+  if(yearOk&&elemOk){
+    log.status='superata';
+    stepsCleared++;
+    setMsg('✅ Perfetto! Anno e tutti gli elementi corretti!','#00856a');
+    document.getElementById('next-btn').style.display='inline-block';
+    document.getElementById('date-input').disabled=true;
+    return;
+  }
+
+  let fb = yearOk ? '✅ Anno corretto! ' : `❌ Anno errato (era ${d.year}). `;
+  fb += elemOk ? '✅ Elementi tutti corretti!' : `⚠️ Gli elementi non sono tutti corretti (ne servono ${d.correct.length}).`;
+
+  if(attempts>=3){
+    log.status='tentativi esauriti';
+    setMsg(`⛔ Tentativi esauriti! Anno: ${d.year} | Elementi: ${d.correct.join(' · ')}`,'#c0392b');
+    document.getElementById('next-btn').style.display='inline-block';
+    document.getElementById('date-input').disabled=true;
+    return;
+  }
+  setMsg(fb+` — Tentativo ${attempts}/3`,'#8e44ad');
+}
+
+function nextLevel(){
+  levelIdx++;
+  if(levelIdx>=6) showFinal();
+  else loadLevel();
+}
+
+function showFinal(){
+  gameActive=false;
+  fsRequired=false; exitFs();
+  if(!endTime) endTime=new Date();
+  show('screen-final');
+  const fb=document.getElementById('final-box');
+  const title=document.getElementById('final-title');
+  if(interrupted){
+    fb.classList.add('final-interrupted');
+    title.textContent='⛔ Attività interrotta';
+    document.getElementById('final-steps').textContent=stepsCleared;
+    document.getElementById('final-msg').textContent="Sei uscito dall'esercizio per più di "+AWAY_LIMIT+" secondi senza rientrare: l'attività è stata interrotta. L'episodio è riportato nel report.";
+    document.getElementById('final-stars').textContent='⛔';
+    return;
+  }
+  fb.classList.remove('final-interrupted');
+  title.textContent='Fine del Quiz!';
+  document.getElementById('final-steps').textContent=stepsCleared;
+  const msgs=[
+    '',
+    'Sei uno storico ancora alle primissime armi… mi sa che devi studiare tutto da capo.',
+    'Insomma, ho visto di meglio… la tua attenzione è tutta da migliorare.',
+    'Storico a metà! Tre cartine indovinate e poi… il crollo!!!',
+    'Bene, ci siamo quasi… ancora una studiata e potrai acquisire il titolo di "storico diplomato".',
+    'Molto bene!!! Storico esperto o quasi esperto.',
+    '🎓 LAUREA HONORIS CAUSA: STORICO A TUTTI GLI EFFETTI… FOR EVER!!!'
+  ];
+  const stars=['','⭐','⭐⭐','⭐⭐⭐','⭐⭐⭐⭐','⭐⭐⭐⭐⭐','🏆🌟🏆'];
+  document.getElementById('final-msg').textContent = msgs[stepsCleared]||'';
+  document.getElementById('final-stars').textContent = stars[stepsCleared]||'';
+}
+
+function restartGame(){
+  ['st-nome','st-cognome','st-classe'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('form-err').textContent='';
+  show('screen-intro');
+}
+
+// ── Controllo uscita dall'esercizio ──────────────────────────────────────────
+function fsSupported(){ return !!document.documentElement.requestFullscreen; }
+function enterFs(){
+  try{ return document.documentElement.requestFullscreen().then(()=>true).catch(()=>false); }
+  catch(e){ return Promise.resolve(false); }
+}
+function exitFs(){
+  if(document.fullscreenElement && document.exitFullscreen){ try{ document.exitFullscreen().catch(()=>{}); }catch(e){} }
+}
+
+function initAudio(){
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext;
+    if(!audioCtx&&AC) audioCtx=new AC();
+    if(audioCtx&&audioCtx.state==='suspended') audioCtx.resume();
+  }catch(e){}
+}
+function beep(){
+  if(!audioCtx) return;
+  try{
+    const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.type='square'; o.frequency.value=880; g.gain.value=0.08;
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime+0.18);
+  }catch(e){}
+}
+
+// Notifica di sistema: visibile anche sopra le altre schede/finestre
+function notify(title,body){
+  if(!('Notification' in window)||Notification.permission!=='granted') return;
+  try{
+    clearNotify();
+    notif=new Notification(title,{body, tag:'quiz-away', requireInteraction:true});
+    notif.onclick=()=>{ window.focus(); clearNotify(); };
+  }catch(e){}
+}
+function clearNotify(){ if(notif){ try{notif.close();}catch(e){} notif=null; } }
+
+// Titolo della scheda lampeggiante (visibile nella barra delle schede)
+function startTitleBlink(){
+  stopTitleBlink(); let on=false;
+  titleTimer=setInterval(()=>{ on=!on; document.title=on?"⚠️ RIENTRA NELL'ESERCIZIO!":"🚫 NON PUOI USCIRE!"; },700);
+}
+function stopTitleBlink(){
+  if(titleTimer){ clearInterval(titleTimer); titleTimer=null; }
+  document.title=ORIG_TITLE;
+}
+
+function refreshAwayButtons(){
+  document.getElementById('away-fs-btn').style.display=(awayInfo&&fsRequired&&!document.fullscreenElement)?'inline-block':'none';
+}
+
+function leaveExercise(reason){
+  if(!gameActive||awayInfo) return;
+  const ev={time:new Date(), level:levelIdx+1, year:DATA[order[levelIdx]].year, seconds:0, returned:false, reason:reason||'focus'};
+  awayEvents.push(ev);
+  awayInfo={start:Date.now(), ev, lastSec:-1, timer:setInterval(awayTick,250)};
+  document.getElementById('screen-game').inert=true;
+  document.getElementById('away-box').classList.remove('ok');
+  document.getElementById('away-icon').textContent='⚠️';
+  document.getElementById('away-title').textContent='ATTENZIONE!';
+  document.getElementById('away-text').innerHTML="<strong>Non puoi uscire dall'esercizio</strong> né aprire altre finestre o schede di consultazione.<br>Torna subito a questa pagina: se non rientri entro "+AWAY_LIMIT+" secondi l'attività verrà <strong>interrotta</strong>.";
+  document.getElementById('away-count-wrap').style.display='block';
+  document.getElementById('away-count').textContent=AWAY_LIMIT;
+  document.getElementById('away-btn').style.display='none';
+  document.getElementById('away-overlay').classList.add('open');
+  refreshAwayButtons();
+  startTitleBlink(); beep();
+  notify("⚠️ NON PUOI USCIRE DALL'ESERCIZIO!","Torna subito alla pagina del quiz: hai "+AWAY_LIMIT+" secondi, altrimenti l'attività verrà interrotta.");
+}
+
+function awayTick(){
+  if(!awayInfo) return;
+  const s=(Date.now()-awayInfo.start)/1000;
+  if(s>=AWAY_LIMIT){ awayTimeout(); return; }
+  document.getElementById('away-count').textContent=Math.max(0,Math.ceil(AWAY_LIMIT-s));
+  const sec=Math.floor(s);
+  if(sec!==awayInfo.lastSec){
+    awayInfo.lastSec=sec; beep();
+    if(sec===5) notify("⚠️ RESTANO 5 SECONDI!","Rientra nel quiz subito, altrimenti l'attività verrà interrotta.");
+  }
+}
+
+function readyToReturn(){
+  return !document.hidden && document.hasFocus() && (!fsRequired || !!document.fullscreenElement);
+}
+
+function returnToExercise(){
+  if(!awayInfo) return;
+  const s=(Date.now()-awayInfo.start)/1000;
+  if(s>=AWAY_LIMIT){ awayTimeout(); return; }
+  if(!readyToReturn()){ refreshAwayButtons(); return; }
+  clearInterval(awayInfo.timer);
+  awayInfo.ev.seconds=Math.round(s);
+  awayInfo.ev.returned=true;
+  awayInfo=null;
+  stopTitleBlink(); clearNotify();
+  document.getElementById('away-box').classList.add('ok');
+  document.getElementById('away-icon').textContent='🚫';
+  document.getElementById('away-title').textContent="Non puoi uscire dall'esercizio!";
+  document.getElementById('away-text').innerHTML="Sei rientrato in tempo, ma <strong>non è consentito uscire</strong> dalla pagina né aprire altre finestre di consultazione.<br>Se succede ancora, l'episodio verrà riportato nel report e, se non rientri entro "+AWAY_LIMIT+" secondi, l'attività sarà interrotta.";
+  document.getElementById('away-count-wrap').style.display='none';
+  document.getElementById('away-fs-btn').style.display='none';
+  document.getElementById('away-btn').style.display='inline-block';
+}
+
+function backToFullscreen(){
+  enterFs().then(()=>returnToExercise());
+}
+
+function dismissAway(){
+  document.getElementById('away-overlay').classList.remove('open');
+  document.getElementById('screen-game').inert=false;
+}
+
+function awayTimeout(){
+  if(!awayInfo) return;
+  clearInterval(awayInfo.timer);
+  awayInfo.ev.seconds=Math.round((Date.now()-awayInfo.start)/1000);
+  awayInfo.ev.returned=false;
+  awayInfo=null;
+  interrupted=true;
+  endTime=new Date();
+  const cur=sessionLog[levelIdx];
+  if(cur.status==='non svolta'||cur.status==='in corso') cur.status='interrotta';
+  gameActive=false;
+  stopTitleBlink();
+  document.getElementById('away-overlay').classList.remove('open');
+  document.getElementById('screen-game').inert=false;
+  showFinal();
+  notify("⛔ ATTIVITÀ INTERROTTA","Sei uscito dall'esercizio per più di "+AWAY_LIMIT+" secondi. Rientra nella pagina del quiz.");
+}
+
+window.addEventListener('blur', ()=>leaveExercise('focus'));
+window.addEventListener('focus', ()=>{ returnToExercise(); if(!gameActive) clearNotify(); });
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden) leaveExercise('focus');
+  else returnToExercise();
+});
+document.addEventListener('fullscreenchange',()=>{
+  if(!gameActive) return;
+  if(fsRequired && !document.fullscreenElement) leaveExercise('fullscreen');
+  else { refreshAwayButtons(); returnToExercise(); }
+});
+window.addEventListener('beforeunload',e=>{
+  if(gameActive){ e.preventDefault(); e.returnValue=''; }
+});
+
+// ── Report PDF ───────────────────────────────────────────────────────────────
+function downloadReport(){
+  if(!window.jspdf){ alert('La libreria PDF non è stata caricata (serve la connessione internet). Controlla la connessione e riprova.'); return; }
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({unit:'mm',format:'a4'});
+  const M=15, maxW=180; let y=M;
+  const fmtD=d=>d.toLocaleDateString('it-IT');
+  const fmtT=d=>d.toLocaleTimeString('it-IT');
+  function line(str,o={}){
+    const size=o.size||10, lh=size*0.5, ind=o.indent||0;
+    doc.setFont('helvetica',o.bold?'bold':'normal'); doc.setFontSize(size);
+    doc.setTextColor(...(o.color||[30,30,30]));
+    doc.splitTextToSize(String(str),maxW-ind).forEach(l=>{
+      if(y+lh>285){ doc.addPage(); y=M; }
+      doc.text(l,M+ind,y); y+=lh;
+    });
+    y+=(o.gap||0);
+  }
+  const end=endTime||new Date();
+  const dur=Math.max(0,Math.round((end-startTime)/1000));
+  const durStr=Math.floor(dur/60)+' min '+(dur%60)+' s';
+
+  doc.setFillColor(214,48,49); doc.rect(0,0,210,22,'F');
+  doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(16);
+  doc.text('Report esercizio - Cartine Storiche della Germania',M,14);
+  y=32;
+
+  line('DATI DELL\'ALUNNO',{size:12,bold:true,color:[214,48,49],gap:1});
+  line('Nome: '+student.nome);
+  line('Cognome: '+student.cognome);
+  line('Classe: '+student.classe,{gap:2});
+  line('Data: '+fmtD(startTime));
+  line('Ora di inizio: '+fmtT(startTime)+'   -   Ora di fine: '+fmtT(end));
+  line('Durata: '+durStr);
+  line('Schermo intero: '+(fsAtStart?'attivo':'non attivo')+'   -   Avvisi di sistema (notifiche): '+notifStatus,{gap:2});
+  line('Esito: '+(interrupted?'ATTIVITA\' INTERROTTA (mancato rientro entro '+AWAY_LIMIT+' secondi)':'Attivita\' completata'),{bold:true,color:interrupted?[192,57,43]:[0,133,106]});
+  line('Cartine superate: '+stepsCleared+' su 6',{bold:true,gap:5});
+
+  line('RISULTATI CARTINA PER CARTINA',{size:12,bold:true,color:[214,48,49],gap:1});
+  sessionLog.forEach((lv,i)=>{
+    const col = lv.status==='superata'?[0,133,106]:(lv.status==='tentativi esauriti'||lv.status==='interrotta')?[192,57,43]:[120,120,120];
+    line('Cartina '+(i+1)+' (anno '+lv.year+') - esito: '+lv.status.toUpperCase(),{bold:true,color:col,gap:0.5});
+    if(!lv.tries.length) line('Nessun tentativo effettuato.',{indent:5,color:[120,120,120]});
+    lv.tries.forEach(t=>{
+      line('Tentativo '+t.n+': '+(t.ok?'CORRETTO':'ERRATO'),{indent:5,bold:true,color:t.ok?[0,133,106]:[192,57,43]});
+      line('Anno inserito: "'+(t.yearGiven||'(vuoto)')+'" ('+(t.yearOk?'corretto':'errato')+')',{indent:10});
+      line('Elementi: '+t.right+' corretti, '+t.wrong.length+' errati, '+t.missing+' mancanti',{indent:10});
+      if(t.wrong.length) line('Elementi errati inseriti: '+t.wrong.join('; '),{indent:10});
+    });
+    y+=3;
+  });
+
+  y+=2;
+  line('COMPORTAMENTO DURANTE L\'ESERCIZIO',{size:12,bold:true,color:[214,48,49],gap:1});
+  if(!awayEvents.length){
+    line('Nessun tentativo di uscire dall\'esercizio.',{color:[0,133,106]});
+  } else {
+    line('Tentativi di uscire dalla pagina dell\'esercizio: '+awayEvents.length,{bold:true,color:[192,57,43],gap:1});
+    awayEvents.forEach((e,i)=>{
+      line((i+1)+') Ore '+fmtT(e.time)+' - durante la cartina '+e.level+' (anno '+e.year+'): '+(e.reason==='fullscreen'?'uscito dallo schermo intero':'cambio di scheda/finestra o minimizzazione')+', assente per circa '+e.seconds+' secondi - '+(e.returned?'rientrato in tempo':'NON rientrato entro '+AWAY_LIMIT+' secondi: attivita\' interrotta'),
+        {indent:3,color:e.returned?[30,30,30]:[192,57,43],bold:!e.returned});
+    });
+  }
+
+  const safe=s=>s.replace(/[^a-zA-Z0-9]+/g,'_');
+  doc.save('report_'+safe(student.cognome)+'_'+safe(student.nome)+'_'+startTime.toISOString().slice(0,10)+'.pdf');
+}
+</script>
+</body>
+</html>
