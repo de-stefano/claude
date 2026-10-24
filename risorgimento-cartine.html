@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Le guerre del Risorgimento – Esercizio sulle cartine</title>
+<style>
+:root{--bg:#e9eef2;--ink:#14283a;--mut:#51657a;--acc:#1d4e7a;--ok:#1f7a45;--ko:#b3261e;--line:#b5c3d0}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,sans-serif}
+h1,h2,h3{font-family:'Palatino Linotype',Palatino,'Book Antiqua',serif;margin:.4em 0}
+h3{font-size:1.05rem}
+#top{position:sticky;top:0;z-index:20;background:var(--ink);color:#fff}
+#hd{display:flex;justify-content:space-between;gap:10px;padding:8px 14px;font-weight:600}
+#tm.lo{color:#ffb4ab}
+#tabs{display:flex;gap:2px;overflow-x:auto;padding:0 8px}
+#tabs button{flex:1;min-width:64px;border:0;background:#ffffff1f;color:#fff;padding:7px 6px;border-radius:8px 8px 0 0;font:inherit;font-size:.85rem;cursor:pointer}
+#tabs button.on{background:var(--bg);color:var(--ink);font-weight:700}
+#tabs button{cursor:default}.nv{margin:2px 0 10px}
+#tabs button.dn::after{content:" ✓";color:#7be0a0}
+#tabs button.on.dn::after{color:var(--ok)}#tabs button.dn{box-shadow:inset 0 -4px #3fbf73}#tabs button.wp::after{content:" ⏳"}#tabs button.wp{box-shadow:inset 0 -4px #f2c200}
+main{max-width:1150px;margin:0 auto;padding:14px}
+.pg{display:none}.pg.on{display:block}
+label{display:block;margin:10px 0;font-weight:600;max-width:420px}
+input{display:block;width:100%;padding:9px;margin-top:4px;border:1px solid var(--line);border-radius:8px;font:inherit}
+button.b{background:var(--acc);color:#fff;border:0;border-radius:8px;padding:10px 18px;font:inherit;font-weight:600;cursor:pointer;margin:6px 6px 6px 0}
+button.b.s{background:#fff;color:var(--acc);border:1px solid var(--acc)}
+:focus-visible{outline:3px solid #f2a900;outline-offset:2px}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:820px){.g{grid-template-columns:1fr}}
+.g>div:first-child{position:sticky;top:78px;align-self:start}
+.map{width:100%;max-height:78vh;object-fit:contain;background:#fff;border:1px solid var(--line);border-radius:6px;cursor:zoom-in}
+small,.note{color:var(--mut)}
+.zone{min-height:52px;border:2px dashed var(--line);border-radius:10px;padding:4px;margin:6px 0;background:#ffffff80}
+.zone.over{border-color:var(--acc);background:#1d4e7a1a}
+.slot:empty::before{content:"Trascina qui il titolo";color:var(--mut);padding:8px;display:block}
+.fz:empty::before{content:"Trascina qui le frasi che riguardano questa cartina";color:var(--mut);padding:8px;display:block}
+.chip{display:inline-block;margin:3px;padding:6px 10px;background:#fff;border:1px solid var(--line);border-radius:8px;cursor:grab;font-size:.9rem;touch-action:none;user-select:none;-webkit-user-select:none}
+.ghost{position:fixed;z-index:99;pointer-events:none;box-shadow:0 6px 18px #0004;border-color:var(--acc)}
+.modal{position:fixed;inset:0;background:#000c;display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+.hidden{display:none!important}
+.box{background:#fff;border-radius:14px;padding:22px;max-width:480px;text-align:center}
+.box.al{border:6px solid var(--ko)}
+#cd{font:700 4rem/1 'Palatino Linotype',Palatino,serif;color:var(--ko)}
+#lb{cursor:zoom-out}#li{max-width:100%;max-height:100%;background:#fff}
+table{border-collapse:collapse;width:100%;background:#fff;margin:10px 0}
+td,th{border:1px solid var(--line);padding:6px 8px;text-align:left;font-size:.92rem}
+.ok{color:var(--ok);font-weight:600}.ko{color:var(--ko);font-weight:600}
+.st{font-size:1.15rem;font-weight:700}
+</style></head><body>
+<div id="top"><div id="hd"><span id="who">Le guerre del Risorgimento</span><span id="tm"></span></div><nav id="tabs"></nav></div>
+<main>
+<section class="pg on" id="p0">
+<h1>Le guerre del Risorgimento</h1>
+<p>Per ogni cartina scegli il titolo giusto e trascina le 6 frasi che riguardano quell’argomento. Le cartine e le frasi cambiano ogni volta.</p>
+<label>Cognome<input id="co" autocomplete="off"></label>
+<label>Nome<input id="no" autocomplete="off"></label>
+<label>Classe<input id="cl" autocomplete="off"></label>
+<label>Tempo a disposizione, in secondi (0 = senza limite di tempo)<input id="tl" type="number" min="0" step="1" value="600"></label>
+<p class="note">L’esercizio si svolge a schermo intero. Se esci dalla pagina, cambi finestra o scheda del browser, comparirà un avviso: avrai 10 secondi per rientrare, altrimenti l’attività sarà interrotta e la cosa sarà scritta nel report.</p>
+<button class="b" id="go">Inizia l’esercizio</button> <span id="err" class="ko"></span>
+</section>
+<section class="pg" id="p6"><div id="rs"></div><p id="pe" class="ko"></p>
+<button class="b" id="rt">Riprova l’esercizio</button><button class="b s" id="pd">Scarica il report in PDF</button></section>
+</main>
+<div id="al" class="modal hidden"><div class="box al"><h2>ATTENZIONE!</h2><p id="am"></p><p>Non puoi uscire dall’esercizio né aprire altre finestre o schede di consultazione.<br>Rientra entro 10 secondi, altrimenti l’attività verrà interrotta.</p><div id="cd">10</div><button class="b" id="bk">Rientra nell’esercizio</button></div></div>
+<div id="cf" class="modal hidden"><div class="box"><p id="cm"></p><button class="b" id="cy">Sì, consegna</button><button class="b s" id="cn">No, continua</button></div></div>
+<div id="lb" class="modal hidden"><img id="li" alt="Cartina ingrandita"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+const T=["Prima guerra di Indipendenza","Seconda guerra di Indipendenza - prima fase","Spedizione dei Mille","Terza guerra di Indipendenza","Presa di Roma"];
+const P=[["Cinque giornate di Milano","Battaglia di Goito","Volontari di Curtatone e Montanara","Pio IX ritira le sue truppe","Armistizio di Salasco","Sconfitta di Novara e abdicazione di Carlo Alberto"],
+["Accordi di Plombières","Attentato di Felice Orsini a Napoleone III","Risaie di Vercelli allagate","Battaglie di Magenta, Solferino e San Martino","Armistizio di Villafranca","Savoia e Nizza cedute alla Francia"],
+["Partenza da Quarto (5 maggio)","Sbarco a Marsala","“Qui si fa l’Italia o si muore” (Calatafimi)","Presa di Palermo","Battaglia del Volturno","Incontro di Teano"],
+["Alleanza con la Prussia","Sconfitta navale di Lissa","Vittoria di Bezzecca","Telegramma “Obbedisco”","Battaglia di Sadowa","Veneto ceduto alla Francia e poi all’Italia (pace di Vienna)"],
+["Aspromonte (1862)","Mentana (1867)","Breccia di Porta Pia (20 settembre 1870)","Sconfitta francese a Sedan","Legge delle guarentigie","Non expedit"]];
+const IMG=n=>`https://de-stefano.github.io/claude/ris${n+1}.jpg`;
+const $=s=>document.querySelector(s);
+const sh=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const pad=n=>String(n).padStart(2,'0'),fmt=s=>pad(s/60|0)+':'+pad(s%60),hm=d=>pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds()),dt=d=>pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear();
+let attempts=[],cur=null,phase='setup',wantFs=false,inc=null,tm=null;
+
+/* schede */
+const tb=['1 Dati','2','3','4','5','6','7 Esito'].map((t,i)=>{const b=document.createElement('button');b.textContent='Scheda '+t;b.tabIndex=-1;b.style.pointerEvents='none';$('#tabs').append(b);return b});
+function go(n){document.querySelectorAll('.pg').forEach(p=>p.classList.toggle('on',p.id=='p'+n));tb.forEach((b,i)=>b.classList.toggle('on',i==n));scrollTo(0,0)}
+function chip(txt,t,k){const c=document.createElement('div');c.className='chip';c.textContent=txt;c.dataset.t=t;c.dataset.k=k;c.tabIndex=0;c.onkeydown=e=>{if(e.key=='Enter'||e.key==' '){e.preventDefault();tap(c)}};drag(c);return c}
+function zone(k,r,cls){const z=document.createElement('div');z.className='zone '+cls;z.dataset.k=k;z.dataset.r=r;return z}
+function mk(i,t){
+ const s=document.createElement('section');s.className='pg';s.id='p'+(i+1);s.dataset.t=t;
+ s.innerHTML=`<h2>Scheda ${i+2}</h2><div class="nv"></div><div class="g"><div><img class="map" src="${IMG(t)}" alt="Cartina da riconoscere"><small>Tocca la cartina per ingrandirla.</small></div><div><h3>Di quale argomento è la cartina?</h3><div id="a"></div><h3>Trascina le 6 frasi che riguardano questo argomento <small class="cnt">(0)</small></h3><div id="b"></div><small>Frasi disponibili</small><div id="c"></div></div></div>`;
+ const q=x=>s.querySelector('#'+x),sl=zone('t','slot','slot'),tbk=zone('t','bank','bank'),fz=zone('p','slot','fz'),pb=zone('p','bank','bank');
+ q('a').append(sl,tbk);q('b').append(fz);q('c').append(pb);
+ sh(T.map((x,j)=>[x,j])).forEach(([x,j])=>tbk.append(chip(x,j,'t')));
+ sh(P.flatMap((a,j)=>a.map(x=>[x,j]))).forEach(([x,j])=>pb.append(chip(x,j,'p')));
+ s.querySelectorAll('[id]').forEach(e=>e.removeAttribute('id'));
+ const nv=s.querySelector('.nv');
+ if(i>0){const b=document.createElement('button');b.className='b s';b.textContent='← Scheda '+(i+1);b.onclick=()=>go(i);nv.append(b)}
+ const n=document.createElement('button');n.className='b';n.textContent=i<4?'Scheda '+(i+3)+' →':'Consegna l’esercizio';n.onclick=()=>i<4?go(i+2):consegna();nv.append(n);
+ s.querySelector('.map').onclick=()=>{$('#li').src=IMG(t);$('#lb').classList.remove('hidden')};
+ return s}
+$('#lb').onclick=()=>$('#lb').classList.add('hidden');
+
+/* trascinamento */
+function put(c,z){if(!z||c.dataset.k!=z.dataset.k)return;const pg=c.closest('.pg');
+ if(z.dataset.k=='t'&&z.dataset.r=='slot'){const o=z.querySelector('.chip');if(o&&o!==c)pg.querySelector('.zone[data-k="t"][data-r="bank"]').append(o)}
+ z.append(c);upd()}
+function tap(c){const pg=c.closest('.pg'),to=c.parentNode.dataset.r=='bank'?'slot':'bank';put(c,pg.querySelector(`.zone[data-k="${c.dataset.k}"][data-r="${to}"]`))}
+function upd(){document.querySelectorAll('.pg[data-t]').forEach((p,i)=>{p.querySelector('.cnt').textContent='('+p.querySelectorAll('.fz .chip').length+' inserite)';const t=!!p.querySelector('.slot .chip'),n=p.querySelectorAll('.fz .chip').length,ok=t&&n==6;tb[i+1].classList.toggle('dn',ok);tb[i+1].classList.toggle('wp',(t||n>0)&&!ok)})}
+function drag(c){c.addEventListener('pointerdown',e=>{
+ if(phase!='running'||e.button>0)return;
+ const r=c.getBoundingClientRect(),ox=e.clientX-r.left,oy=e.clientY-r.top,sx=e.clientX,sy=e.clientY;let g=null,over=null;
+ const zAt=(x,y)=>document.elementFromPoint(x,y)?.closest('.zone');
+ const mv=v=>{if(!g&&Math.hypot(v.clientX-sx,v.clientY-sy)>6){g=c.cloneNode(true);g.className='chip ghost';g.style.width=r.width+'px';document.body.append(g);c.style.opacity=.3}
+  if(g){g.style.left=v.clientX-ox+'px';g.style.top=v.clientY-oy+'px';const z=zAt(v.clientX,v.clientY);if(over&&over!==z)over.classList.remove('over');over=z;z&&z.classList.add('over')}};
+ const up=v=>{removeEventListener('pointermove',mv);removeEventListener('pointerup',up);removeEventListener('pointercancel',up);
+  over&&over.classList.remove('over');c.style.opacity='';
+  if(v.type=='pointercancel'){g&&g.remove();return}
+  if(g){g.remove();put(c,zAt(v.clientX,v.clientY))}else tap(c)};
+ addEventListener('pointermove',mv);addEventListener('pointerup',up);addEventListener('pointercancel',up)})}
+
+/* avvio, timer, consegna */
+$('#go').onclick=async()=>{
+ const co=$('#co').value.trim(),no=$('#no').value.trim(),cl=$('#cl').value.trim(),v=$('#tl').value;
+ if(!co||!no||!cl){$('#err').textContent='Compila cognome, nome e classe.';return}
+ $('#err').textContent='';const limit=v===''?600:Math.max(0,Math.floor(+v)||0);
+ wantFs=!!document.documentElement.requestFullscreen;
+ if(wantFs){try{await document.documentElement.requestFullscreen()}catch(e){wantFs=false}}
+ document.querySelectorAll('.pg[data-t]').forEach(p=>p.remove());
+ const order=sh([0,1,2,3,4]);order.forEach((t,i)=>$('#p6').before(mk(i,t)));
+ cur={s:{co,no,cl},limit,start:new Date(),inc:[],fs:wantFs,order};
+ $('#who').textContent=`${no} ${co} - ${cl}`;
+ phase='running';tm=setInterval(tick,250);tick();upd();go(1)};
+function tick(){if(phase!='running')return;if(inc)updAl();if(phase!='running')return;
+ const e=(Date.now()-cur.start)/1000;
+ if(cur.limit){const r=cur.limit-e;if(r<=0){fin('Tempo scaduto');return}$('#tm').textContent='⏱ '+fmt(Math.ceil(r));$('#tm').classList.toggle('lo',r<=30)}
+ else $('#tm').textContent='⏱ '+fmt(Math.floor(e))+' (senza limite)'}
+function ask(m,f){$('#cm').textContent=m;$('#cf').classList.remove('hidden');$('#cy').onclick=()=>{$('#cf').classList.add('hidden');f()};$('#cn').onclick=()=>$('#cf').classList.add('hidden')}
+function consegna(){const v=ev(),n=v.filter(r=>!r.tit||r.ok+r.ko.length==0).length;
+ ask(n?`Ci sono ${n} schede incomplete. Vuoi consegnare lo stesso?`:'Vuoi consegnare l’esercizio?',()=>fin('Completato'))}
+function ev(){return[...document.querySelectorAll('.pg[data-t]')].map(pg=>{const t=+pg.dataset.t,ti=pg.querySelector('.slot .chip'),ps=[...pg.querySelectorAll('.fz .chip')];
+ const ok=ps.filter(c=>+c.dataset.t==t).length;return{t,tit:ti?T[ti.dataset.t]:null,titOk:!!ti&&+ti.dataset.t==t,ok,ko:ps.filter(c=>+c.dataset.t!=t).map(c=>c.textContent)}})}
+function fin(st){if(phase!='running')return;phase='done';clearInterval(tm);
+ if(inc){inc.secs=Math.round((Date.now()-inc.at)/1000);inc=null}
+ $('#al').classList.add('hidden');$('#cf').classList.add('hidden');
+ cur.end=new Date();cur.dur=Math.round((cur.end-cur.start)/1000);cur.st=st;cur.res=ev();
+ cur.pts=cur.res.reduce((s,r)=>s+(r.titOk?1:0)+r.ok,0);attempts.push(cur);
+ if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});
+ $('#tm').textContent='';$('#pe').textContent='';show(cur);go(6)}
+function show(a){$('#rs').innerHTML=`<h1>Esito dell’esercizio</h1><p class="st ${a.st=='Completato'?'ok':'ko'}">${a.st}</p>
+<p>Risposte corrette: <b>${a.pts} su 35</b> (sbagliate o mancanti: ${35-a.pts}). Durata: ${fmt(a.dur)}. Uscite dalla pagina rilevate: ${a.inc.length}. Tentativi svolti: ${attempts.length}.</p>
+<table><tr><th>Scheda</th><th>Cartina</th><th>Titolo</th><th>Frasi</th></tr>${a.res.map((r,i)=>`<tr><td>${i+2}</td><td>${T[r.t]}</td><td class="${r.titOk?'ok':'ko'}">${r.titOk?'corretto':r.tit?'errato: '+r.tit:'non scelto'}</td><td>${r.ok}/6 corrette, ${r.ko.length} errate</td></tr>`).join('')}</table>`}
+$('#rt').onclick=()=>{phase='setup';$('#who').textContent='Le guerre del Risorgimento';go(0)};
+
+/* controllo uscita */
+function leave(type){if(phase!='running'||inc)return;inc={type,at:new Date(),dl:Date.now()+10000};cur.inc.push(inc);$('#am').textContent=type;$('#al').classList.remove('hidden');updAl()}
+function updAl(){const r=Math.ceil((inc.dl-Date.now())/1000);$('#cd').textContent=Math.max(r,0);if(r<=0){inc.back=false;fin('Interrotto: lo studente non è rientrato entro 10 secondi')}}
+$('#bk').onclick=async()=>{if(!inc)return;if(Date.now()>inc.dl){updAl();return}
+ if(wantFs&&!document.fullscreenElement){try{await document.documentElement.requestFullscreen()}catch(e){}}
+ if(!inc)return;inc.secs=Math.round((Date.now()-inc.at)/1000);inc.back=true;inc=null;$('#al').classList.add('hidden')};
+document.addEventListener('visibilitychange',()=>{if(document.hidden)leave('Cambio di scheda o finestra del browser, oppure finestra ridotta a icona');else if(inc)updAl()});
+addEventListener('blur',()=>setTimeout(()=>{if(!document.hasFocus())leave('Perdita del focus: apertura di un’altra finestra o applicazione')},60));
+addEventListener('focus',()=>{if(inc)updAl()});
+document.addEventListener('fullscreenchange',()=>{if(phase=='running'&&wantFs&&!document.fullscreenElement)leave('Uscita dalla modalità a schermo intero')});
+addEventListener('beforeunload',e=>{if(phase=='running'){cur.inc.push({type:'Tentativo di chiudere, ricaricare o abbandonare la pagina',at:new Date(),secs:0});e.preventDefault();e.returnValue=''}});
+document.addEventListener('contextmenu',e=>{if(phase=='running')e.preventDefault()});
+
+/* report PDF */
+$('#pd').onclick=()=>{
+ if(!window.jspdf){$('#pe').textContent='Libreria PDF non caricata: controlla la connessione a internet e riprova.';return}
+ const d=new window.jspdf.jsPDF();let y=16;
+ const ln=(t,o={})=>{const s=o.s||10;d.setFont('helvetica',o.b?'bold':'normal');d.setFontSize(s);d.setTextColor(...(o.c||[20,40,58]));
+  d.splitTextToSize(t,180-(o.i||0)).forEach(l=>{if(y>281){d.addPage();y=16}d.text(l,15+(o.i||0),y);y+=s*.42+1.3})};
+ const G=[31,122,69],R=[179,38,30];
+ ln('Report esercizio - Le guerre del Risorgimento',{b:1,s:16});ln('Generato il '+dt(new Date())+' alle '+hm(new Date()),{c:[81,101,122]});
+ attempts.forEach((a,n)=>{y+=4;ln('Tentativo '+(n+1),{b:1,s:13,c:[29,78,122]});
+  ln(`Alunno: ${a.s.co} ${a.s.no} - Classe: ${a.s.cl}`);
+  ln(`Data: ${dt(a.start)} - Inizio: ${hm(a.start)} - Fine: ${hm(a.end)} - Durata: ${fmt(a.dur)} (tempo massimo: ${a.limit?fmt(a.limit):'nessun vincolo'}) - Schermo intero: ${a.fs?'attivo':'non disponibile'}`);
+  ln('Esito attività: '+a.st,{b:1,c:a.st=='Completato'?G:R});
+  ln(`Risposte corrette: ${a.pts} su 35 - sbagliate o mancanti: ${35-a.pts}`,{b:1});
+  a.res.forEach((r,i)=>{ln(`Scheda ${i+2} - cartina: ${T[r.t]}`,{b:1,i:2});
+   ln(`Titolo: ${r.titOk?'corretto':r.tit?'errato (scelto: '+r.tit+')':'non scelto'}`,{c:r.titOk?G:R,i:6});
+   ln(`Frasi: ${r.ok}/6 corrette, ${r.ko.length} errate inserite, ${6-r.ok} mancanti`,{c:r.ok==6&&!r.ko.length?G:R,i:6});
+   if(r.ko.length)ln('Frasi errate: '+r.ko.join('; '),{i:6,c:R})});
+  ln('Uscite dalla pagina:',{b:1});
+  if(!a.inc.length)ln('Nessun tentativo di uscire dalla pagina rilevato.',{c:G,i:2});
+  a.inc.forEach(x=>ln(`- ore ${hm(x.at)}: ${x.type}${x.back===true?' (rientrato dopo '+x.secs+' s)':x.back===false?' (NON rientrato entro 10 s: attività interrotta)':''}`,{c:R,i:2}))});
+ const f=a=>a.replace(/[^a-z0-9]+/gi,'_');const l=attempts[attempts.length-1].s;
+ d.save(`report_${f(l.co)}_${f(l.no)}.pdf`)};
+</script></body></html>
