@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Video con domande - Confini orientali 1943-1954</title>
+<style>
+body{margin:0;font-family:system-ui,sans-serif;background:#f4f6fa;color:#1f2a44}
+main{max-width:1000px;margin:auto;padding:14px}h1{font-size:22px}
+#wrap{position:relative;aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden}
+#wrap iframe{position:absolute;inset:0;width:100%;height:100%}
+.card{background:#fff;border-radius:12px;padding:16px;margin-top:14px;box-shadow:0 1px 5px #0002}
+.q{margin:12px 0}.o{display:block;width:100%;text-align:left;margin:5px 0;padding:9px 12px;border:1px solid #8a97b8;border-radius:8px;background:#fff;font:inherit;cursor:pointer}
+.o.sel{background:#e6edff}.o.good{background:#d9f5e5;border-color:#1e9d57}.o.bad{background:#fbdcd8;border-color:#c0392b}
+button.go{font:inherit;padding:9px 16px;border:0;border-radius:8px;background:#2b59c3;color:#fff;cursor:pointer}button.go:disabled{background:#aab}
+#st{font-size:14px;color:#59627a}#msg{color:#c0392b}
+</style></head><body><main>
+<h1>Confini orientali d'Italia 1943-1954: guarda il video e rispondi</h1>
+<p id="st">Guarda il video: si fermerà da solo per farti qualche domanda. Non puoi saltare avanti.</p>
+<div id="wrap"><div id="yt"></div></div><p id="msg"></p>
+<div class="card" id="qz" style="display:none"></div>
+<div class="card" id="fin" style="display:none"></div>
+</main>
+<script>
+const VIDEO_ID="8l8P6cpygsQ";
+/* ==== DA MODIFICARE: t = secondo in cui il video si ferma (es. 90 = 1:30) ==== */
+const STOPS=[
+{t:60,title:"Domande sul primo tratto",qs:[
+ {q:"Quando i partigiani jugoslavi entrarono a Trieste?",o:["1 maggio 1945","2 maggio 1945","9 giugno 1945","10 febbraio 1947"],a:0},
+ {q:"Per quanti giorni Trieste fu amministrata dai partigiani jugoslavi dopo la liberazione?",o:["10 giorni","20 giorni","40 giorni","100 giorni"],a:2}]},
+{t:120,title:"Domande sul secondo tratto",qs:[
+ {q:"Con l'accordo del 9 giugno 1945, chi amministrava la zona A?",o:["L'esercito jugoslavo (VUJA)","Il Governo Militare Alleato (anglo-americani)","Il Regno d'Italia","L'Austria"],a:1},
+ {q:"Quale città, pur essendo in piena zona B, fu attribuita alla zona A come enclave?",o:["Fiume","Zara","Pola","Parenzo"],a:2}]},
+{t:180,title:"Domande sul terzo tratto",qs:[
+ {q:"Quando fu firmato il Trattato di pace di Parigi?",o:["26 aprile 1915","12 novembre 1920","10 febbraio 1947","26 ottobre 1954"],a:2},
+ {q:"Che cosa stabilì il Memorandum di Londra (26 ottobre 1954)?",o:["Zona A all'Italia e zona B alla Jugoslavia","Zona A alla Jugoslavia e zona B all'Italia","Fiume città libera","L'annessione dell'Istria all'Italia"],a:0}]}];
+/* ===================================================================== */
+const R=[];let P,done=0,max=0,busy=false,iv;
+const $=s=>document.querySelector(s);
+const tag=document.createElement("script");tag.src="https://www.youtube.com/iframe_api";document.head.appendChild(tag);
+const to=setTimeout(()=>{$("#msg").innerHTML="Il video non si carica. Controlla la connessione o i filtri della scuola, oppure avvisa il docente. <a href='https://www.youtube.com/watch?v="+VIDEO_ID+"' target='_blank'>Link al video</a>"},10000);
+function onYouTubeIframeAPIReady(){P=new YT.Player("yt",{videoId:VIDEO_ID,playerVars:{rel:0,fs:0,modestbranding:1,playsinline:1},
+ events:{onReady:()=>{clearTimeout(to);iv=setInterval(check,400)},onStateChange:e=>{if(e.data===0&&done>=STOPS.length)finish()},
+ onError:()=>{clearTimeout(to);$("#msg").innerHTML="Questo video non può essere incorporato o non è disponibile. <a href='https://www.youtube.com/watch?v="+VIDEO_ID+"' target='_blank'>Apri su YouTube</a>"}}})}
+function check(){if(busy||!P.getCurrentTime)return;const t=P.getCurrentTime(),s=STOPS[done];
+ if(s&&t>=s.t){P.pauseVideo();P.seekTo(Math.max(0,s.t-0.3),true);return quiz(s)}
+ if(t>max+2){P.seekTo(max,true);$("#st").textContent="Non puoi saltare avanti: il video riprende dal punto già visto.";return}
+ if(t>max)max=t}
+function quiz(s){busy=true;const ans=[];const box=$("#qz");box.style.display="block";
+ box.innerHTML="<h2>"+s.title+"</h2>"+s.qs.map((x,i)=>`<div class="q"><b>${i+1}. ${x.q}</b>${x.o.map((o,j)=>`<button class="o" data-i="${i}" data-j="${j}">${o}</button>`).join("")}</div>`).join("")+`<button class="go" id="ok" disabled>Conferma risposte</button>`;
+ box.onclick=e=>{const b=e.target.closest(".o");if(b&&!box.dataset.fixed){ans[+b.dataset.i]=+b.dataset.j;box.querySelectorAll(`[data-i="${b.dataset.i}"]`).forEach(x=>x.classList.toggle("sel",x===b));$("#ok").disabled=ans.filter(v=>v!==undefined).length<s.qs.length}
+  if(e.target.id=="ok"){if(!box.dataset.fixed){box.dataset.fixed=1;s.qs.forEach((x,i)=>{box.querySelectorAll(`[data-i="${i}"]`).forEach((o,j)=>{o.classList.remove("sel");if(j==x.a)o.classList.add("good");else if(j==ans[i])o.classList.add("bad")});R.push({q:x.q,ok:ans[i]==x.a})});e.target.textContent="Continua il video ▶"}
+   else{box.style.display="none";delete box.dataset.fixed;done++;busy=false;max=Math.max(max,s.t);$("#st").textContent="Guarda il video: si fermerà da solo per farti qualche domanda. Non puoi saltare avanti.";P.seekTo(s.t,true);P.playVideo()}}}}
+function finish(){clearInterval(iv);const ok=R.filter(r=>r.ok).length;const f=$("#fin");f.style.display="block";
+ f.innerHTML=`<h2>Fine del video</h2><p><b>Risposte corrette: ${ok} su ${R.length}</b></p>`+R.map(r=>`<p>${r.ok?"✅":"❌"} ${r.q}</p>`).join("")}
+</script></body></html>
