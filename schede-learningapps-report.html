@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Schede con giochi LearningApps</title>
+<style>
+:root{--bg:#f3f5f7;--ink:#1d2733;--mut:#5d6b7a;--card:#fff;--line:#d3dbe3;--acc:#1f5f8b;--ok:#2e7d4f;--ko:#b3392f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.5 Georgia,"Times New Roman",serif}
+main{max-width:900px;margin:0 auto;padding:20px 16px 60px}
+h1{font:700 26px/1.2 "Trebuchet MS",Verdana,sans-serif;margin:8px 0 18px}
+h2{font:700 19px "Trebuchet MS",Verdana,sans-serif;margin:0 0 10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+label{display:block;font:600 14px "Trebuchet MS",Verdana,sans-serif;color:var(--mut);margin:10px 0 4px}
+input[type=text],textarea{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:6px;font:inherit;background:#fff;color:var(--ink)}
+textarea{min-height:70px;resize:vertical}
+textarea.code{min-height:78px;font:13px Consolas,monospace;background:#f3f5f7}
+button{font:600 15px "Trebuchet MS",Verdana,sans-serif;padding:9px 14px;border-radius:6px;border:1px solid var(--acc);background:var(--acc);color:#fff;cursor:pointer}
+button.sec{background:#fff;color:var(--acc)}
+button.del{background:#fff;color:var(--ko);border-color:var(--ko)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid #f0b429;outline-offset:2px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.hint{font-size:14px;color:var(--mut)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.tab{background:#fff;color:var(--ink);border:2px solid var(--line)}
+.tab.on{border-color:var(--acc);background:#e6f0f7}
+.tab.done{border-color:var(--ok)}
+iframe.la{width:100%;height:520px;border:0;border-radius:6px;background:#fff}
+.msg{padding:10px;border-left:4px solid var(--ko);background:#fbeceb;margin:10px 0}
+.msg.ok{border-color:var(--ok);background:#e8f4ec}
+table{width:100%;border-collapse:collapse;font-size:15px}
+td,th{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+.hide{display:none}
+@media print{.noprint{display:none!important}body{background:#fff}}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+let D={title:'',base:'',pages:[]};
+const app=document.querySelector('#app'),$=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const enc=o=>btoa(unescape(encodeURIComponent(JSON.stringify(o))));
+const dec=s=>JSON.parse(decodeURIComponent(escape(atob(s))));
+const gid=v=>{v=String(v).trim();const m=v.match(/[?&]v=([a-z0-9]+)/i);return m?m[1]:(/^[a-z0-9]+$/i.test(v)?v:'')};
+const newPage=()=>({id:'p'+Date.now().toString(36)+Math.floor(Math.random()*999),title:'',text:'',game:''});
+const feedback=p=>`Ottimo, hai risolto il gioco!<iframe src="${D.base}?ok=${p.id}" width="0" height="0" style="border:0"></iframe>`;
+
+/* ---------- DOCENTE ---------- */
+function teacher(){
+  if(!D.base&&/^http/.test(location.href))D.base=location.origin+location.pathname;
+  app.innerHTML=`<h1>Schede con giochi LearningApps: area docente</h1>
+  <div class="card">
+    <label for="t">Titolo dell’attività</label><input type="text" id="t" value="${esc(D.title)}" oninput="D.title=this.value">
+    <label for="b">Indirizzo pubblicato di questo file (es. GitHub Pages)</label>
+    <input type="text" id="b" value="${esc(D.base)}" oninput="D.base=this.value.trim();codes()" placeholder="https://nomeutente.github.io/repo/schede-learningapps.html">
+    <p class="hint">Serve per costruire il codice da incollare nel campo Feedback di LearningApps. Se apri il file dal computer, scrivi qui l’indirizzo dove lo pubblicherai.</p>
+  </div>
+  <div id="pages"></div>
+  <div class="row">
+    <button onclick="D.pages.push(newPage());list()">+ Aggiungi scheda</button>
+    <button class="sec" onclick="saveJson()">Salva file JSON</button>
+    <button class="sec" onclick="document.querySelector('#file').click()">Apri file JSON</button>
+    <input type="file" id="file" accept=".json" class="hide" onchange="openJson(this.files[0])">
+  </div>
+  <div class="card" style="margin-top:16px"><h2>Prova e condividi</h2>
+    <div class="row"><button onclick="student(true)">Prova come alunno</button>
+    <button class="sec" onclick="copyLink()">Copia link per gli alunni</button></div>
+    <p class="hint" id="msg"></p></div>`;
+  list();
+}
+function list(){
+  $('#pages').innerHTML=D.pages.map((p,i)=>`<div class="card">
+    <div class="row"><h2 style="margin:0;flex:1">Scheda ${i+1}</h2>
+      <button class="sec" onclick="mv(${i},-1)" ${i?'':'disabled'} aria-label="Sposta su">↑</button>
+      <button class="sec" onclick="mv(${i},1)" ${i<D.pages.length-1?'':'disabled'} aria-label="Sposta giù">↓</button>
+      <button class="del" onclick="D.pages.splice(${i},1);list()">Elimina</button></div>
+    <label>Titolo della scheda</label><input type="text" value="${esc(p.title)}" oninput="D.pages[${i}].title=this.value">
+    <label>Testo della scheda</label><textarea oninput="D.pages[${i}].text=this.value">${esc(p.text)}</textarea>
+    <label>Gioco LearningApps (facoltativo: link, codice incorpora o solo codice, es. pc6e3z4d523)</label>
+    <input type="text" value="${esc(p.game)}" onchange="D.pages[${i}].game=gid(this.value);this.value=D.pages[${i}].game;codes()">
+    <div class="gc" data-i="${i}"></div></div>`).join('')||'<p class="hint">Nessuna scheda: premi “Aggiungi scheda”.</p>';
+  codes();
+}
+function codes(){
+  document.querySelectorAll('.gc').forEach(el=>{const p=D.pages[+el.dataset.i];
+    if(!p.game){el.innerHTML='';return}
+    el.innerHTML=`<label>Codice da incollare nel campo “Feedback” di quel gioco su LearningApps</label>
+      <textarea class="code" readonly onclick="this.select()">${esc(feedback(p))}</textarea>
+      <button class="sec" onclick="navigator.clipboard.writeText(D.pages[${el.dataset.i}]&&feedback(D.pages[${el.dataset.i}]))">Copia codice</button>
+      <p class="hint">Questa scheda resterà bloccata finché il gioco non viene risolto.</p>`});
+}
+function mv(i,d){const t=D.pages[i];D.pages[i]=D.pages[i+d];D.pages[i+d]=t;list()}
+function saveJson(){const b=new Blob([JSON.stringify(D,null,1)],{type:'application/json'});
+  const l=document.createElement('a');l.href=URL.createObjectURL(b);l.download='schede-learningapps.json';l.click()}
+function openJson(f){if(!f)return;const r=new FileReader();r.onload=()=>{try{D=JSON.parse(r.result);teacher()}catch(e){alert('File non valido.')}};r.readAsText(f)}
+function copyLink(){const u=(D.base||location.origin+location.pathname)+'?c='+enc(D);
+  navigator.clipboard.writeText(u).then(()=>$('#msg').textContent='Link copiato.',()=>$('#msg').textContent=u)}
+
+/* ---------- ALUNNO ---------- */
+const fmtD=t=>t?new Date(t).toLocaleString('it-IT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'–';
+const fmtT=ms=>{const s=Math.round(ms/1000);return s<60?s+' s':Math.floor(s/60)+' min '+String(s%60).padStart(2,'0')+' s'};
+function student(preview){
+  const P=D.pages,key='schede-'+P.map(p=>p.id).join('-');
+  let st={i:0,ok:{},log:{},name:''},cur=null;
+  if(!preview)try{st=Object.assign(st,JSON.parse(localStorage.getItem(key))||{})}catch(e){}
+  const save=()=>{if(!preview)try{localStorage.setItem(key,JSON.stringify(st))}catch(e){}};
+  const L=id=>st.log[id]||(st.log[id]={first:0,visits:0,spent:0,solvedAt:0,tSolve:0});
+  const spent=id=>L(id).spent+(cur&&cur.id===id?Date.now()-cur.t0:0);
+  const stop=()=>{if(cur){L(cur.id).spent+=Date.now()-cur.t0;cur=null}};
+  const open=i=>P.slice(0,i).every(p=>!p.game||st.ok[p.id]);
+  app.innerHTML=`<h1>${esc(D.title||'Attività')}</h1>
+    ${preview?'<p class="noprint"><button class="sec" onclick="teacher()">← Torna all’area docente</button></p>':''}
+    <div class="card noprint" id="namebox"><label for="nome">Nome e cognome</label><input type="text" id="nome" value="${esc(st.name)}"></div>
+    <nav class="tabs noprint" id="nav"></nav><div id="page"></div><div class="row noprint" id="foot"></div><div id="rep" class="hide"></div>`;
+  $('#nome').oninput=e=>{st.name=e.target.value;save()};
+  function nav(){
+    $('#nav').innerHTML=P.map((p,i)=>`<button class="tab ${i===st.i?'on':''} ${p.game&&st.ok[p.id]?'done':''}" ${open(i)?'':'disabled'} data-i="${i}">${open(i)?(p.game&&st.ok[p.id]?'✓ ':''):'🔒 '}${esc(p.title||'Scheda '+(i+1))}</button>`).join('');
+    document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{st.i=+b.dataset.i;page()});
+    const p=P[st.i],locked=p.game&&!st.ok[p.id];
+    $('#foot').innerHTML=`<button class="sec" id="prev" ${st.i?'':'disabled'}>← Indietro</button>
+      <button id="next" ${(st.i<P.length-1&&!locked)?'':'disabled'}>Avanti →</button>
+      <button class="sec" id="repb">Genera report</button>
+      ${preview&&locked?'<button class="sec" id="fake">Simula gioco risolto (prova)</button>':''}`;
+    $('#prev').onclick=()=>{st.i--;page()};
+    $('#next').onclick=()=>{st.i++;page()};
+    $('#repb').onclick=report;
+    if($('#fake'))$('#fake').onclick=()=>solved(p.id);
+    const m=$('#lock');if(m){m.className='msg'+(p.game&&st.ok[p.id]?' ok':'');
+      m.textContent=!p.game?'':st.ok[p.id]?'Gioco risolto! Puoi andare avanti.':'Risolvi il gioco per sbloccare la scheda successiva.';}
+  }
+  function page(){
+    const p=P[st.i];if(!p){$('#page').innerHTML='<p>Nessuna scheda.</p>';return}
+    stop();const l=L(p.id);if(!l.first)l.first=Date.now();l.visits++;cur={id:p.id,t0:Date.now()};save();
+    $('#page').innerHTML=`<div class="card"><h2>${esc(p.title)}</h2>
+      <div style="white-space:pre-wrap">${esc(p.text)}</div>
+      ${p.game?`<iframe class="la" src="https://learningapps.org/watch?v=${esc(p.game)}" allowfullscreen title="Gioco"></iframe><div id="lock" class="msg"></div>`:''}
+      ${st.i===P.length-1&&open(st.i)?'<p><b>Attività completata.</b></p>':''}</div>`;
+    nav();window.scrollTo(0,0);
+  }
+  function solved(id){if(st.ok[id])return;st.ok[id]=true;const l=L(id);l.solvedAt=Date.now();l.tSolve=spent(id);save();nav()}
+  function report(){
+    stop();save();
+    const rows=P.map((p,i)=>{const l=L(p.id);return `<tr><td>${i+1}. ${esc(p.title||'Scheda '+(i+1))}</td><td>${fmtD(l.first)}</td><td>${l.visits}</td><td>${l.first?fmtT(l.spent):'–'}</td>
+      <td>${p.game?(st.ok[p.id]?'Risolto il '+fmtD(l.solvedAt)+', dopo '+fmtT(l.tSolve)+' sulla scheda':'Non ancora risolto'):'–'}</td></tr>`}).join('');
+    const tot=P.filter(p=>p.game).length,done=P.filter(p=>p.game&&st.ok[p.id]).length;
+    $('#rep').innerHTML=`<div class="card"><h2>Report dell’attività</h2>
+      <p><b>${esc(st.name||'Alunno')}</b>: ${esc(D.title)}<br>Generato il ${fmtD(Date.now())}. Giochi risolti: ${done} su ${tot}.</p>
+      <div style="overflow-x:auto"><table><tr><th>Scheda</th><th>Primo accesso</th><th>Accessi</th><th>Tempo sulla scheda</th><th>Gioco</th></tr>${rows}</table></div>
+      <p class="hint">Gli accessi sono le volte in cui la scheda è stata aperta. Gli errori nei singoli giochi non sono rilevabili: LearningApps segnala solo la soluzione corretta.</p>
+      <p class="row noprint"><button id="pr">Stampa il report</button><button class="sec" id="rb">← Torna alle schede</button></p></div>`;
+    ['#namebox','#nav','#page','#foot'].forEach(x=>$(x).classList.add('hide'));$('#rep').classList.remove('hide');
+    $('#pr').onclick=()=>window.print();
+    $('#rb').onclick=()=>{['#namebox','#nav','#page','#foot'].forEach(x=>$(x).classList.remove('hide'));$('#rep').classList.add('hide');
+      cur={id:P[st.i].id,t0:Date.now()}};
+  }
+  window.onpagehide=()=>{stop();save()};
+  window.onmessage=e=>{
+    if(/^http/.test(location.origin)&&e.origin!==location.origin)return;
+    const d=e.data;if(d&&d.lavar==='solved'&&P.some(p=>p.id===d.id&&p.game))solved(d.id);
+  };
+  page();
+}
+
+/* ---------- AVVIO ---------- */
+const q=new URLSearchParams(location.search);
+if(q.get('ok')){
+  /* pagina-segnale: compare solo dentro il Feedback di LearningApps */
+  if(window.top!==window.self)window.top.postMessage({lavar:'solved',id:q.get('ok')},/^http/.test(location.origin)?location.origin:'*');
+  document.body.innerHTML='';
+}else if(q.get('c')){try{D=dec(q.get('c'));student(false)}catch(e){teacher()}}
+else teacher();
+</script>
+</body>
+</html>
