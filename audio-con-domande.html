@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Audio con domande</title>
+<style>
+:root{--bg:#f3f5f7;--ink:#1d2733;--mut:#5d6b7a;--card:#fff;--line:#d3dbe3;--acc:#1f5f8b;--ok:#2e7d4f;--ko:#b3392f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.5 Georgia,"Times New Roman",serif}
+main{max-width:760px;margin:0 auto;padding:20px 16px 60px}
+h1{font:700 26px/1.2 "Trebuchet MS",Verdana,sans-serif;margin:8px 0 18px}
+h2{font:700 18px "Trebuchet MS",Verdana,sans-serif;margin:0 0 10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+label{display:block;font:600 14px "Trebuchet MS",Verdana,sans-serif;color:var(--mut);margin:10px 0 4px}
+input[type=text],textarea{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:6px;font:inherit;background:#fff;color:var(--ink)}
+select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:6px;font:inherit;background:#fff;color:var(--ink)}
+textarea{min-height:60px;resize:vertical}
+button{font:600 15px "Trebuchet MS",Verdana,sans-serif;padding:9px 14px;border-radius:6px;border:1px solid var(--acc);background:var(--acc);color:#fff;cursor:pointer}
+button.sec{background:#fff;color:var(--acc)}
+button.del{background:#fff;color:var(--ko);border-color:var(--ko)}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid #f0b429;outline-offset:2px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row>input[type=text]{flex:1;min-width:140px}
+.time{width:90px!important;flex:none!important;text-align:center;font-weight:700}
+.opt{display:flex;gap:8px;align-items:center;margin:6px 0}
+.hint{font-size:14px;color:var(--mut)}
+.bar{position:relative;height:12px;background:#e3e9ee;border-radius:6px;margin:14px 0}
+.bar i{position:absolute;left:0;top:0;bottom:0;background:var(--acc);border-radius:6px}
+.bar b{position:absolute;top:-4px;width:4px;height:20px;background:var(--ink);border-radius:2px}
+.choice{display:block;width:100%;text-align:left;margin:8px 0;background:#fff;color:var(--ink);border:2px solid var(--line);padding:12px;font:inherit}
+.choice.ok{border-color:var(--ok);background:#e8f4ec}
+.choice.ko{border-color:var(--ko);background:#fbeceb;opacity:.7}
+.fb{margin-top:10px;padding:10px;border-left:4px solid var(--ok);background:#f0f7f2}
+table{width:100%;border-collapse:collapse;font-size:15px}
+td,th{border:1px solid var(--line);padding:6px 8px;text-align:left}
+.hide{display:none}
+@media print{.noprint{display:none!important}body{background:#fff}}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+let D={title:'',audio:'',stops:[]};
+const $=s=>document.querySelector(s);
+const fmt=s=>Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0');
+const parse=v=>{v=String(v).trim();if(v.includes(':')){const[a,b]=v.split(':');return(+a)*60+(+b)||0}return +v||0};
+const fixUrl=u=>u.trim().replace(/^https?:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\/(.+)$/,'https://raw.githubusercontent.com/$1/$2/$3');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const enc=o=>btoa(unescape(encodeURIComponent(JSON.stringify(o))));
+const dec=s=>JSON.parse(decodeURIComponent(escape(atob(s))));
+const newStop=()=>({type:'mc',t:0,q:'',opts:['','','',''],c:0,ans:'',fb:''});
+const norm=x=>String(x).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,'').replace(/\s+/g,' ').trim();
+
+/* ---------- DOCENTE ---------- */
+function teacher(){
+  $('#app').innerHTML=`
+  <h1>Audio con domande: area docente</h1>
+  <div class="card">
+    <label for="title">Titolo dell’attività</label>
+    <input type="text" id="title" value="${esc(D.title)}" oninput="D.title=this.value">
+    <label for="audio">Link dell’audio (GitHub Pages o link “blob” di GitHub)</label>
+    <div class="row"><input type="text" id="audio" value="${esc(D.audio)}" oninput="D.audio=this.value" placeholder="https://nomeutente.github.io/repo/lezione.mp3">
+    <button class="sec" onclick="loadAudio()">Carica audio</button></div>
+    <audio id="prev" controls style="width:100%;margin-top:12px"></audio>
+    <p class="hint">Ascolta l’audio, fermalo dove vuoi inserire la domanda e premi “Usa il tempo dell’audio” nella domanda.</p>
+  </div>
+  <div id="stops"></div>
+  <div class="row noprint">
+    <button onclick="D.stops.push(newStop());renderStops()">+ Aggiungi domanda</button>
+    <button class="sec" onclick="saveJson()">Salva file JSON</button>
+    <button class="sec" onclick="$('#file').click()">Apri file JSON</button>
+    <input type="file" id="file" accept=".json" class="hide" onchange="openJson(this.files[0])">
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h2>Condividi con gli alunni</h2>
+    <div class="row"><button onclick="startStudent()">Prova come alunno</button>
+    <button class="sec" onclick="copyLink()">Copia link per gli alunni</button></div>
+    <p class="hint" id="msg"></p>
+  </div>`;
+  renderStops();
+  if(D.audio)loadAudio();
+}
+function loadAudio(){const a=$('#prev');a.src=fixUrl(D.audio)}
+function setType(i,t){const s=D.stops[i];s.type=t;if(t==='tf'){s.opts=['Vero','Falso'];if(s.c>1)s.c=0}else if(t==='mc'&&s.opts.length<4){s.opts=['','','','']}renderStops()}
+function renderStops(){
+  $('#stops').innerHTML=D.stops.map((s,i)=>{const t=s.type||'mc';
+  const opts=t==='tf'?['Vero','Falso']:s.opts;
+  const body=t==='short'
+    ?`<label>Risposte accettate (separale con ;)</label><input type="text" value="${esc(s.ans||'')}" oninput="D.stops[${i}].ans=this.value" placeholder="es. Garibaldi; Giuseppe Garibaldi">
+      <p class="hint">Maiuscole, accenti e punteggiatura vengono ignorati nel controllo.</p>`
+    :`<label>Risposte (seleziona quella corretta)</label>`+opts.map((o,j)=>`<div class="opt"><input type="radio" name="c${i}" ${s.c===j?'checked':''} onchange="D.stops[${i}].c=${j}" aria-label="Corretta">`+
+      (t==='tf'?`<span>${o}</span>`:`<input type="text" value="${esc(o)}" oninput="D.stops[${i}].opts[${j}]=this.value" placeholder="Risposta ${j+1}">`)+`</div>`).join('');
+  return `
+  <div class="card">
+    <div class="row">
+      <h2 style="margin:0">Domanda ${i+1}</h2>
+      <input type="text" class="time" value="${fmt(s.t)}" aria-label="Minuto e secondo" onchange="D.stops[${i}].t=parse(this.value);this.value=fmt(D.stops[${i}].t)">
+      <button class="sec" onclick="useTime(${i})">Usa il tempo dell’audio</button>
+      <button class="del" onclick="D.stops.splice(${i},1);renderStops()">Elimina</button>
+    </div>
+    <label>Tipo di esercizio</label>
+    <select aria-label="Tipo di esercizio" onchange="setType(${i},this.value)">
+      <option value="mc" ${t==='mc'?'selected':''}>Scelta multipla</option>
+      <option value="tf" ${t==='tf'?'selected':''}>Vero o falso</option>
+      <option value="short" ${t==='short'?'selected':''}>Risposta breve</option>
+    </select>
+    <label>Testo della domanda o affermazione</label>
+    <textarea oninput="D.stops[${i}].q=this.value">${esc(s.q)}</textarea>
+    ${body}
+    <label>Commento dopo la risposta giusta (facoltativo)</label>
+    <input type="text" value="${esc(s.fb)}" oninput="D.stops[${i}].fb=this.value">
+  </div>`}).join('')||'<p class="hint">Nessuna domanda: premi “Aggiungi domanda”.</p>';
+}
+function useTime(i){const a=$('#prev');D.stops[i].t=Math.round(a.currentTime);renderStops()}
+function saveJson(){
+  const b=new Blob([JSON.stringify(D,null,1)],{type:'application/json'});
+  const l=document.createElement('a');l.href=URL.createObjectURL(b);l.download='audio-con-domande.json';l.click();
+}
+function openJson(f){if(!f)return;const r=new FileReader();r.onload=()=>{try{D=JSON.parse(r.result);teacher()}catch(e){alert('File non valido.')}};r.readAsText(f)}
+function copyLink(){
+  const url=location.origin+location.pathname+'?c='+enc(D);
+  navigator.clipboard.writeText(url).then(()=>$('#msg').textContent='Link copiato. Incollalo dove vuoi: gli alunni vedranno solo l’attività.',
+    ()=>$('#msg').textContent=url);
+}
+
+/* ---------- ALUNNO ---------- */
+function startStudent(){
+  const S=[...D.stops].sort((a,b)=>a.t-b.t);
+  let idx=0,tries=0,shown=-1,res=[];
+  const a=new Audio(fixUrl(D.audio));a.preload='auto';
+  $('#app').innerHTML=`
+  <h1>${esc(D.title||'Ascolta e rispondi')}</h1>
+  <div class="card noprint" id="top">
+    <label for="nome">Nome e cognome</label><input type="text" id="nome">
+    <div class="row" style="margin-top:14px"><button id="play">▶ Ascolta</button>
+    <button class="sec hide" id="again">↺ Riascolta l’ultimo tratto</button></div>
+    <div class="bar" id="bar"><i id="fill" style="width:0"></i></div>
+    <p class="hint" id="time">0:00</p>
+  </div>
+  <div id="quiz"></div><div id="end"></div>`;
+  const bar=$('#bar');
+  a.onloadedmetadata=()=>S.forEach(s=>{const m=document.createElement('b');m.style.left=(s.t/a.duration*100)+'%';bar.appendChild(m)});
+  const upd=()=>{$('#fill').style.width=(a.duration?a.currentTime/a.duration*100:0)+'%';$('#time').textContent=fmt(a.currentTime)+(a.duration?' / '+fmt(a.duration):'')};
+  const timer=setInterval(()=>{
+    upd();
+    if(!a.paused&&idx<S.length&&a.currentTime>=S[idx].t){a.pause();showQ()}
+  },100);
+  $('#play').onclick=()=>{if(!$('#quiz').innerHTML){a.play().catch(()=>alert('Non riesco a caricare l’audio. Controlla il link.'))}};
+  const replay=()=>{$('#quiz').innerHTML='';a.currentTime=idx>0?S[idx-1].t:0;a.play()};
+  $('#again').onclick=replay;
+  a.onended=()=>{if(idx<S.length)showQ();else finish()};
+  function showQ(){
+    const s=S[idx];if(shown!==idx){tries=0;shown=idx}
+    $('#again').classList.remove('hide');
+    const t=s.type||'mc';let body;
+    if(t==='short')body=`<input type="text" id="sa" autocomplete="off" placeholder="Scrivi la risposta"><p><button id="sb">Controlla</button></p>`;
+    else body=(t==='tf'?['Vero','Falso']:s.opts).map((o,j)=>o.trim()?`<button class="choice" data-j="${j}">${esc(o)}</button>`:'').join('');
+    $('#quiz').innerHTML=`<div class="card"><h2>${esc(s.q)}</h2>${body}<p><button class="sec" id="re">↺ Riascolta prima di rispondere</button></p><div id="fbk"></div></div>`;
+    $('#re').onclick=replay;
+    document.querySelectorAll('.choice').forEach(b=>b.onclick=()=>{
+      if(+b.dataset.j===s.c){b.classList.add('ok');document.querySelectorAll('.choice').forEach(x=>x.disabled=true);right(s,'')}
+      else{tries++;b.classList.add('ko');b.disabled=true;wrong()}});
+    if(t==='short'){
+      const chk=()=>{const v=norm($('#sa').value);if(!v)return;
+        const L=(s.ans||'').split(';').map(norm).filter(Boolean);
+        if(L.includes(v)){$('#sa').disabled=true;$('#sb').remove();right(s,'')}else{tries++;wrong()}};
+      $('#sb').onclick=chk;$('#sa').onkeydown=e=>{if(e.key==='Enter')chk()};
+    }
+  }
+  function wrong(){$('#fbk').innerHTML='<div class="fb" style="border-color:var(--ko);background:#fbeceb">Non è corretta. Riprova oppure riascolta il tratto.</div>'}
+  function right(s){
+    tries++;res.push({n:idx+1,t:s.t,q:s.q,ok:tries===1,tries});
+    const r=$('#re');if(r)r.remove();
+    $('#fbk').innerHTML=`<div class="fb"><b>Esatto!</b> ${esc(s.fb)}</div><p><button id="go">Continua ▶</button></p>`;
+    $('#go').onclick=()=>{idx++;$('#quiz').innerHTML='';if(idx>=S.length&&a.ended)finish();else a.play()};
+  }
+  function finish(){
+    clearInterval(timer);upd();$('#top').classList.add('hide');
+    const ok=res.filter(r=>r.ok).length;
+    $('#end').innerHTML=`<div class="card"><h2>Attività completata</h2>
+    <p><b>${esc($('#nome').value||'Alunno')}</b>: ${ok} risposte giuste al primo tentativo su ${res.length}.</p>
+    <table><tr><th>N.</th><th>Minuto</th><th>Domanda</th><th>Esito</th></tr>
+    ${res.map(r=>`<tr><td>${r.n}</td><td>${fmt(r.t)}</td><td>${esc(r.q)}</td><td>${r.ok?'Giusta al 1° tentativo':'Giusta al tentativo n. '+r.tries}</td></tr>`).join('')}</table>
+    <p class="noprint"><button onclick="window.print()">Stampa il report</button></p></div>`;
+  }
+}
+
+/* ---------- AVVIO ---------- */
+const p=new URLSearchParams(location.search).get('c');
+if(p){try{D=dec(p);startStudent()}catch(e){teacher()}}else teacher();
+</script>
+</body>
+</html>
