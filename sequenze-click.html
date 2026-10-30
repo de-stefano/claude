@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sequenze narrative – Clic</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{--bg:#f4f6fb;--c:#fff;--t:#1f2937;--p:#2563eb;--b:#d1d5db}
+@media(prefers-color-scheme:dark){:root{--bg:#111827;--c:#1f2937;--t:#f3f4f6;--b:#4b5563}}
+*{box-sizing:border-box}body{margin:0;font:17px/1.6 system-ui,sans-serif;background:var(--bg);color:var(--t)}
+header{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--p);color:#fff}
+#steps span{padding:3px 10px;border-radius:12px;margin-right:4px;font-size:14px;background:#ffffff33}#steps .on{background:#fff;color:var(--p);font-weight:700}
+#tm{font-weight:700;font-size:18px}
+main{max-width:900px;margin:16px auto;padding:0 12px}
+section{background:var(--c);border:1px solid var(--b);border-radius:12px;padding:18px}
+label{display:block;margin:8px 0 2px;font-weight:600}
+input,textarea{width:100%;font:inherit;padding:8px;border:1px solid var(--b);border-radius:8px;background:var(--bg);color:var(--t)}
+textarea{min-height:240px}
+button{font:inherit;padding:8px 14px;margin:6px 6px 0 0;border:0;border-radius:8px;background:var(--p);color:#fff;cursor:pointer}
+button.s{background:#6b7280}button:disabled{opacity:.4;cursor:not-allowed}
+.warn{color:#dc2626;font-weight:600}
+#tx{position:relative;padding:12px;border:1px solid var(--b);border-radius:8px;line-height:2.1;user-select:text}
+#tx canvas{position:absolute;left:0;top:0;pointer-events:none}
+.w{padding:2px 1px;border-radius:3px;cursor:pointer}.w.st{border-left:4px solid #dc2626;padding-left:3px}
+.seg{padding:8px;border-radius:8px;margin:8px 0;color:#111}.seg input{margin-top:4px}
+#ord{list-style:none;padding:0}#ord li{display:flex;gap:8px;align-items:center;padding:8px;margin:6px 0;border:1px solid var(--b);border-radius:8px;background:var(--bg);cursor:grab}#ord li span{flex:1}
+#ord button{margin:0;padding:4px 10px}.ok{color:#16a34a;font-weight:700}.ko{color:#dc2626;font-weight:700}
+.modes label{display:inline-block;margin-right:12px;font-weight:400}.modes input{width:auto}
+</style></head><body>
+<header><b>Sequenze narrative</b><div id="steps"></div><span id="tm"></span></header>
+<main>
+<section id="s1"><h2>1. I tuoi dati</h2>
+<label>Nome</label><input id="nome"><label>Cognome</label><input id="cognome"><label>Classe</label><input id="classe">
+<label>Tempo massimo in minuti (0 = nessun timer)</label><input id="lim" type="number" min="0" value="0">
+<p class="warn" id="e1"></p><button id="go1">Inizia</button></section>
+
+<section id="s2" hidden><h2>2. Incolla il testo</h2>
+<label>Titolo del brano</label><input id="titolo">
+<label>Testo</label><textarea id="txt" placeholder="Incolla qui il testo..."></textarea>
+<p class="warn">Quando passi alla scheda successiva non potrai più tornare qui.</p>
+<button class="s" id="sv">💾 Salva il testo (.txt)</button>
+<button class="s" onclick="ld.click()">📂 Carica un testo salvato</button><input type="file" id="ld" accept=".txt" hidden>
+<p class="warn" id="e2"></p><button id="go2">Avanti</button></section>
+
+<section id="s3" hidden><h2>3. Dividi in sequenze</h2>
+<p>👆 <b>Metodo: clic.</b> Clicca sulla prima parola di ogni nuova sequenza. Clicca di nuovo sulla stessa parola per togliere il taglio.</p><p>Quando dividi il testo, ogni sequenza prende un colore diverso.</p>
+<div id="tx"></div>
+<button class="s" id="undo">↩ Annulla ultimo taglio</button><button class="s" id="clr">Cancella tutti i tagli</button>
+<h3>Dai un titolo a ogni sequenza <small>(almeno 5 caratteri, niente numeri)</small></h3>
+<div id="segs"></div><p class="warn" id="e3"></p><button id="go3">Avanti: riordina</button></section>
+
+<section id="s4" hidden><h2>4. Riordina i titoli</h2>
+<p>Trascina i titoli (o usa le frecce) per metterli nell'ordine logico della storia.</p>
+<ul id="ord"></ul><button id="go4">Consegna</button></section>
+
+<section id="s5" hidden><h2>5. Report</h2><div id="rep"></div>
+<button id="pdf">📄 Salva il report (PDF)</button><button id="again" class="s" disabled>🔁 Nuovo tentativo</button>
+<p id="e5" class="warn"></p></section>
+</main>
+<div id="ov" style="display:none;position:fixed;inset:0;background:#000d;z-index:99;align-items:center;justify-content:center;padding:16px"><div style="background:var(--c);color:var(--t);padding:24px;border-radius:12px;max-width:480px"><h2>⚠️ Report non salvato</h2><p>L'esercizio precedente è stato chiuso prima di salvare il report. Per continuare devi salvare ora il report in PDF.</p><button id="ovb">📄 Salva il report (PDF)</button></div></div>
+<script>
+const $=i=>document.getElementById(i),esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const COL=['#fde68a','#bbf7d0','#bfdbfe','#fbcfe8','#ddd6fe','#fed7aa'];
+const S={step:1,limit:0,start:0,words:[],cuts:[],titles:[],order:[],attempts:[],dirty:false,tid:null,mode:'c'};
+const NAMES=['Dati','Testo','Sequenze','Riordino','Report'];
+function show(n){S.step=n;[1,2,3,4,5].forEach(i=>$('s'+i).hidden=i!=n);
+ $('steps').innerHTML=NAMES.map((t,i)=>`<span class="${i+1==n?'on':''}">${i+1}. ${t}</span>`).join('');scrollTo(0,0)}
+function fmt(s){s=Math.max(0,Math.round(s));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+function tick(){if(S.step>=5||!S.start)return;const e=(Date.now()-S.start)/1000;
+ if(S.limit>0){const r=S.limit-e;$('tm').textContent='⏱ '+fmt(r);if(r<=0){alert('Tempo scaduto!');finish(true)}}else $('tm').textContent='⏱ '+fmt(e)}
+function startTimer(){S.start=Date.now();clearInterval(S.tid);S.tid=setInterval(tick,500);tick()}
+$('go1').onclick=()=>{if(!$('nome').value.trim()||!$('cognome').value.trim()||!$('classe').value.trim()){$('e1').textContent='Compila nome, cognome e classe.';return}
+ S.limit=Math.max(0,parseInt($('lim').value)||0)*60;S.dirty=true;startTimer();show(2)};
+$('sv').onclick=()=>{const t=$('txt').value;if(!t.trim())return;const a=document.createElement('a');
+ a.href=URL.createObjectURL(new Blob([($('titolo').value.trim()||'')+'\n'+t],{type:'text/plain'}));a.download='testo-salvato.txt';a.click()};
+$('ld').onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{const i=t.indexOf('\n');$('titolo').value=t.slice(0,i).trim();$('txt').value=t.slice(i+1)})};
+$('go2').onclick=()=>{const t=$('txt').value.trim();
+ if(!$('titolo').value.trim()||t.split(/\s+/).length<10){$('e2').textContent='Scrivi il titolo e incolla un testo (almeno 10 parole).';return}
+ S.words=t.split(/\s+/);S.cuts=[];S.titles=[];show(3);drawText();drawSegs()};
+/* ---- scheda 3 ---- */
+document.querySelectorAll('input[name=m]').forEach(r=>r.onchange=()=>{S.mode=r.value;$('tx').querySelector('canvas').style.pointerEvents=S.mode=='p'?'auto':'none'});
+function segIdx(){let k=-1;return S.words.map((w,i)=>{if(i==0||S.cuts.includes(i))k++;return k})}
+function drawText(){const si=segIdx();
+ $('tx').innerHTML=S.words.map((w,i)=>`<span class="w${S.cuts.includes(i)?' st':''}" data-i="${i}" style="${S.cuts.length?'background:'+COL[si[i]%6]+';color:#111':''}">${esc(w)}</span>`).join(' ')+'<canvas></canvas>';
+ const c=$('tx').querySelector('canvas');c.width=$('tx').clientWidth;c.height=$('tx').clientHeight;c.style.pointerEvents=S.mode=='p'?'auto':'none';pen(c)}
+function toggle(i){if(i<=0||i>=S.words.length)return;const k=S.cuts.indexOf(i);k>=0?S.cuts.splice(k,1):S.cuts.push(i);S.cuts.sort((a,b)=>a-b);drawText();drawSegs()}
+$('tx').addEventListener('click',e=>{if(S.mode=='c'&&e.target.dataset.i)toggle(+e.target.dataset.i)});
+$('tx').addEventListener('mouseup',()=>{if(S.mode!='s')return;const sel=getSelection();if(sel.isCollapsed)return;
+ const ix=[...$('tx').querySelectorAll('.w')].filter(s=>sel.containsNode(s,true)).map(s=>+s.dataset.i);sel.removeAllRanges();if(!ix.length)return;
+ const a=Math.min(...ix),b=Math.max(...ix)+1;[a,b].forEach(i=>{if(i>0&&i<S.words.length&&!S.cuts.includes(i))S.cuts.push(i)});S.cuts.sort((x,y)=>x-y);drawText();drawSegs()});
+function pen(c){const g=c.getContext('2d');let pts=null;
+ c.onpointerdown=e=>{pts=[];c.setPointerCapture(e.pointerId);add(e)};
+ function add(e){const r=c.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;g.strokeStyle='#dc2626';g.lineWidth=3;g.lineCap='round';
+  if(pts.length){g.beginPath();g.moveTo(pts.at(-1)[0],pts.at(-1)[1]);g.lineTo(x,y);g.stroke()}pts.push([x,y,e.clientX,e.clientY])}
+ c.onpointermove=e=>{if(pts)add(e)};
+ c.onpointerup=()=>{if(!pts||pts.length<2){pts=null;return}
+  const mx=pts.reduce((s,p)=>s+p[2],0)/pts.length,my=pts.reduce((s,p)=>s+p[3],0)/pts.length;let best=0,bd=1e9;
+  $('tx').querySelectorAll('.w').forEach(s=>{const r=s.getBoundingClientRect(),d=Math.hypot(Math.max(r.left-mx,0,mx-r.right),Math.max(r.top-my,0,my-r.bottom));if(d<bd){bd=d;best=+s.dataset.i}});
+  pts=null;setTimeout(()=>toggle(best),200)}}
+$('undo').onclick=()=>{S.cuts.pop();drawText();drawSegs()};$('clr').onclick=()=>{S.cuts=[];drawText();drawSegs()};
+function segs(){const si=segIdx(),o=[];S.words.forEach((w,i)=>{(o[si[i]]=o[si[i]]||[]).push(w)});return o.map(a=>a.join(' '))}
+function drawSegs(){const sg=segs();if(!S.cuts.length){$('segs').innerHTML='<p><i>Le sequenze e le caselle dei titoli compariranno dopo aver diviso il testo.</i></p>';return}$('segs').innerHTML=sg.map((t,i)=>`<div class="seg" style="background:${COL[i%6]}">${esc(t)}<input data-k="${i}" placeholder="Titolo della sequenza (almeno 5 caratteri, senza numeri)" value="${esc(S.titles[i]||'')}"></div>`).join('');
+ $('segs').querySelectorAll('input').forEach(inp=>{inp.oninput=()=>{const v=inp.value.replace(/\d/g,'');$('e3').textContent=v!=inp.value?'Nei titoli non si possono usare i numeri.':'';inp.value=v;S.titles[+inp.dataset.k]=v}})}
+$('go3').onclick=()=>{const n=segs().length;
+ if(n<2){$('e3').textContent='Dividi il testo in almeno due sequenze.';return}
+ for(let i=0;i<n;i++)if((S.titles[i]||'').trim().length<5){$('e3').textContent='Ogni sequenza deve avere un titolo di almeno 5 caratteri.';return}
+ S.titles=S.titles.slice(0,n).map(t=>t.trim());let o;do{o=[...Array(n).keys()].sort(()=>Math.random()-.5)}while(o.every((v,i)=>v==i));S.order=o;show(4);drawOrd()};
+/* ---- scheda 4 ---- */
+function mv(a,b){if(b<0||b>=S.order.length)return;S.order.splice(b,0,S.order.splice(a,1)[0]);drawOrd()}
+function drawOrd(){const ol=$('ord');ol.innerHTML='';S.order.forEach((id,p)=>{const li=document.createElement('li');li.draggable=true;
+ li.innerHTML=`<b>${p+1}.</b><span>${esc(S.titles[id])}</span><button class="s">▲</button><button class="s">▼</button>`;
+ const [u,d]=li.querySelectorAll('button');u.onclick=()=>mv(p,p-1);d.onclick=()=>mv(p,p+1);
+ li.ondragstart=()=>S.drag=p;li.ondragover=e=>e.preventDefault();li.ondrop=e=>{e.preventDefault();mv(S.drag,p)};ol.appendChild(li)})}
+$('go4').onclick=()=>finish(false);
+/* ---- report ---- */
+function finish(timeout){clearInterval(S.tid);const now=new Date(),el=Math.min((Date.now()-S.start)/1000,S.limit||1e9),sg=S.words.length?segs():[];
+ const ok=S.order.length?S.order.filter((id,p)=>id==p).length:0;
+ const a={nome:$('nome').value.trim(),cognome:$('cognome').value.trim(),classe:$('classe').value.trim(),titolo:$('titolo').value.trim(),
+  data:now.toLocaleDateString('it-IT'),ora:now.toLocaleTimeString('it-IT'),durata:fmt(el),timeout,
+  seq:sg.map((t,i)=>({t:S.titles[i]||'(senza titolo)',x:t})),ord:S.order.map(id=>S.titles[id]),ok,n:sg.length};
+ S.attempts.push(a);S.dirty=true;show(5);$('again').disabled=true;$('e5').textContent='';
+ $('rep').innerHTML=`<p><b>${esc(a.cognome)} ${esc(a.nome)}</b> – classe ${esc(a.classe)}<br>Brano: <b>${esc(a.titolo)}</b><br>${a.data} ore ${a.ora} – durata ${a.durata}${timeout?' (tempo scaduto)':''}</p>
+ <h3>Risultato del riordino: <span class="${a.ok==a.n&&a.n?'ok':'ko'}">${a.ok} su ${a.n}</span></h3>
+ <p>Ordine dato: ${a.ord.map(esc).join(' → ')||'—'}</p><p>Ordine corretto: ${a.seq.map(s=>esc(s.t)).join(' → ')||'—'}</p>
+ <p>Tentativi svolti finora: <b>${S.attempts.length}</b>. Salva il report per poter giocare di nuovo.</p>`}
+function mkpdf(A){const J=window.jspdf&&window.jspdf.jsPDF;if(!J){alert('Libreria PDF non disponibile: nella finestra di stampa scegli "Salva come PDF".');print();return true}
+ const d=new J(),W=180;let y=15;const L=(t,b,sz)=>{d.setFont('helvetica',b?'bold':'normal');d.setFontSize(sz||11);d.splitTextToSize(String(t),W).forEach(r=>{if(y>282){d.addPage();y=15}d.text(r,15,y);y+=(sz||11)*.5+1.5})};
+ const f=A[0];L('Report esercizio: sequenze narrative',1,16);L(`Alunno: ${f.cognome} ${f.nome} – Classe: ${f.classe}`,1,12);
+ A.forEach((a,i)=>{y+=4;L(`TENTATIVO ${i+1}`,1,13);L(`Brano: ${a.titolo}`);L(`Data: ${a.data}   Ora: ${a.ora}   Durata: ${a.durata}${a.timeout?' (tempo scaduto)':''}${a.interrotto?' (esercizio interrotto: pagina chiusa prima della fine)':''}`);
+  L('Suddivisione in sequenze:',1);a.seq.forEach((s,k)=>{L(`Sequenza ${k+1} – titolo: ${s.t}`,1);L(s.x)});
+  L('Ordine dato dall\'alunno: '+a.ord.join(' > '));L('Ordine corretto: '+a.seq.map(s=>s.t).join(' > '));L(`Risultato del riordino: ${a.ok} su ${a.n}`,1)});
+ d.save(`report_${f.cognome}_${f.nome}.pdf`);return true}
+$('pdf').onclick=()=>{if(mkpdf(S.attempts))done()};
+function done(){S.dirty=false;try{localStorage.removeItem('seqPend')}catch(e){}$('again').disabled=false;$('e5').textContent=''}
+$('again').onclick=()=>{if(S.dirty){$('e5').textContent='Prima salva il report.';return}
+ S.dirty=true;S.cuts=[];S.titles=[];S.order=[];$('e2').textContent='';startTimer();show(2)};
+$('again').addEventListener('click',()=>{if($('again').disabled)$('e5').textContent='Prima salva il report.'});
+function part(){if(S.step<2||S.step>4)return null;const n=new Date(),sg=S.words.length?segs():[];
+ return{nome:$('nome').value.trim(),cognome:$('cognome').value.trim(),classe:$('classe').value.trim(),titolo:$('titolo').value.trim()||'(nessun titolo)',data:n.toLocaleDateString('it-IT'),ora:n.toLocaleTimeString('it-IT'),durata:fmt((Date.now()-S.start)/1000),timeout:false,interrotto:true,
+ seq:sg.map((t,i)=>({t:S.titles[i]||'(senza titolo)',x:t})),ord:S.step==4?S.order.map(id=>S.titles[id]):[],ok:0,n:sg.length}}
+function stash(){if(!S.dirty)return;const l=S.attempts.slice(),p=part();if(p)l.push(p);try{localStorage.setItem('seqPend',JSON.stringify(l))}catch(e){}}
+addEventListener('beforeunload',e=>{if(S.dirty){stash();e.preventDefault();e.returnValue=''}});
+addEventListener('pagehide',stash);
+try{const p=JSON.parse(localStorage.getItem('seqPend')||'null');if(p&&p.length){$('ov').style.display='flex';$('ovb').onclick=()=>{if(mkpdf(p)){localStorage.removeItem('seqPend');$('ov').style.display='none'}}}}catch(e){}
+show(1);
+</script></body></html>
