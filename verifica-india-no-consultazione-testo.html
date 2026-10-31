@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Verifica - L’India</title>
+<style>
+:root{--z:1;--bar:#3d5a73;--bar2:#2f4a60;--side:#e8eaec;--line:#cfd6dc}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#222;background:#fff;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+button{font-family:inherit;cursor:pointer}
+.logo{display:flex;align-items:center;gap:10px;padding:0 40px;height:78px;flex:none}
+.logo svg{height:60px}
+.logo b{font-size:22px;letter-spacing:5px;color:#3d5a73}
+#tbar{background:var(--bar);color:#fff;height:50px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 24px 0 36px;font-weight:bold}
+#tbar .r{display:flex;align-items:center;gap:14px}
+#timer{font-variant-numeric:tabular-nums;background:#2f4a60;padding:6px 12px;border-radius:4px}
+#timer.low{background:#b3261e}
+#gear{background:none;border:1px solid #9bb0c0;color:#fff;border-radius:4px;padding:5px 9px;font-size:16px}
+#login{margin:60px auto;width:360px;border:1px solid var(--line);padding:28px;background:#f7f9fa}
+#login h2{margin:0 0 18px;font-size:20px;color:var(--bar)}
+#login label{display:block;font-size:14px;margin:12px 0 4px}
+#login input{width:100%;padding:9px;border:1px solid #98a7b3;font-size:15px}
+.btn{background:var(--bar);color:#fff;border:0;padding:10px 20px;font-size:15px;border-radius:3px;margin-top:18px}
+.err{color:#b3261e;font-size:13px;min-height:16px;margin-top:8px}
+#app{flex:1;display:none;min-height:0}
+#wrap{display:flex;height:100%}
+#side{width:270px;flex:none;background:#fff;border-right:1px solid var(--line);overflow:auto;padding:12px}
+#side.hide{display:none}
+.box h4{margin:0;background:#d4d9dd;padding:9px 10px;font-weight:normal;font-size:16px}
+.stat{display:flex;justify-content:space-between;padding:8px 10px;border-bottom:1px solid #e3e6e8;font-size:15px}
+.stat span:first-child{display:flex;gap:10px;align-items:center}
+.fil{display:flex;margin:14px 0 0}
+.fil button{flex:1;padding:8px;border:1px solid var(--line);background:#fff;font-size:15px}
+.fil button.on{background:#5e7b93;color:#fff}
+.sec{background:#d4d9dd;padding:9px 10px;margin-top:0;font-size:16px}
+.qi{display:flex;align-items:center;gap:10px;padding:9px 10px;border-bottom:1px solid #fff;background:#e3e0dd;cursor:pointer;font-size:15px;color:#555}
+.qi.cur{background:#f0f2f3;color:#111;font-weight:bold}
+.qi .f{margin-left:auto;color:#b3261e}
+#main{flex:1;display:flex;gap:14px;padding:30px 36px;min-width:0;background:#f4f5f6}
+.pane{background:#fff;border:1px solid var(--line);padding:18px 22px;overflow:auto;font-size:calc(16px * var(--z));line-height:1.55}
+#tp{flex:1.35;text-align:justify}
+#qp{flex:1}
+#tp h1{font-size:1.25em;margin:0 0 .6em}
+#tp h2{font-size:1.05em;margin:1.3em 0 .4em;color:#2f4a60}
+#tp p{margin:0 0 .8em}
+#qp .qn{font-size:.8em;color:#5e7b93;margin-bottom:.4em}
+#qp .qt{font-weight:bold;margin-bottom:.8em}
+.opt{display:flex;gap:10px;align-items:flex-start;padding:.55em .7em;border-bottom:1px solid #eef0f2;cursor:pointer}
+.opt:hover{background:#f3f6f8}
+.opt input{margin-top:.35em;transform:scale(1.2)}
+select,textarea{font-size:1em;padding:.3em;border:1px solid #98a7b3}
+textarea{width:100%;min-height:9em}
+.blank{display:inline-block;min-width:6em;border-bottom:2px solid var(--bar);background:#eaf0f5;text-align:center;padding:0 .4em;cursor:pointer}
+.bank{margin-top:1.2em;display:flex;gap:10px;flex-wrap:wrap}
+.chip{background:var(--bar);color:#fff;padding:.3em .8em;border-radius:1em;cursor:grab;user-select:none}
+#bot{height:44px;flex:none;background:var(--bar);color:#fff;display:none;align-items:center;justify-content:space-between;padding:0 24px}
+#bot button{background:none;border:0;color:#fff;font-size:15px;font-weight:bold;padding:8px 12px}
+#bot button:disabled{opacity:.4;cursor:default}
+#bot .g{display:flex;gap:6px;align-items:center}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9}
+.md{background:#fff;padding:26px;width:min(440px,92vw);border-radius:4px}
+.md h3{margin:0 0 12px;color:var(--bar)}
+.md input{padding:8px;font-size:15px;width:100%;border:1px solid #98a7b3}
+.row{display:flex;gap:10px;justify-content:flex-end;margin-top:6px}
+.btn.s{background:#fff;color:var(--bar);border:1px solid var(--bar)}
+#end,#rep{display:none;padding:40px;overflow:auto;flex:1}
+#end h2{color:var(--bar)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+td,th{border:1px solid #b8c2ca;padding:6px 8px;vertical-align:top;text-align:left}
+th{background:#e3e8ec}
+@media print{.logo,#tbar,#bot,.noprint{display:none!important}body{overflow:visible;height:auto}#rep{overflow:visible}}
+</style></head><body>
+<div class="logo"><svg viewBox="0 0 90 70"><path d="M0 0h70c8 0 14 6 14 14v26c0 8-6 14-14 14H0z" fill="#5b89a6"/><path d="M0 54h84v8H0z" fill="#3d5a73"/></svg><b>INVALSI</b></div>
+<div id="tbar"><span id="ttl">Formato CBT - Italiano - Verifica: l’India</span><span class="r" id="tr" style="display:none"><span id="timer">00:30:00</span><button id="gear" title="Impostazioni docente" onclick="teacher('set')">⚙</button></span></div>
+
+<div id="login"><h2>Accesso alla prova</h2>
+<label>Cognome e nome</label><input id="u" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()">
+<div class="err" id="le"></div><button class="btn" onclick="doLogin()">Accedi</button></div>
+
+<div id="app"><div id="wrap">
+<div id="side"></div>
+<div id="main"><div class="pane" id="qp"></div></div>
+</div></div>
+<div id="end"></div><div id="rep"></div>
+<div id="bot">
+<div class="g"><button onclick="toggleSide()" id="tsb">‹ Nascondi revisione</button><button onclick="toggleFlag()" id="fb">⚑ Segna per la revisione</button><button onclick="zoom(-.1)" title="Riduci">⊖</button><button onclick="zoom(.1)" title="Ingrandisci">⊕</button></div>
+<div class="g"><button id="pb" onclick="nav(-1)">« Precedente</button><button id="nb" onclick="nav(1)">Successivo »</button></div></div>
+
+<script>
+
+const Q=[{"t": "mc", "q": "Che cosa rispondeva Terzani a chi gli chiedeva perché fosse andato a vivere in India?", "o": ["Per fare affari", "Perché lì si può imparare a morire", "Per studiare la religione induista", "Per seguire Gandhi"], "c": 1}, {"t": "mc", "q": "Oltre al PNL pro capite, quali due fattori considera l’Indice di Sviluppo Umano?", "o": ["Speranza di vita e grado di alfabetizzazione", "Numero di abitanti e superficie", "Esportazioni e importazioni", "Numero di ospedali e di strade"], "c": 0}, {"t": "mc", "q": "Che cosa indica l’acronimo G8?", "o": ["I 8 Paesi più poveri", "I 8 Paesi più industrializzati del mondo", "I 8 Paesi asiatici", "I 8 Paesi più popolosi"], "c": 1}, {"t": "tf", "q": "Gli Inglesi iniziarono la loro penetrazione in India con una presenza solo economica, tramite la Compagnia Commerciale delle Indie Orientali.", "c": true}, {"t": "mc", "q": "Che cosa fece scoppiare la rivolta dei Sepoys nel 1857?", "o": ["L’aumento delle tasse sul sale", "La voce che le cartucce fossero oliate con grasso di maiale o di bue", "La nascita del Pakistan", "L’arrivo di soldati dalla Cina"], "c": 1}, {"t": "sel", "p": "Completa la frase scegliendo dal menù.", "q": "Dopo la rivolta del 1857 la Compagnia delle Indie si fece da parte e il governo dell’India passò direttamente a {}.", "o": ["la regina d’Inghilterra", "Gandhi", "Nehru"], "c": 0}, {"t": "short", "q": "Elenca almeno tre aspetti positivi che il dominio coloniale inglese lasciò all’India.", "r": "Ferrovia, amministrazione efficiente, riforme sociali (rogo delle vedove, matrimoni delle bambine), democrazia, lingua inglese"}, {"t": "mc", "q": "Chi annunciò l’indipendenza dell’India nel ferragosto del 1947?", "o": ["Gandhi", "Nehru", "Indira Gandhi", "Ratan Tata"], "c": 1}, {"t": "mc", "q": "Con quali metodi Gandhi condusse la lotta contro gli Inglesi?", "o": ["Con la guerriglia", "Con la non violenza e la resistenza passiva", "Con il boicottaggio dell’inglese a scuola", "Con l’aiuto dell’esercito"], "c": 1}, {"t": "short", "q": "Che cos’è stata la “protesta del sale” del 1930?", "r": "Marcia pacifica guidata da Gandhi di 350 km fino alla costa per bollire l’acqua di mare e contestare il monopolio fiscale sul sale"}, {"t": "tf", "q": "La Partizione e la nascita del Pakistan causarono circa un milione di morti e undici milioni di profughi.", "c": true}, {"t": "drag", "p": "Trascina le parole al posto giusto.", "q": "Gandhi fu assassinato da un {} fanatico, che lo accusava di essere stato troppo tenero con i {}.", "w": ["indù", "musulmani", "inglesi", "sikh"], "c": ["indù", "musulmani"]}, {"t": "mc", "q": "Che cos’è una teocrazia?", "o": ["Un sistema in cui religione e Stato sono separati", "Un sistema in cui l’autorità politica è nelle mani del potere religioso", "Un governo dei militari", "Un governo di un solo partito"], "c": 1}, {"t": "mc", "q": "Che cosa significa il neologismo “Cindia”?", "o": ["Cina + India, la nuova superpotenza economica", "Un accordo militare tra Cina e India", "Un nuovo Stato asiatico", "Una moneta asiatica"], "c": 0}, {"t": "sel", "p": "Completa la frase scegliendo dal menù.", "q": "La città di Bangalore è considerata la nuova {} del mondo del software.", "o": ["Silicon Valley", "Wall Street", "Versailles"], "c": 0}, {"t": "tf", "q": "Un ingegnere indiano costa all’azienda più di un ingegnere statunitense.", "c": false}, {"t": "mc", "q": "Secondo il testo, perché la crescita economica dell’India è più lenta di quella della Cina?", "o": ["Perché in India c’è la democrazia e le decisioni passano dal Parlamento", "Perché l’India non ha giovani", "Perché l’India non conosce l’inglese", "Perché non ha università"], "c": 0}, {"t": "drag", "p": "Trascina le parole al posto giusto.", "q": "L’induismo è una religione {} e tra i suoi dèi principali ci sono Brahma, {} e Shiva.", "w": ["politeistica", "monoteistica", "Visnu", "Zeus"], "c": ["politeistica", "Visnu"]}, {"t": "short", "q": "Che cosa sono le caste in India? Sono state davvero abolite? Spiega.", "r": "Divisione della società in classi a cui si appartiene per nascita; abolite formalmente nel 1947 ma ancora una realtà concreta (matrimoni, cibo, firma)"}, {"t": "mc", "q": "Quale regione è motivo di conflitto tra India e Pakistan?", "o": ["Il Punjab", "Il Kashmir", "Il Bengala", "Il Gange"], "c": 1}];
+function shuf(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+Q.forEach(q=>{if(q.t==='mc'||q.t==='sel'){const ok=q.o[q.c];shuf(q.o);q.c=q.o.indexOf(ok)}if(q.t==='drag')shuf(q.w)});shuf(Q);
+const N=Q.length,S={cur:0,seen:new Set([0]),ans:{},flag:new Set(),filter:'all',z:1,left:1800,tm:null,done:false};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function modal(h){const o=document.createElement('div');o.className='ov';o.innerHTML='<div class="md">'+h+'</div>';document.body.appendChild(o);return o}
+function closeM(){document.querySelectorAll('.ov').forEach(o=>o.remove())}
+function doLogin(){const u=$('u').value.trim();
+ if(u.length>=3){S.name=u;$('login').style.display='none';$('app').style.display='block';$('bot').style.display='flex';$('tr').style.display='flex';startTimer();render()}
+ else $('le').textContent='Inserisci cognome e nome per iniziare.'}
+function fmt(s){const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return [h,m,x].map(v=>String(v).padStart(2,'0')).join(':')}
+function startTimer(){clearInterval(S.tm);$('timer').textContent=fmt(S.left);S.tm=setInterval(()=>{if(S.done)return;S.left--;$('timer').textContent=fmt(Math.max(S.left,0));$('timer').className=S.left<=300?'low':'';if(S.left<=0){finish(true)}},1000)}
+function teacher(mode){const o=modal('<h3>Area docente</h3><p>Inserisci la password del docente.</p><input id="tp2" type="password"><div class="err" id="te"></div><div class="row"><button class="btn s" onclick="closeM()">Annulla</button><button class="btn" onclick="chk(\''+mode+'\')">Conferma</button></div>');
+ $('tp2').focus();$('tp2').onkeydown=e=>{if(e.key==='Enter')chk(mode)}}
+function chk(mode){if($('tp2').value!=='doc26'){$('te').textContent='Password errata.';return}closeM();
+ if(mode==='rep')return report();
+ modal('<h3>Impostazioni timer</h3><p>Durata della prova in minuti:</p><input id="mn" type="number" min="1" value="'+Math.max(1,Math.round(S.left/60))+'"><div class="row" style="margin-top:14px"><button class="btn s" onclick="closeM()">Chiudi</button><button class="btn" onclick="setT()">Applica</button></div>')}
+function setT(){const m=parseInt($('mn').value);if(!(m>0))return;S.left=m*60;$('timer').className=m<=5?'low':'';$('timer').textContent=fmt(S.left);closeM()}
+function isAns(i){const q=Q[i],a=S.ans[i];if(a===undefined||a===null)return false;if(q.t==='short')return a.trim().length>0;if(q.t==='drag')return a.every(x=>x);return true}
+function counts(){let r=0;for(let i=0;i<N;i++)if(isAns(i))r++;return{seen:S.seen.size,r,u:N-r,f:S.flag.size}}
+function renderSide(){const c=counts(),fl=S.filter;
+ let h='<div class="box"><h4>Stato della prova</h4><div class="stat"><span>👁 Visualizzato</span><span>'+c.seen+'/'+N+'</span></div><div class="stat"><span>◉ Risposto</span><span>'+c.r+'/'+N+'</span></div><div class="stat"><span>○ Senza risposta</span><span>'+c.u+'/'+N+'</span></div><div class="stat"><span>⚑ Contrassegnato</span><span>'+c.f+'/'+N+'</span></div></div>';
+ h+='<div class="fil"><button class="'+(fl==='all'?'on':'')+'" onclick="S.filter=\'all\';renderSide()">Tutto</button><button class="'+(fl==='un'?'on':'')+'" onclick="S.filter=\'un\';renderSide()">○</button><button class="'+(fl==='fl'?'on':'')+'" onclick="S.filter=\'fl\';renderSide()">⚑</button></div><div class="sec" style="margin-top:12px">ITALIANO</div>';
+ for(let i=0;i<N;i++){if(fl==='un'&&isAns(i))continue;if(fl==='fl'&&!S.flag.has(i))continue;
+  const ic=i===S.cur?'👁':isAns(i)?'◉':'○';
+  h+='<div class="qi'+(i===S.cur?' cur':'')+'" onclick="go('+i+')"><span>'+ic+'</span>Domanda '+(i+1)+(S.flag.has(i)?'<span class="f">⚑</span>':'')+'</div>'}
+ $('side').innerHTML=h}
+function renderQ(){const i=S.cur,q=Q[i];let h='<div class="qn">Domanda '+(i+1)+' di '+N+'</div>';
+ if(q.t==='mc'){h+='<div class="qt">'+q.q+'</div>'+q.o.map((o,k)=>'<label class="opt"><input type="radio" name="r" '+(S.ans[i]===k?'checked':'')+' onchange="setA('+i+','+k+')"><span>'+o+'</span></label>').join('')}
+ else if(q.t==='tf'){h+='<div class="qt">'+q.q+'</div>'+[['Vero',true],['Falso',false]].map(([l,v])=>'<label class="opt"><input type="radio" name="r" '+(S.ans[i]===v?'checked':'')+' onchange="setA('+i+','+v+')"><span>'+l+'</span></label>').join('')}
+ else if(q.t==='sel'){const sel='<select onchange="setA('+i+',this.value===\'\'?undefined:+this.value)"><option value="">▾ scegli</option>'+q.o.map((o,k)=>'<option value="'+k+'"'+(S.ans[i]===k?' selected':'')+'>'+o+'</option>').join('')+'</select>';
+  h+='<div class="qt">'+q.p+'</div><p>'+q.q.replace('{}',sel)+'</p>'}
+ else if(q.t==='short'){h+='<div class="qt">'+q.q+'</div><textarea oninput="setA('+i+',this.value,1)">'+esc(S.ans[i]||'')+'</textarea>'}
+ else if(q.t==='drag'){const a=S.ans[i]||q.c.map(()=>'');let k=0;
+  const txt=q.q.replace(/\{\}/g,()=>{const j=k++;return '<span class="blank" ondragover="event.preventDefault()" ondrop="dropW(event,'+j+')" onclick="clrB('+j+')">'+(a[j]||'&nbsp;')+'</span>'});
+  h+='<div class="qt">'+q.p+'</div><p>'+txt+'</p><div class="bank">'+q.w.filter(w=>!a.includes(w)).map(w=>'<span class="chip" draggable="true" ondragstart="event.dataTransfer.setData(\'text\',this.textContent)" onclick="pickW(this.textContent)">'+w+'</span>').join('')+'</div>'}
+ $('qp').innerHTML=h;$('qp').scrollTop=0}
+function render(){renderSide();renderQ();$('pb').disabled=S.cur===0;$('nb').textContent=S.cur===N-1?'Termina ✔':'Successivo »';$('fb').textContent=(S.flag.has(S.cur)?'⚐':'⚑')+' Segna per la revisione'}
+function setA(i,v,keepFocus){if(v===undefined)delete S.ans[i];else S.ans[i]=v;renderSide()}
+function dropW(e,j){e.preventDefault();place(j,e.dataTransfer.getData('text'))}
+function place(j,w){const q=Q[S.cur],a=(S.ans[S.cur]||q.c.map(()=>'')).slice();a[j]=w;S.ans[S.cur]=a;renderSide();renderQ()}
+function pickW(w){const q=Q[S.cur],a=S.ans[S.cur]||q.c.map(()=>''),j=a.indexOf('');if(j>=0)place(j,w)}
+function clrB(j){const a=S.ans[S.cur];if(!a||!a[j])return;a[j]='';renderSide();renderQ()}
+function go(i){S.cur=i;S.seen.add(i);render()}
+function nav(d){if(S.cur+d<0)return;if(S.cur+d>=N){const c=counts();modal('<h3>Termina la prova</h3><p>Hai risposto a '+c.r+' domande su '+N+(c.u?' ('+c.u+' senza risposta)':'')+'. Vuoi consegnare?</p><div class="row"><button class="btn s" onclick="closeM()">Torna alla prova</button><button class="btn" onclick="closeM();finish()">Consegna</button></div>');return}go(S.cur+d)}
+function toggleFlag(){S.flag.has(S.cur)?S.flag.delete(S.cur):S.flag.add(S.cur);render()}
+function toggleSide(){const s=$('side');s.classList.toggle('hide');$('tsb').textContent=s.classList.contains('hide')?'› Mostra revisione':'‹ Nascondi revisione'}
+function zoom(d){S.z=Math.min(1.8,Math.max(.8,+(S.z+d).toFixed(2)));document.documentElement.style.setProperty('--z',S.z)}
+function finish(auto){S.done=true;clearInterval(S.tm);closeM();$('app').style.display='none';$('bot').style.display='none';$('tr').style.display='none';
+ $('end').style.display='block';$('end').innerHTML='<h2>Prova conclusa</h2><p>'+(auto?'Il tempo a disposizione è terminato. ':'')+'Le tue risposte sono state registrate. Grazie!</p><button class="btn s noprint" onclick="teacher(\'rep\')">Area docente</button>'}
+function esito(i){const q=Q[i],a=S.ans[i];if(!isAns(i))return['—','Senza risposta',0];
+ if(q.t==='short')return[esc(a),'Da valutare<br><small>Attesa: '+q.r+'</small>',0];
+ if(q.t==='mc'||q.t==='sel'){const ok=a===q.c;return[q.o[a],ok?'✔':'✘ ('+q.o[q.c]+')',ok]}
+ if(q.t==='tf'){const ok=a===q.c;return[a?'Vero':'Falso',ok?'✔':'✘',ok]}
+ const ok=a.join('|')===q.c.join('|');return[a.join(' / '),ok?'✔':'✘ ('+q.c.join(' / ')+')',ok]}
+function report(){$('end').style.display='none';$('tbar').style.display='none';const r=$('rep');r.style.display='block';let pt=0,cl=0,rows='';
+ for(let i=0;i<N;i++){const e=esito(i);if(Q[i].t!=='short'){cl++;if(e[2])pt++}
+  rows+='<tr><td>'+(i+1)+'</td><td>'+(Q[i].p?Q[i].p+' ':'')+Q[i].q.replace('{}','…')+'</td><td>'+e[0]+'</td><td>'+e[1]+'</td></tr>'}
+ r.innerHTML='<h2>Report della verifica – '+esc(S.name)+'</h2><p>Risposte esatte (domande chiuse): <b>'+pt+' / '+cl+'</b> · Domande semi-aperte da valutare: '+(N-cl)+' · Tempo residuo: '+fmt(Math.max(S.left,0))+'</p><table><tr><th>N.</th><th>Domanda</th><th>Risposta data</th><th>Esito</th></tr>'+rows+'</table><p><button class="btn noprint" onclick="window.print()">Stampa / Salva PDF</button></p>'}
+</script></body></html>
