@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Il gioco dei passi</title>
+<style>
+:root{--bg:#eef5ff;--card:#fff;--ink:#1d2b3a;--acc:#2563eb;--ok:#16a34a;--ko:#dc2626;--grass:#bfe3a8;--path:#f3d9a4}
+@media (prefers-color-scheme:dark){:root{--bg:#14202e;--card:#1f2f43;--ink:#eaf1f8;--grass:#3f6b3a;--path:#9a7b3c}}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,Arial,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;display:flex;justify-content:center;padding:16px}
+.card{background:var(--card);border-radius:16px;padding:20px;max-width:640px;width:100%;box-shadow:0 4px 16px rgba(0,0,0,.12)}
+h1{margin:0 0 12px;font-size:1.6rem}
+label{display:block;margin:10px 0 4px;font-weight:600}
+input,select{width:100%;padding:10px;font-size:1.05rem;border-radius:8px;border:1px solid #8aa;background:var(--card);color:var(--ink)}
+button{padding:12px 18px;font-size:1.05rem;border:0;border-radius:10px;background:var(--acc);color:#fff;cursor:pointer;margin-top:12px}
+button.sec{background:#64748b}
+button:disabled{opacity:.5;cursor:default}
+.hide{display:none!important}
+.top{display:flex;justify-content:space-between;font-weight:700;margin-bottom:8px;gap:8px;flex-wrap:wrap}
+#grid{display:grid;grid-template-columns:repeat(8,1fr);gap:2px;margin:10px auto;max-width:480px;aspect-ratio:1}
+.c{background:var(--grass);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:clamp(14px,5vw,28px);position:relative}
+.c.p{background:var(--path)}
+.c.p::after{content:"";width:22%;height:22%;border-radius:50%;background:rgba(120,80,20,.45);position:absolute}
+.c.p.g::after,.c.p.s::after{display:none}
+.c.s{outline:3px solid var(--acc)}
+.row{display:flex;gap:10px;flex-wrap:wrap}.row>div{flex:1;min-width:180px}
+#fb{min-height:1.6em;font-weight:700;margin-top:10px}
+.ok{color:var(--ok)}.ko{color:var(--ko)}
+table{width:100%;border-collapse:collapse;margin-top:8px;font-size:.92rem}
+td,th{border:1px solid #889;padding:5px;text-align:left}
+.shake{animation:sh .3s}@keyframes sh{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+@media print{body{background:#fff;color:#000;padding:0}.card{box-shadow:none}.noprint{display:none!important}#screens>*:not(#final){display:none!important}}
+</style>
+</head>
+<body>
+<div class="card" id="screens">
+
+<section id="intro">
+  <h1>🚶 Il gioco dei passi</h1>
+  <label>Cognome</label><input id="cog" autocomplete="off">
+  <label>Nome</label><input id="nom" autocomplete="off">
+  <label>Classe</label><input id="cla" autocomplete="off">
+  <label>Timer (minuti, 0 = nessun timer)</label><input id="lim" type="number" min="0" max="120" value="0">
+  <label>Impostazione del gioco</label>
+  <select id="mode">
+    <option value="strict">Rigorosa: si passa al livello successivo solo con la risposta corretta</option>
+    <option value="free">Libera: si passa dopo aver risposto, anche se la risposta è sbagliata</option>
+  </select>
+  <button id="go">Inizia</button>
+  <div id="err" class="ko"></div>
+</section>
+
+<section id="game" class="hide">
+  <div class="top"><span id="lv"></span><span id="tm"></span></div>
+  <p>Guarda il percorso: quanti passi deve fare 🚶 per arrivare alla bandiera 🏁, e in quale direzione? Ogni pallino è un passo.</p>
+  <div id="grid"></div>
+  <div class="row">
+    <div><label>Quanti passi?</label>
+      <select id="n"><option value="">Scegli…</option>
+        <option value="1">fai 1 passo</option><option value="2">fai 2 passi</option><option value="3">fai 3 passi</option><option value="4">fai 4 passi</option><option value="5">fai 5 passi</option><option value="6">fai 6 passi</option><option value="7">fai 7 passi</option>
+      </select></div>
+    <div><label>In quale direzione?</label>
+      <select id="d"><option value="">Scegli…</option>
+        <option value="R">➡️ vai a destra</option><option value="L">⬅️ vai a sinistra</option><option value="U">⬆️ vai in alto</option><option value="D">⬇️ vai in basso</option>
+      </select></div>
+  </div>
+  <button id="chk">Verifica</button>
+  <button id="nxt" class="hide">Avanti ▶</button>
+  <div id="fb"></div>
+</section>
+
+<section id="final" class="hide">
+  <h1>🏁 Percorso concluso!</h1>
+  <div id="rep"></div>
+  <div class="noprint">
+    <button id="dl">⬇️ Scarica il report (stampa / salva PDF)</button>
+    <button id="again" class="sec">🔁 Gioca di nuovo</button>
+    <p id="warn" class="ko"></p>
+  </div>
+</section>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const DIRS={R:[0,1,'destra'],L:[0,-1,'sinistra'],U:[-1,0,'alto'],D:[1,0,'basso']};
+// 10 livelli: direzione e numero di passi
+const LEVELS=[['R',3],['D',5],['L',4],['U',2],['R',7],['D',1],['L',6],['U',5],['R',2],['D',4]];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const ri=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+let S=null,sessions=[],reportPrinted=true,tick=null,lvl=null;
+
+const fmt=s=>String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+const elapsed=()=>Math.round((Date.now()-S.t0)/1000);
+
+function show(id){['intro','game','final'].forEach(x=>$(x).classList.toggle('hide',x!==id))}
+
+$('go').onclick=()=>{
+  const cog=$('cog').value.trim(),nom=$('nom').value.trim(),cla=$('cla').value.trim();
+  if(!cog||!nom||!cla){$('err').textContent='Compila cognome, nome e classe.';return}
+  const lim=Math.max(0,parseInt($('lim').value)||0);
+  S={cog,nom,cla,lim,mode:$('mode').value,order:shuffle(LEVELS),i:0,t0:Date.now(),log:[],att:0,done:0,timeUp:false};
+  reportPrinted=false;$('err').textContent='';
+  clearInterval(tick);tick=setInterval(onTick,500);
+  show('game');loadLevel();
+};
+
+function onTick(){
+  const e=elapsed();
+  if(S.lim>0){const left=S.lim*60-e;$('tm').textContent='⏱ '+fmt(Math.max(0,left));if(left<=0){S.timeUp=true;finish()}}
+  else $('tm').textContent='⏱ '+fmt(e);
+}
+
+function loadLevel(){
+  const [d,n]=S.order[S.i];const [dr,dc]=DIRS[d];
+  let r,c;
+  r=dr===0?ri(0,7):dr>0?ri(0,7-n):ri(n,7);
+  c=dc===0?ri(0,7):dc>0?ri(0,7-n):ri(n,7);
+  const path=new Set();for(let k=1;k<=n;k++)path.add((r+dr*k)*8+(c+dc*k));
+  const goal=(r+dr*n)*8+(c+dc*n);
+  let h='';
+  for(let i=0;i<64;i++){
+    let cls='c',t='';
+    if(i===r*8+c){cls+=' p s';t='🚶'}
+    else if(i===goal){cls+=' p g';t='🏁'}
+    else if(path.has(i))cls+=' p';
+    else if(Math.random()<.14)t=['🌳','🌲','🌼','🪨'][ri(0,3)];
+    h+=`<div class="${cls}">${t}</div>`;
+  }
+  $('grid').innerHTML=h;
+  lvl={d,n,att:0,ok:false};
+  $('lv').textContent=`Livello ${S.i+1} di 10`;
+  $('n').value='';$('d').value='';$('n').disabled=$('d').disabled=false;
+  $('chk').classList.remove('hide');$('nxt').classList.add('hide');$('fb').textContent='';$('fb').className='';
+  onTick();
+}
+
+$('chk').onclick=()=>{
+  const n=$('n').value,d=$('d').value;
+  if(!n||!d){$('fb').className='ko';$('fb').textContent='Scegli sia i passi sia la direzione.';return}
+  lvl.att++;S.att++;
+  const ok=(+n===lvl.n&&d===lvl.d);
+  const fb=$('fb');
+  if(ok){
+    lvl.ok=true;fb.className='ok';fb.textContent='✅ Bravo, risposta corretta!';
+    endLevel();
+  }else if(S.mode==='strict'){
+    fb.className='ko';fb.textContent='❌ Non è corretto, riprova.';
+    $('grid').classList.remove('shake');void $('grid').offsetWidth;$('grid').classList.add('shake');
+  }else{
+    fb.className='ko';fb.textContent=`❌ Non è corretto. La risposta giusta era: ${lvl.n} ${lvl.n>1?'passi':'passo'} a ${DIRS[lvl.d][2]}.`;
+    endLevel();
+  }
+};
+function endLevel(){
+  S.log.push({lv:S.i+1,att:lvl.att,ok:lvl.ok});if(lvl.ok)S.done++;
+  $('n').disabled=$('d').disabled=true;$('chk').classList.add('hide');
+  $('nxt').classList.remove('hide');$('nxt').textContent=S.i===9?'Vedi il report ▶':'Avanti ▶';
+}
+$('nxt').onclick=()=>{S.i++;if(S.i>=10)finish();else loadLevel()};
+
+function finish(){
+  clearInterval(tick);
+  S.sec=elapsed();S.end=new Date();
+  sessions.push({when:S.end.toLocaleString('it-IT'),mode:S.mode,lim:S.lim,sec:S.sec,att:S.att,done:S.done,timeUp:S.timeUp,log:S.log});
+  renderReport();show('final');
+  $('warn').textContent='';
+}
+
+function renderReport(){
+  let h=`<h2>Report</h2><p><b>Cognome:</b> ${esc(S.cog)} &nbsp; <b>Nome:</b> ${esc(S.nom)} &nbsp; <b>Classe:</b> ${esc(S.cla)}</p>`;
+  h+=`<table><tr><th>Partita</th><th>Data di esecuzione</th><th>Modalità</th><th>Tempo di esecuzione</th><th>Tentativi effettuati</th><th>Livelli corretti</th></tr>`;
+  sessions.forEach((s,i)=>{
+    h+=`<tr><td>${i+1}</td><td>${s.when}</td><td>${s.mode==='strict'?'Rigorosa':'Libera'}${s.lim?' (timer '+s.lim+' min)':''}</td><td>${fmt(s.sec)}${s.timeUp?' (tempo scaduto)':''}</td><td>${s.att}</td><td>${s.done} su 10</td></tr>`;
+  });
+  h+='</table>';
+  sessions.forEach((s,i)=>{
+    h+=`<p><b>Partita ${i+1} – tentativi per livello:</b> `+s.log.map(l=>`L${l.lv}: ${l.att}${l.ok?'':' ✗'}`).join(' · ')+'</p>';
+  });
+  $('rep').innerHTML=h;
+}
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+$('dl').onclick=()=>{reportPrinted=true;$('warn').textContent='';window.print()};
+window.addEventListener('afterprint',()=>{if(!$('final').classList.contains('hide'))reportPrinted=true});
+
+$('again').onclick=()=>{show('intro')};
+
+// blocco chiusura pagina finché il report non è stato stampato
+window.addEventListener('beforeunload',e=>{
+  if(S&&!reportPrinted){e.preventDefault();e.returnValue='';return ''}
+});
+</script>
+</body>
+</html>
