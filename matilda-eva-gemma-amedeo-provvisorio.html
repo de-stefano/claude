@@ -1,0 +1,1488 @@
+<!DOCTYPE html>
+<html lang="it" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Depaving - Missione riscaldamento globale</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        pastel: {
+                            green: '#77DD77',
+                            light: '#B2FBA5',
+                            dark: '#4E9F3D',
+                            bg: '#F4FBF4'
+                        },
+                        sage: {
+                            DEFAULT: '#87A96B',
+                            hover: '#739557',
+                            light: '#C1DBB3',
+                            dark: '#4A6B32'
+                        },
+                        city: {
+                            asphalt: '#4A5568',
+                            heat: '#E53E3E',
+                            cool: '#319795'
+                        }
+                    },
+                    fontFamily: {
+                        outfit: ['Outfit', 'sans-serif'],
+                        inter: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            overflow-x: hidden;
+        }
+        h1, h2, h3, .font-heading {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #F1F5F9;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #CBD5E1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94A3B8;
+        }
+
+        /* Animations */
+        @keyframes pulse-subtle {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+        .animate-pulse-subtle {
+            animation: pulse-subtle 3s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+        .animate-float {
+            animation: float 4s infinite ease-in-out;
+        }
+
+        @keyframes toast-slide {
+            0% { transform: translateY(100%) scale(0.9); opacity: 0; }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        .animate-toast {
+            animation: toast-slide 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .glass-dark {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        /* Canvas container aspect styling */
+        #cityCanvas {
+            border-radius: 1.25rem;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.15);
+            cursor: crosshair;
+        }
+    </style>
+</head>
+<body class="h-full bg-slate-900 text-slate-800 flex flex-col justify-between selection:bg-pastel-green selection:text-slate-900">
+
+    <!-- Sound Controller -->
+    <div class="fixed top-4 right-4 z-50 flex items-center space-x-2">
+        <button id="soundToggleBtn" onclick="toggleSound()" class="p-2.5 rounded-full bg-white/90 text-slate-700 hover:text-slate-900 shadow-lg hover:shadow-xl transition-all duration-200 border border-slate-200" title="Attiva/Disattiva Audio">
+            <span id="soundIcon">🔊</span>
+        </button>
+    </div>
+
+    <!-- MAIN APP CONTAINER -->
+    <div id="appContainer" class="relative w-full h-full min-h-screen flex flex-col overflow-hidden bg-slate-950">
+
+        <!-- ========================================== -->
+        <!-- SCHERMATA 1: HOME / START                  -->
+        <!-- ========================================== -->
+        <section id="screen1" class="absolute inset-0 z-30 flex flex-col items-center justify-center p-6 bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900 transition-opacity duration-700 opacity-100">
+            <!-- Decorative background elements -->
+            <div class="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
+                <div class="absolute -top-40 -left-40 w-96 h-96 rounded-full bg-pastel-green blur-3xl"></div>
+                <div class="absolute top-1/2 -right-40 w-96 h-96 rounded-full bg-sage blur-3xl"></div>
+                <div class="absolute -bottom-40 left-1/3 w-96 h-96 rounded-full bg-emerald-500 blur-3xl"></div>
+            </div>
+
+            <div class="relative z-10 max-w-3xl w-full text-center space-y-8 animate-float">
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-semibold tracking-wide uppercase">
+                    <span>🌱 Eco City Strategy Game</span>
+                </div>
+
+                <h1 class="text-5xl sm:text-7xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-[#77DD77] via-[#9FAF90] to-[#8FBC8F] drop-shadow-sm leading-tight">
+                    Missione riscaldamento globale
+                </h1>
+
+                <p class="text-slate-300 text-lg sm:text-xl max-w-xl mx-auto font-light leading-relaxed">
+                    Rimuovi l'asfalto rovente, rinfresca la città e crea un’oasi sostenibile per i tuoi cittadini prima che le temperature esplodano!
+                </p>
+
+                <div class="pt-4">
+                    <button onclick="goToScreen(2)" class="group relative inline-flex items-center justify-center px-10 py-5 text-xl font-bold text-slate-950 transition-all duration-300 bg-pastel-green rounded-2xl hover:bg-pastel-light shadow-[0_0_35px_rgba(119,221,119,0.4)] hover:shadow-[0_0_50px_rgba(119,221,119,0.7)] hover:-translate-y-1 active:translate-y-0 active:scale-95">
+                        <span>START</span>
+                        <svg class="w-6 h-6 ml-3 transition-transform duration-300 group-hover:translate-x-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="absolute bottom-6 text-xs text-slate-500 font-mono tracking-widest uppercase">
+                Depaving Simulator v2.5 • Sostenibilità Urbana
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- SCHERMATA 2: INTRO E BRIEFING DEL SINDACO   -->
+        <!-- ========================================== -->
+        <section id="screen2" class="absolute inset-0 z-20 flex flex-col items-center justify-center p-6 bg-slate-900 transition-opacity duration-700 opacity-0 pointer-events-none">
+            <div class="max-w-2xl w-full glass-dark p-8 sm:p-12 rounded-3xl border border-slate-700/60 shadow-2xl space-y-8 text-center relative overflow-hidden">
+                <div class="w-20 h-20 mx-auto rounded-full bg-sage/20 border-2 border-sage flex items-center justify-center text-4xl shadow-inner">
+                    🏛️
+                </div>
+
+                <div class="space-y-4">
+                    <h2 class="text-2xl sm:text-3xl font-bold text-slate-100 tracking-tight">
+                        Briefing Ufficiale dal Comune
+                    </h2>
+                    
+                    <div class="p-5 rounded-2xl bg-slate-800/80 border border-slate-700 text-slate-200 text-base sm:text-lg leading-relaxed text-left space-y-3">
+                        <p>
+                            Sei diventato il nuovo sindaco della città <strong id="introCityName" class="text-pastel-green font-bold">M.E.G.A. city</strong> e hai deciso di sistemare e apportare alcune modifiche pensate per il benessere dei cittadini.
+                        </p>
+                        <p class="text-amber-300/90 font-medium flex items-center gap-2">
+                            <span>⚠️</span> Attenzione però: la città ha un limite di soldi!
+                        </p>
+                        <p class="text-center font-bold text-xl pt-2 text-white">
+                            SEI PRONTO?
+                        </p>
+                    </div>
+                </div>
+
+                <div>
+                    <button onclick="startMainGame()" class="w-full sm:w-auto inline-flex items-center justify-center px-12 py-4 text-lg font-extrabold text-white transition-all duration-300 bg-sage hover:bg-sage-hover rounded-2xl shadow-lg hover:shadow-sage/40 hover:-translate-y-0.5 active:translate-y-0">
+                        <span>INIZIAMO</span>
+                        <span class="ml-2">🚀</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- SCHERMATA 3: GIOCO PRINCIPALE E MAPPA      -->
+        <!-- ========================================== -->
+        <section id="screen3" class="absolute inset-0 z-10 flex flex-col justify-between p-3 sm:p-5 bg-slate-900 text-white transition-opacity duration-500 opacity-0 pointer-events-none">
+            
+            <!-- TOP BAR STATS -->
+            <header class="w-full max-w-7xl mx-auto glass-dark rounded-2xl p-3 sm:p-4 border border-slate-700/80 shadow-lg flex flex-wrap items-center justify-between gap-3">
+                <!-- Money Counter -->
+                <div class="flex items-center gap-3 bg-slate-800/90 px-4 py-2 rounded-xl border border-slate-700">
+                    <span class="text-2xl sm:text-3xl">💵</span>
+                    <div>
+                        <div class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Budget Cittadino</div>
+                        <div id="budgetDisplay" class="text-lg sm:text-2xl font-black text-emerald-400 font-mono tracking-tight">
+                            800.000 €
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Climate Indicators -->
+                <div class="flex items-center gap-3 sm:gap-5 bg-slate-800/60 px-4 py-2 rounded-xl border border-slate-700/60">
+                    <div class="flex items-center gap-2">
+                        <span id="tempIcon" class="text-2xl">🔥</span>
+                        <div>
+                            <div class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Temperatura</div>
+                            <div id="tempDisplay" class="text-base sm:text-xl font-bold text-red-400">
+                                38.5 °C
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="h-8 w-px bg-slate-700"></div>
+
+                    <div class="flex items-center gap-2">
+                        <span class="text-2xl">🍃</span>
+                        <div>
+                            <div class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Verde & Depaving</div>
+                            <div id="ecoDisplay" class="text-base sm:text-xl font-bold text-pastel-green">
+                                12%
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="h-8 w-px bg-slate-700"></div>
+
+                    <div class="flex items-center gap-2">
+                        <span class="text-2xl">😊</span>
+                        <div>
+                            <div class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Benessere</div>
+                            <div id="welfareDisplay" class="text-base sm:text-xl font-bold text-sky-400">
+                                0%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upgrades Warning Button -->
+                <div class="flex items-center gap-2">
+                    <button onclick="toggleCardDrawer(true)" class="group relative flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-bold transition-all duration-200 active:scale-95 shadow-md hover:shadow-amber-500/20">
+                        <span class="text-2xl animate-pulse">⚠️</span>
+                        <span class="hidden md:inline text-sm font-semibold">Carte Intervento</span>
+                        <span id="badgeCards" class="px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 text-xs font-black">APERTE</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- MAIN CITY CANVAS DISPLAY -->
+            <main class="relative w-full max-w-7xl mx-auto flex-1 my-3 flex flex-col items-center justify-center min-h-0 overflow-hidden">
+                
+                <div class="absolute top-3 left-4 z-10 glass-dark px-4 py-1.5 rounded-full border border-slate-700 text-xs sm:text-sm font-medium text-slate-200 shadow-md flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                    <span id="cityHeaderTitle">Situazione attuale di M.E.G.A. city</span>
+                </div>
+
+                <div class="relative w-full h-full flex items-center justify-center p-1">
+                    <canvas id="cityCanvas" class="w-full h-full object-contain bg-slate-950 border border-slate-800"></canvas>
+                </div>
+
+                <!-- REAL-TIME CITIZEN FEEDBACK TOASTS -->
+                <div id="toastContainer" class="absolute bottom-4 left-4 z-20 max-w-sm w-full pointer-events-none space-y-2"></div>
+
+            </main>
+
+            <!-- BOTTOM ACTION BAR -->
+            <footer class="w-full max-w-7xl mx-auto glass-dark rounded-2xl p-3 border border-slate-700 flex items-center justify-center">
+                <button onclick="finishWorkAndReview()" class="w-full sm:w-auto px-10 py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 via-sage to-emerald-500 text-white text-base sm:text-lg font-extrabold shadow-lg hover:shadow-emerald-500/30 hover:scale-[1.02] active:scale-95 transition-all duration-200 flex items-center justify-center gap-3">
+                    <span>📋</span>
+                    <span>Fine lavori e recensione finale</span>
+                </button>
+            </footer>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- CARDS INTERVENTO DRAWER                    -->
+        <!-- ========================================== -->
+        <div id="cardDrawer" class="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-md transition-opacity duration-300 opacity-0 pointer-events-none flex justify-end">
+            <div id="drawerContent" class="w-full max-w-xl h-full bg-slate-900 border-l border-slate-700/80 p-6 flex flex-col justify-between shadow-2xl transform translate-x-full transition-transform duration-300 overflow-y-auto">
+                
+                <div>
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
+                        <div class="flex items-center gap-3">
+                            <span class="text-3xl">⚠️</span>
+                            <div>
+                                <h3 class="text-xl font-bold text-white">Carte Intervento</h3>
+                                <p class="text-xs text-slate-400">Seleziona i lavori di depaving e ristrutturazione</p>
+                            </div>
+                        </div>
+                        <button onclick="toggleCardDrawer(false)" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors">
+                            ✕
+                        </button>
+                    </div>
+
+                    <div id="cardsList" class="space-y-3 pr-1">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <div class="pt-6 border-t border-slate-800 mt-6">
+                    <button onclick="toggleCardDrawer(false)" class="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold transition-colors">
+                        Chiudi Pannello
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- NO CASH ERROR MODAL (RED POPUP)            -->
+        <!-- ========================================== -->
+        <div id="noCashModal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 transition-opacity duration-300 opacity-0 pointer-events-none">
+            <div class="max-w-md w-full bg-red-950 border-2 border-red-600 p-6 sm:p-8 rounded-3xl shadow-[0_0_50px_rgba(220,38,38,0.5)] text-center space-y-6 transform scale-95 transition-transform duration-300">
+                <div class="w-20 h-20 mx-auto rounded-full bg-red-600/30 border-2 border-red-500 flex items-center justify-center text-4xl animate-bounce">
+                    💸
+                </div>
+                
+                <div class="space-y-2">
+                    <h3 class="text-3xl font-extrabold text-red-400 tracking-wide uppercase">
+                        We hai finito il cash!
+                    </h3>
+                    <p class="text-red-200/80 text-sm">
+                        La città non ha fondi sufficienti per completare questo intervento.
+                    </p>
+                </div>
+
+                <div>
+                    <button onclick="closeNoCashModal()" class="w-full py-3.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-lg shadow-lg hover:shadow-red-600/50 active:scale-95 transition-all">
+                        OK
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- SCHERMATA 4: RATING E PROGRESSIONE FINALE  -->
+        <!-- ========================================== -->
+        <section id="screen4" class="fixed inset-0 z-40 bg-slate-950/95 backdrop-blur-lg flex items-center justify-center p-4 overflow-y-auto transition-opacity duration-500 opacity-0 pointer-events-none">
+            <div class="max-w-2xl w-full glass-dark p-6 sm:p-10 rounded-3xl border border-slate-700 shadow-2xl space-y-6 text-center my-auto">
+                
+                <div class="space-y-2">
+                    <span class="px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-400 text-xs font-mono uppercase tracking-widest">
+                        Rapporto di Valutazione Finale
+                    </span>
+                    <h2 id="finalCityName" class="text-3xl sm:text-4xl font-extrabold text-white">
+                        M.E.G.A. city
+                    </h2>
+                </div>
+
+                <div class="py-4 bg-slate-900/80 rounded-2xl border border-slate-800 space-y-2">
+                    <div id="starContainer" class="flex justify-center items-center text-4xl sm:text-5xl gap-2 text-amber-400">
+                        <!-- Stars injected via JS -->
+                    </div>
+                    <div id="ratingText" class="text-xl font-bold text-slate-200">
+                        Punteggio: 4.5 / 5.0 ⭐
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-left">
+                    <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700/60">
+                        <div class="text-[10px] text-slate-400 uppercase font-bold">Temperatura</div>
+                        <div id="finalTemp" class="text-lg font-bold text-emerald-400">23.2 °C</div>
+                    </div>
+                    <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700/60">
+                        <div class="text-[10px] text-slate-400 uppercase font-bold">Depaving Totale</div>
+                        <div id="finalDepaved" class="text-lg font-bold text-pastel-green">1.250 m²</div>
+                    </div>
+                    <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700/60">
+                        <div class="text-[10px] text-slate-400 uppercase font-bold">Alberi Piantati</div>
+                        <div id="finalTrees" class="text-lg font-bold text-emerald-300">85</div>
+                    </div>
+                    <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700/60">
+                        <div class="text-[10px] text-slate-400 uppercase font-bold">Budget Residuo</div>
+                        <div id="finalBudget" class="text-lg font-bold text-amber-300">4.500.000 €</div>
+                    </div>
+                </div>
+
+                <div class="p-4 rounded-xl bg-slate-800/40 border border-slate-700/50 text-slate-300 italic text-sm" id="finalVerdictQuote">
+                    "La trasformazione urbana è stata fantastica! Più ombra, l'aria è fresca e la città è molto più vivibile."
+                </div>
+
+                <div id="progressionButtons" class="pt-4 flex flex-col sm:flex-row gap-4 justify-center">
+                    <!-- Injected dynamically -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- LETTERA PROMOZIONE PROSSIMA CITTÀ          -->
+        <!-- ========================================== -->
+        <div id="promotionModal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 transition-opacity duration-300 opacity-0 pointer-events-none">
+            <div class="max-w-lg w-full bg-amber-50 text-slate-900 p-8 rounded-2xl shadow-2xl border-4 border-amber-200 relative space-y-6 font-serif transform scale-95 transition-transform duration-300">
+                <div class="absolute -top-6 -right-6 w-16 h-16 rounded-full bg-red-700 text-amber-100 border-2 border-amber-300 flex items-center justify-center text-2xl shadow-lg">
+                    📜
+                </div>
+
+                <div class="border-b-2 border-amber-900/20 pb-4 text-center">
+                    <div class="text-xs font-sans tracking-widest uppercase text-amber-800 font-bold">Ministero dell'Ambiente e Urbanistica</div>
+                    <h3 class="text-2xl font-extrabold text-amber-950 mt-1">Lettera Ufficiale di Promozione</h3>
+                </div>
+
+                <div class="space-y-4 text-base leading-relaxed text-amber-900 font-sans">
+                    <p class="font-bold text-lg text-emerald-800 text-center">
+                        "Ben fatto sei stato promosso alla città successiva!"
+                    </p>
+                    <p>
+                        Grazie ai tuoi straordinari risultati nella ristrutturazione ecologica e depavimentazione, sei stato assegnato ad una nuova sfida urbana.
+                    </p>
+                    <div class="p-4 rounded-xl bg-amber-100/80 border border-amber-300 font-sans text-sm space-y-1">
+                        <div>📍 <strong>Nuova Città:</strong> <span id="nextCityName">Asfaltia Metropolis</span></div>
+                        <div>🌡️ <strong>Temperatura iniziale:</strong> <span id="nextCityTemp">40.0 °C</span></div>
+                        <div>💰 <strong>Budget assegnato:</strong> <span id="nextCityBudget">12.000.000 €</span></div>
+                    </div>
+                </div>
+
+                <div class="pt-2">
+                    <button onclick="confirmNextCity()" class="w-full py-4 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-sans font-bold text-lg shadow-lg transition-colors">
+                        Accetta Incarico e Parti
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- AUDIO & GAME ENGINE SCRIPT -->
+    <script>
+        /* ====================================================== */
+        /* SCREEN NAVIGATION SYSTEM                               */
+        /* ====================================================== */
+        function goToScreen(screenNum) {
+            playSound('click');
+            for (let i = 1; i <= 4; i++) {
+                const scr = document.getElementById(`screen${i}`);
+                if (!scr) continue;
+                if (i === screenNum) {
+                    scr.classList.remove('opacity-0', 'pointer-events-none');
+                    scr.classList.add('opacity-100', 'pointer-events-auto');
+                } else {
+                    scr.classList.remove('opacity-100', 'pointer-events-auto');
+                    scr.classList.add('opacity-0', 'pointer-events-none');
+                }
+            }
+        }
+
+        /* ====================================================== */
+        /* AUDIO SYNTHESIZER (Web Audio API)                     */
+        /* ====================================================== */
+        let audioCtx = null;
+        let soundEnabled = true;
+
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) audioCtx = new AudioContext();
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('soundIcon').innerText = soundEnabled ? '🔊' : '🔇';
+        }
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            initAudio();
+            if (!audioCtx) return;
+
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.05);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                osc.start(now);
+                osc.stop(now + 0.05);
+            } else if (type === 'buy') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, now);
+                osc.frequency.setValueAtTime(659.25, now + 0.08);
+                osc.frequency.setValueAtTime(783.99, now + 0.16);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } else if (type === 'error') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.setValueAtTime(140, now + 0.1);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            } else if (type === 'review_pos') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, now);
+                osc.frequency.setValueAtTime(880, now + 0.1);
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            } else if (type === 'review_neg') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.setValueAtTime(200, now + 0.12);
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            } else if (type === 'fanfare') {
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, idx) => {
+                    const osc2 = audioCtx.createOscillator();
+                    const gain2 = audioCtx.createGain();
+                    osc2.connect(gain2);
+                    gain2.connect(audioCtx.destination);
+                    osc2.type = 'triangle';
+                    osc2.frequency.setValueAtTime(freq, now + idx * 0.1);
+                    gain2.gain.setValueAtTime(0.15, now + idx * 0.1);
+                    gain2.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.1 + 0.3);
+                    osc2.start(now + idx * 0.1);
+                    osc2.stop(now + idx * 0.1 + 0.3);
+                });
+            }
+        }
+
+        /* ====================================================== */
+        /* GAME DATA & STATE                                      */
+        /* ====================================================== */
+        const CITIES_PRESETS = [
+            { name: "M.E.G.A. city", budget: 800000, initialTemp: 38.5, targetTemp: 23.0 },
+            { name: "Asfaltia Metropolis", budget: 600000, initialTemp: 40.0, targetTemp: 22.5 },
+            { name: "Caldara Polis", budget: 450000, initialTemp: 41.5, targetTemp: 22.0 },
+            { name: "Concrete Valley", budget: 300000, initialTemp: 43.0, targetTemp: 21.5 }
+        ];
+
+        let currentCityIndex = 0;
+        let gameState = {
+            cityName: "M.E.G.A. city",
+            budget: 800000,
+            initialBudget: 800000,
+            temp: 38.5,
+            initialTemp: 38.5,
+            
+            upgrades: {
+                depaving: 0,
+                trees: 0,
+                shade: 0,
+                parkingRemoved: 0,
+                misting: 0,
+                ecoParking: 0,
+                bikeLanes: 0,
+                fountains: 0,
+                asphaltExpansion: 0,
+                treeLogging: 0,
+                megaParking: 0,
+                industrialAC: 0,
+                playground: 0,
+                pool: 0,
+                arcade: 0,
+                iceCream: 0,
+                outdoorCinema: 0
+            }
+        };
+
+        const CARDS_CONFIG = [
+            // CITTÀ BASE (LIVELLO 0+)
+            {
+                id: 'depaving',
+                name: 'Troppo cemento (Depaving)',
+                desc: 'Rimuovi l’asfalto rovente e trasforma lotti cementati in suolo drenante e prati.',
+                cost: 130,
+                unit: 'm²',
+                icon: '☘️',
+                minCity: 0,
+                isNegative: false,
+                tempDrop: 0.005,
+                ecoBoost: 0.1,
+                welfareBoost: 0.2
+            },
+            {
+                id: 'trees',
+                name: 'Mancanza di vegetazione',
+                desc: 'Pianta alberi ad alto fusto ed aiuole urbane per catturare CO₂ e creare ombra naturale.',
+                cost: 100,
+                unit: 'albero',
+                icon: '🌳',
+                minCity: 0,
+                isNegative: false,
+                tempDrop: 0.004,
+                ecoBoost: 0.08,
+                welfareBoost: 0.3
+            },
+            {
+                id: 'playground',
+                name: 'Parco Giochi Ecologico',
+                desc: 'Strutture in legno riciclato e giostrine sul prato per far divertire i bambini all\'aria aperta.',
+                cost: 3500,
+                unit: 'parco',
+                icon: '🛝',
+                minCity: 0,
+                isNegative: false,
+                tempDrop: 0.1,
+                ecoBoost: 0.8,
+                welfareBoost: 5.0
+            },
+            {
+                id: 'iceCream',
+                name: 'Chiosco Gelati & Granite',
+                desc: 'Distribuisci gelati artigianali e granite rinfrescanti ai cittadini accaldati nel parco.',
+                cost: 1500,
+                unit: 'chiosco',
+                icon: '🍦',
+                minCity: 0,
+                isNegative: false,
+                tempDrop: 0.05,
+                ecoBoost: 0.4,
+                welfareBoost: 3.0
+            },
+            {
+                id: 'asphaltExpansion',
+                name: 'Nuova Arteria Stradale Asfaltata',
+                desc: 'Vendi diritti di superficie per asfaltare piazzali. Incassi liquidità immediata per la città.',
+                cost: -25000,
+                unit: 'lotto',
+                icon: '🚜',
+                minCity: 0,
+                isNegative: true,
+                tempDrop: -0.6,
+                ecoBoost: -3.5,
+                welfareBoost: -4.0
+            },
+            {
+                id: 'parkingRemoved',
+                name: 'Togliere alcuni parcheggi',
+                desc: 'Riconverti posti auto in micro-giardini, bioswales e zone di filtrazione per l\'acqua.',
+                cost: 1000,
+                unit: 'parcheggio',
+                icon: '🚫🅿️',
+                minCity: 0,
+                isNegative: false,
+                tempDrop: 0.04,
+                ecoBoost: 0.4,
+                welfareBoost: -0.3
+            },
+            {
+                id: 'ecoParking',
+                name: 'Parcheggi senza cemento',
+                desc: 'Trasforma i parcheggi asfaltati in parcheggi con grigliati erbosi drenanti ed ecologici.',
+                cost: 1000,
+                unit: 'parcheggio',
+                icon: '🚗🌿',
+                minCity: 0,
+                isNegative: false,
+                tempDrop: 0.05,
+                ecoBoost: 0.5,
+                welfareBoost: 0.6
+            },
+            {
+                id: 'treeLogging',
+                name: 'Piano Taglio Alberi e Bonifica',
+                desc: 'Abatti la vegetazione ingombrante e ricava fondi immediati dalla vendita del legname.',
+                cost: -5000,
+                unit: 'albero',
+                icon: '🪓',
+                minCity: 0,
+                isNegative: true,
+                tempDrop: -0.2,
+                ecoBoost: -2.0,
+                welfareBoost: -3.0
+            },
+            // CITTÀ LIVELLO 1+
+            {
+                id: 'pool',
+                name: 'Piscina Pubblica all\'Aperto',
+                desc: 'Vasche d\'acqua rinfrescanti con scivoli e sdraio per permettere a tutti di tuffarsi e combattere il caldo.',
+                cost: 18000,
+                unit: 'piscina',
+                icon: '🏊',
+                minCity: 1,
+                isNegative: false,
+                tempDrop: 0.5,
+                ecoBoost: 1.2,
+                welfareBoost: 6.0
+            },
+            {
+                id: 'arcade',
+                name: 'Sala Giochi Arcade',
+                desc: 'Divertimento al chiuso con videogiochi e flipper. Ha il condizionatore ma consuma tanta corrente!',
+                cost: 12000,
+                unit: 'sala',
+                icon: '🕹️',
+                minCity: 1,
+                isNegative: false,
+                tempDrop: -0.1,
+                ecoBoost: -0.5,
+                welfareBoost: 4.0
+            },
+            {
+                id: 'outdoorCinema',
+                name: 'Cinema all\'Aperto nel Parco',
+                desc: 'Proiezioni serali di film sotto la chioma degli alberi per intrattenere grandi e piccini.',
+                cost: 4500,
+                unit: 'cinema',
+                icon: '🍿',
+                minCity: 1,
+                isNegative: false,
+                tempDrop: 0.08,
+                ecoBoost: 0.6,
+                welfareBoost: 4.5
+            },
+            {
+                id: 'shade',
+                name: 'Poche strutture per proteggersi dal caldo',
+                desc: 'Installa pensiline ombreggianti, pergole e tetti verdi sugli edifici pubblici.',
+                cost: 15000,
+                unit: 'edificio',
+                icon: '🏛️',
+                minCity: 1,
+                isNegative: false,
+                tempDrop: 0.45,
+                ecoBoost: 1.5,
+                welfareBoost: 1.2
+            },
+            {
+                id: 'misting',
+                name: 'Impianto di nebulizzazione',
+                desc: 'Installato sui tetti delle case per rinfrescare l\'aria nelle strade sottostanti.',
+                cost: 500,
+                unit: 'tetto',
+                icon: '🌬️',
+                minCity: 1,
+                isNegative: false,
+                tempDrop: 0.02,
+                ecoBoost: 0.25,
+                welfareBoost: 0.8
+            },
+            {
+                id: 'megaParking',
+                name: 'Parcheggio Multipiano Asfaltato',
+                desc: 'Crea un grande hub asfaltato in centro città per accogliere il flusso turistico.',
+                cost: 8000,
+                unit: 'struttura',
+                icon: '🚘',
+                minCity: 1,
+                isNegative: true,
+                tempDrop: -0.4,
+                ecoBoost: -2.5,
+                welfareBoost: -1.0
+            },
+            // CITTÀ LIVELLO 2+
+            {
+                id: 'bikeLanes',
+                name: 'Piste ciclabili alberate',
+                desc: 'Crea corridoi verdi dedicati a biciclette e monopattini per ridurre il traffico.',
+                cost: 5000,
+                unit: 'km',
+                icon: '🚴',
+                minCity: 2,
+                isNegative: false,
+                tempDrop: 0.15,
+                ecoBoost: 0.8,
+                welfareBoost: 2.0
+            },
+            {
+                id: 'fountains',
+                name: 'Fontanelle e specchi d\'acqua',
+                desc: 'Punti d\'acqua pubblica per rinfrescare i passanti e abbassare l\'isola di calore.',
+                cost: 2500,
+                unit: 'fontana',
+                icon: '⛲',
+                minCity: 2,
+                isNegative: false,
+                tempDrop: 0.08,
+                ecoBoost: 0.5,
+                welfareBoost: 2.5
+            },
+            {
+                id: 'industrialAC',
+                name: 'Chiller di Condizionamento Commerciale',
+                desc: 'Rinfresca i grandi complessi commerciali centralizzati scaricando i fumi d\'aria all\'esterno.',
+                cost: 12000,
+                unit: 'impianto',
+                icon: '🏭',
+                minCity: 2,
+                isNegative: true,
+                tempDrop: -0.8,
+                ecoBoost: -4.0,
+                welfareBoost: -3.5
+            }
+        ];
+
+        const POSITIVE_REVIEWS = [
+            { text: "Un tuffo rinfrescante nella nuova piscina pubblica! Che sollievo dal caldo!", bonus: 350 },
+            { text: "I bambini adorano il nuovo parco giochi sul prato! Grazie Sindaco!", bonus: 250 },
+            { text: "Un gelato fresco al chiosco del parco! Il miglior pomeriggio di sempre!", bonus: 150 },
+            { text: "Che spettacolo il cinema all'aperto serale sotto gli alberi!", bonus: 200 },
+            { text: "La sala giochi arcade è super divertente e c'è pure l'aria fresca!", bonus: 180 },
+            { text: "Che meraviglia questo nuovo prato urbano! Ci voleva proprio!", bonus: 300 },
+            { text: "L'aria è molto più fresca con i nebulizzatori sui tetti! Bravo Sindaco!", bonus: 200 },
+            { text: "Finalmente posso camminare all'ombra sotto le nuove pergole!", bonus: 220 },
+            { text: "Meno asfalto rovente e più verde: la città è fantastica!", bonus: 350 },
+            { text: "Le nuove piste ciclabili alberate sono utilissime!", bonus: 160 },
+            { text: "I nuovi parcheggi con grigliati d'erba sono comodissimi ed ecologici!", bonus: 150 },
+            { text: "Le fontanelle pubbliche sono una benedizione!", bonus: 120 }
+        ];
+
+        const NEGATIVE_REVIEWS = [
+            { text: "Dove parcheggio la macchina adesso?! AVETE TOLTO I PARCHEGGI!", bonus: 0 },
+            { text: "Fa ancora un caldo soffocante! Servono una piscina o un parco giochi!", bonus: 0 },
+            { text: "Serve molta più ombra nel mio quartiere, sbrigatevi coi lavori!", bonus: 0 },
+            { text: "Avete tagliato gli alberi per l'asfalto?! Ora soffochiamo dal caldo!", bonus: 0 },
+            { text: "Questi motori dei condizionatori soffiano aria bollente in faccia ai passanti!", bonus: 0 }
+        ];
+
+        let reviewTimer = null;
+
+        function startMainGame() {
+            goToScreen(3);
+            initCanvas();
+            renderUpgradesList();
+            updateUI();
+            startCitizenReviewLoop();
+        }
+
+        /* ====================================================== */
+        /* GAME MECHANICS & UPGRADES                              */
+        /* ====================================================== */
+        function renderUpgradesList() {
+            const container = document.getElementById('cardsList');
+            container.innerHTML = '';
+
+            // Filter cards based on current city level
+            const availableCards = CARDS_CONFIG.filter(card => card.minCity <= currentCityIndex);
+
+            availableCards.forEach(card => {
+                const count = gameState.upgrades[card.id] || 0;
+                const cardEl = document.createElement('div');
+                
+                // UNIFORM APPEARANCE FOR ALL CARDS
+                cardEl.className = 'glass-dark p-4 rounded-2xl border border-slate-700 hover:border-slate-500 transition-all space-y-3';
+
+                const priceDisplay = card.cost < 0 
+                    ? `<span class="text-amber-300 font-bold">Ricavo Immediato: +${Math.abs(card.cost).toLocaleString('it-IT')} €</span>`
+                    : `<span class="text-pastel-green font-bold">Costo: ${card.cost.toLocaleString('it-IT')} €</span>`;
+
+                cardEl.innerHTML = `
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-2xl shadow-inner">
+                                ${card.icon}
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-white text-base">${card.name}</h4>
+                                <div class="text-xs font-mono">${priceDisplay} / ${card.unit}</div>
+                            </div>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 text-xs font-mono font-bold border border-slate-700">
+                            Posseduti: <span id="count-${card.id}">${count}</span>
+                        </span>
+                    </div>
+
+                    <p class="text-xs text-slate-300 leading-relaxed">${card.desc}</p>
+
+                    <div class="flex items-center gap-2 pt-1">
+                        <button onclick="buyUpgrade('${card.id}', 1)" class="flex-1 py-2 rounded-xl ${card.cost < 0 ? 'bg-amber-600 hover:bg-amber-500' : 'bg-emerald-600 hover:bg-emerald-500'} text-white font-bold text-xs shadow active:scale-95 transition-all">
+                            ${card.cost < 0 ? 'Attiva Intervento (+ Cash)' : `Acquista 1 (${card.cost.toLocaleString('it-IT')} €)`}
+                        </button>
+                        ${card.cost > 0 ? `
+                            <button onclick="buyUpgrade('${card.id}', 10)" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-slate-700 font-bold text-xs active:scale-95 transition-all">
+                                +10
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+                container.appendChild(cardEl);
+            });
+        }
+
+        function buyUpgrade(cardId, qty) {
+            const card = CARDS_CONFIG.find(c => c.id === cardId);
+            if (!card) return;
+
+            const totalCost = card.cost * qty;
+
+            if (totalCost > 0 && gameState.budget < totalCost) {
+                playSound('error');
+                showNoCashModal();
+                return;
+            }
+
+            gameState.budget -= totalCost;
+            gameState.upgrades[cardId] = (gameState.upgrades[cardId] || 0) + qty;
+            
+            playSound('buy');
+
+            recalculateClimate();
+            updateUI();
+
+            const countEl = document.getElementById(`count-${cardId}`);
+            if (countEl) countEl.innerText = gameState.upgrades[cardId];
+        }
+
+        function recalculateClimate() {
+            let tempChangeTotal = 0;
+            CARDS_CONFIG.forEach(card => {
+                const qty = gameState.upgrades[card.id] || 0;
+                tempChangeTotal += card.tempDrop * qty;
+            });
+
+            gameState.temp = Math.max(18.0, Math.min(50.0, gameState.initialTemp - tempChangeTotal));
+        }
+
+        function calculateEcoPercentage() {
+            let ecoScore = 0;
+            CARDS_CONFIG.forEach(card => {
+                const qty = gameState.upgrades[card.id] || 0;
+                ecoScore += card.ecoBoost * qty;
+            });
+            
+            return Math.max(0, Math.min(100, Math.round(ecoScore)));
+        }
+
+        function calculateWelfarePercentage() {
+            let welfareScore = 0;
+            CARDS_CONFIG.forEach(card => {
+                const qty = gameState.upgrades[card.id] || 0;
+                welfareScore += (card.welfareBoost || 0) * qty;
+            });
+            
+            return Math.max(0, Math.min(100, Math.round(welfareScore)));
+        }
+
+        function updateUI() {
+            document.getElementById('budgetDisplay').innerText = gameState.budget.toLocaleString('it-IT') + ' €';
+            
+            const tempEl = document.getElementById('tempDisplay');
+            const tempIcon = document.getElementById('tempIcon');
+            tempEl.innerText = gameState.temp.toFixed(1) + ' °C';
+            
+            if (gameState.temp > 32) {
+                tempEl.className = 'text-lg sm:text-2xl font-bold text-red-500';
+                tempIcon.innerText = '🔥';
+            } else if (gameState.temp > 26) {
+                tempEl.className = 'text-lg sm:text-2xl font-bold text-amber-400';
+                tempIcon.innerText = '☀️';
+            } else {
+                tempEl.className = 'text-lg sm:text-2xl font-bold text-emerald-400';
+                tempIcon.innerText = '🍃';
+            }
+
+            const ecoPct = calculateEcoPercentage();
+            document.getElementById('ecoDisplay').innerText = ecoPct + '%';
+
+            const welfarePct = calculateWelfarePercentage();
+            document.getElementById('welfareDisplay').innerText = welfarePct + '%';
+        }
+
+        /* Drawer Toggle */
+        function toggleCardDrawer(show) {
+            playSound('click');
+            const drawer = document.getElementById('cardDrawer');
+            const content = document.getElementById('drawerContent');
+            if (show) {
+                drawer.classList.remove('opacity-0', 'pointer-events-none');
+                drawer.classList.add('opacity-100', 'pointer-events-auto');
+                content.classList.remove('translate-x-full');
+            } else {
+                drawer.classList.remove('opacity-100', 'pointer-events-auto');
+                drawer.classList.add('opacity-0', 'pointer-events-none');
+                content.classList.add('translate-x-full');
+            }
+        }
+
+        /* Modal handling */
+        function showNoCashModal() {
+            const modal = document.getElementById('noCashModal');
+            const content = modal.firstElementChild;
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.classList.add('opacity-100', 'pointer-events-auto');
+            content.classList.remove('scale-95');
+            content.classList.add('scale-100');
+        }
+
+        function closeNoCashModal() {
+            playSound('click');
+            const modal = document.getElementById('noCashModal');
+            const content = modal.firstElementChild;
+            modal.classList.remove('opacity-100', 'pointer-events-auto');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            content.classList.remove('scale-100');
+            content.classList.add('scale-95');
+        }
+
+        /* Citizen Reviews Loop */
+        function startCitizenReviewLoop() {
+            if (reviewTimer) clearInterval(reviewTimer);
+            const baseInterval = 25000 + (currentCityIndex * 5000);
+            reviewTimer = setInterval(() => {
+                triggerCitizenReview();
+            }, baseInterval);
+        }
+
+        function triggerCitizenReview() {
+            const ecoPct = calculateEcoPercentage();
+            const welfarePct = calculateWelfarePercentage();
+            
+            const posChance = Math.max(0.15, (ecoPct + welfarePct) / 200 - (currentCityIndex * 0.1));
+            const isPositive = Math.random() < posChance;
+
+            if (isPositive) {
+                const review = POSITIVE_REVIEWS[Math.floor(Math.random() * POSITIVE_REVIEWS.length)];
+                const reward = Math.round(review.bonus * (1 - currentCityIndex * 0.15));
+                gameState.budget += reward;
+                updateUI();
+                playSound('review_pos');
+                showToast(`💬 "${review.text}" (+${reward} €)`, true);
+            } else {
+                const review = NEGATIVE_REVIEWS[Math.floor(Math.random() * NEGATIVE_REVIEWS.length)];
+                playSound('review_neg');
+                showToast(`😠 "${review.text}"`, false);
+            }
+        }
+
+        function showToast(msg, isPositive) {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = `p-3 rounded-xl font-medium text-xs sm:text-sm shadow-xl flex items-center gap-2 animate-toast ${
+                isPositive 
+                    ? 'bg-emerald-900/90 text-emerald-200 border border-emerald-500/50' 
+                    : 'bg-slate-800/90 text-slate-200 border border-slate-700'
+            }`;
+            toast.innerHTML = msg;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'transition-opacity', 'duration-500');
+                setTimeout(() => toast.remove(), 500);
+            }, 4500);
+        }
+
+        /* Finish Work & Final Review */
+        function finishWorkAndReview() {
+            playSound('click');
+            if (reviewTimer) clearInterval(reviewTimer);
+
+            const ecoPct = calculateEcoPercentage();
+            const welfarePct = calculateWelfarePercentage();
+            const tempDrop = gameState.initialTemp - gameState.temp;
+
+            let score = 1.0;
+            score += Math.min(2.0, (tempDrop / 15) * 2.0);
+            score += Math.min(1.0, (ecoPct / 60));
+            score += Math.min(1.0, (welfarePct / 50));
+            
+            let finalStars = Math.round(score * 2) / 2;
+            finalStars = Math.max(1.0, Math.min(5.0, finalStars));
+
+            document.getElementById('finalCityName').innerText = gameState.cityName;
+            document.getElementById('ratingText').innerText = `Punteggio: ${finalStars.toFixed(1)} / 5.0 ⭐`;
+            document.getElementById('finalTemp').innerText = `${gameState.temp.toFixed(1)} °C`;
+            
+            const depavedArea = (gameState.upgrades.depaving || 0) * 10;
+            document.getElementById('finalDepaved').innerText = `${depavedArea.toLocaleString('it-IT')} m²`;
+            document.getElementById('finalTrees').innerText = `${gameState.upgrades.trees || 0}`;
+            document.getElementById('finalBudget').innerText = `${gameState.budget.toLocaleString('it-IT')} €`;
+
+            const starContainer = document.getElementById('starContainer');
+            starContainer.innerHTML = '';
+            for (let i = 1; i <= 5; i++) {
+                if (finalStars >= i) {
+                    starContainer.innerHTML += '★';
+                } else if (finalStars >= i - 0.5) {
+                    starContainer.innerHTML += '½';
+                } else {
+                    starContainer.innerHTML += '<span class="text-slate-700">★</span>';
+                }
+            }
+
+            const verdictQuote = document.getElementById('finalVerdictQuote');
+            if (finalStars >= 4.5) {
+                verdictQuote.innerText = '"Capolavoro di sostenibilità! La città è fresca, verde e piena di vita!"';
+                playSound('fanfare');
+            } else if (finalStars >= 3.5) {
+                verdictQuote.innerText = '"Ottimo lavoro! I cittadini apprezzano molto i nuovi spazi verdi e il clima più mite."';
+                playSound('fanfare');
+            } else {
+                verdictQuote.innerText = '"I lavori non sono stati sufficienti. C\'è ancora troppo asfalto e il caldo fa soffrire i cittadini."';
+            }
+
+            const buttonsContainer = document.getElementById('progressionButtons');
+            buttonsContainer.innerHTML = '';
+
+            if (finalStars >= 3.5) {
+                buttonsContainer.innerHTML = `
+                    <button onclick="showPromotionLetter()" class="flex-1 py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-600 to-sage text-white font-extrabold text-base shadow-xl hover:shadow-emerald-500/30 hover:scale-[1.02] active:scale-95 transition-all">
+                        Prossima città ➔
+                    </button>
+                    <button onclick="endGame()" class="flex-1 py-4 px-6 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-base border border-slate-700 active:scale-95 transition-all">
+                        Termina gioco 🏁
+                    </button>
+                `;
+            } else {
+                buttonsContainer.innerHTML = `
+                    <button onclick="endGame()" class="w-full py-4 px-6 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-extrabold text-base border border-slate-700 active:scale-95 transition-all">
+                        Termina gioco 🏁 (Servono almeno 3.5 stelle)
+                    </button>
+                `;
+            }
+
+            goToScreen(4);
+        }
+
+        function showPromotionLetter() {
+            playSound('click');
+            const nextIdx = (currentCityIndex + 1) % CITIES_PRESETS.length;
+            const nextCity = CITIES_PRESETS[nextIdx];
+
+            document.getElementById('nextCityName').innerText = nextCity.name;
+            document.getElementById('nextCityTemp').innerText = `${nextCity.initialTemp.toFixed(1)} °C`;
+            document.getElementById('nextCityBudget').innerText = `${nextCity.budget.toLocaleString('it-IT')} €`;
+
+            const modal = document.getElementById('promotionModal');
+            const content = modal.firstElementChild;
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.classList.add('opacity-100', 'pointer-events-auto');
+            content.classList.remove('scale-95');
+            content.classList.add('scale-100');
+        }
+
+        function confirmNextCity() {
+            playSound('click');
+            const modal = document.getElementById('promotionModal');
+            modal.classList.remove('opacity-100', 'pointer-events-auto');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+
+            currentCityIndex = (currentCityIndex + 1) % CITIES_PRESETS.length;
+            const preset = CITIES_PRESETS[currentCityIndex];
+
+            gameState = {
+                cityName: preset.name,
+                budget: preset.budget,
+                initialBudget: preset.budget,
+                temp: preset.initialTemp,
+                initialTemp: preset.initialTemp,
+                upgrades: {
+                    depaving: 0, trees: 0, shade: 0, parkingRemoved: 0, misting: 0,
+                    ecoParking: 0, bikeLanes: 0, fountains: 0, asphaltExpansion: 0,
+                    treeLogging: 0, megaParking: 0, industrialAC: 0, playground: 0,
+                    pool: 0, arcade: 0, iceCream: 0, outdoorCinema: 0
+                }
+            };
+
+            document.getElementById('introCityName').innerText = preset.name;
+            document.getElementById('cityHeaderTitle').innerText = `Situazione attuale di ${preset.name}`;
+            
+            goToScreen(2);
+        }
+
+        function endGame() {
+            playSound('click');
+            currentCityIndex = 0;
+            const preset = CITIES_PRESETS[0];
+            gameState = {
+                cityName: preset.name,
+                budget: preset.budget,
+                initialBudget: preset.budget,
+                temp: preset.initialTemp,
+                initialTemp: preset.initialTemp,
+                upgrades: {
+                    depaving: 0, trees: 0, shade: 0, parkingRemoved: 0, misting: 0,
+                    ecoParking: 0, bikeLanes: 0, fountains: 0, asphaltExpansion: 0,
+                    treeLogging: 0, megaParking: 0, industrialAC: 0, playground: 0,
+                    pool: 0, arcade: 0, iceCream: 0, outdoorCinema: 0
+                }
+            };
+            document.getElementById('introCityName').innerText = preset.name;
+            document.getElementById('cityHeaderTitle').innerText = `Situazione attuale di ${preset.name}`;
+            goToScreen(1);
+        }
+
+        /* ====================================================== */
+        /* CANVAS RENDERER & EMOJI DISPLAY                        */
+        /* ====================================================== */
+        let canvas, ctx;
+
+        function initCanvas() {
+            canvas = document.getElementById('cityCanvas');
+            if (!canvas) return;
+            ctx = canvas.getContext('2d');
+
+            function resize() {
+                const rect = canvas.getBoundingClientRect();
+                const dpr = window.devicePixelRatio || 1;
+                canvas.width = rect.width * dpr;
+                canvas.height = rect.height * dpr;
+                ctx.scale(dpr, dpr);
+                drawCity();
+            }
+
+            window.addEventListener('resize', resize);
+            resize();
+            
+            function loop() {
+                drawCity();
+                requestAnimationFrame(loop);
+            }
+            requestAnimationFrame(loop);
+        }
+
+        function drawCity() {
+            if (!ctx || !canvas) return;
+            
+            const dpr = window.devicePixelRatio || 1;
+            const w = canvas.width / dpr;
+            const h = canvas.height / dpr;
+            const time = Date.now() * 0.002;
+
+            ctx.clearRect(0, 0, w, h);
+
+            const ecoRatio = calculateEcoPercentage() / 100;
+            const welfareRatio = calculateWelfarePercentage() / 100;
+            const temp = gameState.temp;
+
+            // 1. TERRAIN BACKGROUND GRADIENT
+            const bgGrad = ctx.createLinearGradient(0, 0, w, h);
+            if (ecoRatio > 0.5) {
+                bgGrad.addColorStop(0, '#E8F5E9');
+                bgGrad.addColorStop(1, '#C8E6C9');
+            } else if (ecoRatio > 0.25) {
+                bgGrad.addColorStop(0, '#F1F8E9');
+                bgGrad.addColorStop(1, '#DCEDC8');
+            } else {
+                bgGrad.addColorStop(0, '#ECEFF1');
+                bgGrad.addColorStop(1, '#CFD8DC');
+            }
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, w, h);
+
+            // 2. CITY PLOTS & ROAD NETWORK
+            const cols = 5;
+            const rows = 4;
+            const marginX = w * 0.04;
+            const marginY = h * 0.04;
+            const gridW = (w - marginX * 2) / cols;
+            const gridH = (h - marginY * 2) / rows;
+
+            // Draw Roads
+            ctx.lineWidth = 14;
+            ctx.strokeStyle = ecoRatio > 0.4 ? '#94A3B8' : '#475569';
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+
+            // Main avenues
+            ctx.beginPath();
+            ctx.moveTo(marginX, marginY + gridH * 2);
+            ctx.lineTo(w - marginX, marginY + gridH * 2);
+            ctx.moveTo(marginX + gridW * 2, marginY);
+            ctx.lineTo(marginX + gridW * 2, h - marginY);
+            ctx.stroke();
+
+            // Bike Lanes overlay if unlocked
+            if ((gameState.upgrades.bikeLanes || 0) > 0) {
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = '#38BDF8';
+                ctx.beginPath();
+                ctx.moveTo(marginX, marginY + gridH * 2 - 8);
+                ctx.lineTo(w - marginX, marginY + gridH * 2 - 8);
+                ctx.stroke();
+            }
+
+            // Road Markings
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([8, 8]);
+            ctx.beginPath();
+            ctx.moveTo(marginX, marginY + gridH * 2);
+            ctx.lineTo(w - marginX, marginY + gridH * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // 3. PARK PARCELS & BUILDINGS
+            const plotCoords = [
+                {c: 0, r: 0, type: 'building'}, {c: 1, r: 0, type: 'park'}, {c: 3, r: 0, type: 'building'}, {c: 4, r: 0, type: 'park'},
+                {c: 0, r: 1, type: 'park'}, {c: 1, r: 1, type: 'building'}, {c: 3, r: 1, type: 'park'}, {c: 4, r: 1, type: 'building'},
+                {c: 0, r: 2, type: 'building'}, {c: 1, r: 2, type: 'park'}, {c: 3, r: 2, type: 'building'}, {c: 4, r: 2, type: 'park'},
+                {c: 0, r: 3, type: 'park'}, {c: 1, r: 3, type: 'building'}, {c: 3, r: 3, type: 'park'}, {c: 4, r: 3, type: 'building'}
+            ];
+
+            plotCoords.forEach((plot, idx) => {
+                const px = marginX + plot.c * gridW + gridW * 0.08;
+                const py = marginY + plot.r * gridH + gridH * 0.08;
+                const pw = gridW * 0.84;
+                const ph = gridH * 0.84;
+
+                ctx.save();
+                ctx.shadowColor = 'rgba(15, 23, 42, 0.08)';
+                ctx.shadowBlur = 10;
+                ctx.shadowOffsetY = 4;
+
+                if (plot.type === 'park') {
+                    // Grass Plot
+                    const parkGrad = ctx.createLinearGradient(px, py, px + pw, py + ph);
+                    if (ecoRatio > 0.4) {
+                        parkGrad.addColorStop(0, '#A7F3D0');
+                        parkGrad.addColorStop(1, '#6EE7B7');
+                    } else {
+                        parkGrad.addColorStop(0, '#E2E8F0');
+                        parkGrad.addColorStop(1, '#CBD5E1');
+                    }
+                    ctx.fillStyle = parkGrad;
+                    ctx.beginPath();
+                    ctx.roundRect(px, py, pw, ph, 16);
+                    ctx.fill();
+
+                    // Decorative lines
+                    ctx.strokeStyle = ecoRatio > 0.4 ? '#34D399' : '#94A3B8';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.arc(px + pw * 0.3, py + ph * 0.3, 4, 0, Math.PI * 2);
+                    ctx.arc(px + pw * 0.7, py + ph * 0.6, 6, 0, Math.PI * 2);
+                    ctx.stroke();
+                } else {
+                    // Building Plot
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.beginPath();
+                    ctx.roundRect(px, py, pw, ph, 12);
+                    ctx.fill();
+
+                    // Roof color
+                    const hasRoofGreen = (gameState.upgrades.shade || 0) + (gameState.upgrades.misting || 0) > idx;
+                    const roofGrad = ctx.createLinearGradient(px, py, px, py + ph * 0.4);
+                    if (hasRoofGreen) {
+                        roofGrad.addColorStop(0, '#4ADE80');
+                        roofGrad.addColorStop(1, '#22C55E');
+                    } else {
+                        roofGrad.addColorStop(0, '#F87171');
+                        roofGrad.addColorStop(1, '#EF4444');
+                    }
+                    ctx.fillStyle = roofGrad;
+                    ctx.beginPath();
+                    ctx.roundRect(px + 4, py + 4, pw - 8, ph * 0.35, 8);
+                    ctx.fill();
+
+                    // Windows
+                    ctx.fillStyle = temp > 32 ? '#FDE047' : '#38BDF8';
+                    const winW = (pw - 24) / 3;
+                    const winH = ph * 0.2;
+                    for (let wIdx = 0; wIdx < 3; wIdx++) {
+                        ctx.fillRect(px + 8 + wIdx * (winW + 4), py + ph * 0.48, winW, winH);
+                        ctx.fillRect(px + 8 + wIdx * (winW + 4), py + ph * 0.72, winW, winH);
+                    }
+                }
+                ctx.restore();
+            });
+
+            // 4. EMOJI ITEMS RENDER ENGINE
+            const emojiItems = [];
+
+            const addEmojis = (upgId, emoji, defaultSize = 26) => {
+                const qty = gameState.upgrades[upgId] || 0;
+                for (let i = 0; i < qty; i++) {
+                    emojiItems.push({ symbol: emoji, size: defaultSize, id: upgId });
+                }
+            };
+
+            addEmojis('trees', '🌳', 30);
+            addEmojis('playground', '🛝', 30);
+            addEmojis('pool', '🏊', 30);
+            addEmojis('fountains', '⛲', 28);
+            addEmojis('iceCream', '🍦', 26);
+            addEmojis('outdoorCinema', '🍿', 28);
+            addEmojis('arcade', '🕹️', 26);
+            addEmojis('ecoParking', '🚗🌿', 26);
+            addEmojis('depaving', '🌸', 22);
+
+            const parkPlots = plotCoords.filter(p => p.type === 'park');
+            
+            emojiItems.forEach((item, index) => {
+                const plot = parkPlots[index % parkPlots.length];
+                const px = marginX + plot.c * gridW + gridW * 0.08;
+                const py = marginY + plot.r * gridH + gridH * 0.08;
+                const pw = gridW * 0.84;
+                const ph = gridH * 0.84;
+
+                const subCol = (Math.floor(index / parkPlots.length)) % 3;
+                const subRow = (Math.floor(index / (parkPlots.length * 3))) % 3;
+
+                const floatY = Math.sin(time * 2 + index * 0.8) * 3;
+                const posX = px + (pw * 0.22) + subCol * (pw * 0.3);
+                const posY = py + (ph * 0.25) + subRow * (ph * 0.3) + floatY;
+
+                ctx.save();
+                
+                // Soft Token Badge
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.12)';
+                ctx.shadowBlur = 6;
+                ctx.shadowOffsetY = 3;
+
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                ctx.beginPath();
+                ctx.arc(posX, posY, item.size * 0.65, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = 'rgba(226, 232, 240, 0.9)';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+
+                ctx.font = `${item.size}px sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(item.symbol, posX, posY + 1);
+
+                ctx.restore();
+            });
+
+            // 5. ATMOSPHERIC & CLIMATE EFFECTS
+            // Misting
+            if ((gameState.upgrades.misting || 0) > 0) {
+                ctx.fillStyle = 'rgba(186, 230, 253, 0.4)';
+                for (let i = 0; i < 20; i++) {
+                    const px = (Math.sin(time + i * 1.7) * 0.45 + 0.5) * w;
+                    const py = (Math.cos(time * 0.8 + i * 2.3) * 0.45 + 0.5) * h;
+                    ctx.beginPath();
+                    ctx.arc(px, py, 3 + (i % 4), 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            // Heat Waves (> 32°C)
+            if (temp > 32) {
+                ctx.strokeStyle = 'rgba(239, 68, 68, 0.25)';
+                ctx.lineWidth = 2.5;
+                for (let i = 0; i < 5; i++) {
+                    const yPos = (i + 1) * (h / 6);
+                    ctx.beginPath();
+                    for (let xPos = 0; xPos < w; xPos += 15) {
+                        const yWave = yPos + Math.sin(time * 3 + xPos * 0.03 + i) * 6;
+                        if (xPos === 0) ctx.moveTo(xPos, yWave);
+                        else ctx.lineTo(xPos, yWave);
+                    }
+                    ctx.stroke();
+                }
+            }
+
+            // Green Leaf Particles (< 26°C)
+            if (temp < 26) {
+                ctx.fillStyle = 'rgba(74, 222, 128, 0.5)';
+                for (let i = 0; i < 12; i++) {
+                    const lx = ((time * 20 + i * 50) % w);
+                    const ly = (Math.sin(time + i) * 30 + (i * (h / 12)));
+                    ctx.beginPath();
+                    ctx.ellipse(lx, ly, 4, 2, time + i, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+    </script>
+</body>
+</html>

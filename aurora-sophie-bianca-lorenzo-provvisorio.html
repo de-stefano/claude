@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoSindaco - La Città nelle Tue Mani</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Google Fonts: Fredoka & Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                        },
+                        gigi: '#fbbf24',
+                    },
+                    fontFamily: {
+                        heading: ['Fredoka', 'sans-serif'],
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f8fafc;
+            user-select: none;
+        }
+
+        h1, h2, h3, h4, .font-heading {
+            font-family: 'Fredoka', sans-serif;
+        }
+
+        /* Thermometer mercury fluid animation */
+        .mercury-bar {
+            transition: height 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.5s ease;
+        }
+
+        /* District SVG interactive hover */
+        .district-path {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .district-path:hover {
+            filter: brightness(1.15) drop-shadow(0 6px 10px rgba(0,0,0,0.18));
+            transform: scale(1.01);
+        }
+        .district-path.active {
+            stroke: #ec4899;
+            stroke-width: 5;
+            filter: brightness(1.2) drop-shadow(0 0 12px rgba(236, 72, 153, 0.5));
+        }
+
+        /* Pulsing animations for streak widgets */
+        @keyframes pulse-fire {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.7)); }
+            50% { transform: scale(1.08); filter: drop-shadow(0 0 18px rgba(239, 68, 68, 0.9)); }
+        }
+        .animate-fire {
+            animation: pulse-fire 1.5s infinite ease-in-out;
+        }
+
+        @keyframes pulse-skull {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 6px rgba(107, 114, 128, 0.5)); }
+            50% { transform: scale(1.06); filter: drop-shadow(0 0 16px rgba(225, 29, 72, 0.95)); }
+        }
+        .animate-skull {
+            animation: pulse-skull 1.2s infinite ease-in-out;
+        }
+
+        /* Playful card styling */
+        .playful-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            border: 2px solid #f1f5f9;
+            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.05), 0 8px 10px -6px rgba(15, 23, 42, 0.05);
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 6px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 6px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-100 via-pink-50/30 to-sky-50/40 text-slate-800 flex flex-col min-h-screen">
+
+    <!-- HEADER / NAVIGATION BAR -->
+    <header class="bg-white/90 backdrop-blur-md border-b-2 border-slate-200 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 py-2.5 flex items-center justify-between">
+            <!-- Brand Logo -->
+            <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('intro')">
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-pink-500 via-purple-500 to-emerald-400 flex items-center justify-center text-white shadow-md text-2xl transform hover:rotate-12 transition-transform">
+                    <i class="fa-solid fa-city"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black tracking-wide leading-none font-heading bg-gradient-to-r from-pink-600 via-purple-600 to-emerald-600 bg-clip-text text-transparent">Eco<span class="text-emerald-500">Sindaco</span> 🚀</h1>
+                    <p class="text-[11px] text-pink-600 font-extrabold tracking-wider uppercase">Sperimenta, Governa e Trasforma!</p>
+                </div>
+            </div>
+
+            <!-- Page Switcher Tabs -->
+            <div class="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200 text-sm font-extrabold shadow-inner">
+                <button id="nav-intro-btn" onclick="switchTab('intro')" class="px-5 py-2 rounded-xl transition-all text-pink-900 bg-white shadow-md flex items-center gap-2">
+                    <i class="fa-solid fa-scroll text-pink-500"></i> <span>Manuale Segreto</span>
+                </button>
+                <button id="nav-game-btn" onclick="switchTab('game')" class="px-5 py-2 rounded-xl transition-all text-slate-600 hover:text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-gamepad text-indigo-500"></i> <span>Cabina di Regia</span>
+                </button>
+            </div>
+
+            <!-- Header Quick Stats -->
+            <div id="header-stats" class="hidden md:flex items-center gap-4">
+                <div class="flex items-center gap-2 bg-amber-50 border-2 border-amber-200 px-3.5 py-1.5 rounded-2xl shadow-sm">
+                    <i class="fa-solid fa-coins text-amber-500 text-lg"></i>
+                    <span class="text-xs text-amber-900 uppercase font-black">Cassa:</span>
+                    <span id="stat-budget-header" class="font-black text-amber-950 font-heading text-base">800.000 Gigi</span>
+                </div>
+                <div class="flex items-center gap-2 bg-purple-50 border-2 border-purple-200 px-3.5 py-1.5 rounded-2xl shadow-sm">
+                    <i class="fa-solid fa-user-tie text-purple-600 text-lg"></i>
+                    <span id="stat-mayor-header" class="text-xs font-black text-purple-950 truncate max-w-[150px]">Sindaco Marco Rossi</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
+
+        <!-- ================================================================= -->
+        <!-- VIEW 1: ISTRUZIONI / MANUALE SEGRETO -->
+        <!-- ================================================================= -->
+        <section id="view-intro" class="space-y-6">
+            
+            <!-- Mayor Identity Customization Card -->
+            <div class="playful-card rounded-3xl p-6 border-t-8 border-t-purple-500 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-amber-500/10">
+                <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-purple-500 to-pink-500 text-white flex items-center justify-center text-3xl shadow-lg shadow-purple-500/30">
+                            🎭
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-black font-heading text-slate-900">✨ Plasmati un'Identità Leggendaria!</h2>
+                            <p class="text-sm text-slate-600 font-bold">Personalizza il nome del Primo Cittadino prima di scendere in campo</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3 w-full md:w-auto">
+                        <div class="relative w-full md:w-72">
+                            <i class="fa-solid fa-pen-nib absolute left-3.5 top-1/2 -translate-y-1/2 text-purple-400"></i>
+                            <input type="text" id="intro-mayor-input" value="Sindaco Marco Rossi" placeholder="Es. Sindaco Coraggioso" 
+                                   oninput="updateMayorNameFromInput(this.value)"
+                                   class="w-full pl-10 pr-4 py-3 rounded-2xl border-2 border-purple-300 font-black text-slate-800 bg-white shadow-sm focus:outline-none focus:border-purple-600 focus:ring-4 focus:ring-purple-200 transition-all text-sm">
+                        </div>
+                        <button onclick="generateRandomMayorName()" class="px-4 py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 text-amber-950 font-black shadow-md border-2 border-amber-300 transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2 whitespace-nowrap text-sm font-heading">
+                            <i class="fa-solid fa-dice text-base"></i> <span>Dado Magico</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page Title -->
+            <div class="text-center space-y-2 py-2">
+                <h2 class="text-3xl sm:text-4xl font-black font-heading bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                    📜 Il Codice d'Onore del Super Sindaco
+                </h2>
+                <p class="text-slate-600 font-extrabold max-w-2xl mx-auto text-sm sm:text-base">
+                    9 Regole d'Oro per guidare la città verso l'utopia verde ed evitare il referendum della vergogna!
+                </p>
+            </div>
+
+            <!-- 9 Rules Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                
+                <!-- Rule 1 -->
+                <div class="playful-card p-5 rounded-3xl border-l-8 border-l-pink-500 space-y-2">
+                    <div class="flex items-center gap-3">
+                        <span class="w-9 h-9 rounded-xl bg-pink-500 text-white font-black flex items-center justify-center text-base shadow-md">1</span>
+                        <h3 class="font-black text-base font-heading text-slate-800">Star del Municipio 🏛️</h3>
+                    </div>
+                    <p class="text-xs text-slate-600 font-extrabold leading-relaxed">
+                        Sei la star indiscutibile del Municipio! Ogni tua firma cambia istantaneamente il destino climatico dei 5 quartieri.
+                    </p>
+                </div>
+
+                <!-- Rule 2 -->
+                <div class="playful-card p-5 rounded-3xl border-l-8 border-l-purple-500 space-y-2">
+                    <div class="flex items-center gap-3">
+                        <span class="w-9 h-9 rounded-xl bg-purple-500 text-white font-black flex items-center justify-center text-base shadow-md">2</span>
+                        <h3 class="font-black text-base font-heading text-slate-800">Scelte da Vertigine 📊</h3>
+                    </div>
+                    <p class="text-xs text-slate-600 font-extrabold leading-relaxed">
+                        Ogni opera ha il suo risvolto della medaglia: osserva l'impatto su bilancio e termometri prima di agire!
+                    </p>
+                </div>
+
+                <!-- Rule 3 -->
+                <div class="playful-card p-5 rounded-3xl border-l-8 border-l-indigo-500 space-y-2">
+                    <div class="flex items-center gap-3">
+                        <span class="w-9 h-9 rounded-xl bg-indigo-500 text-white font-black flex items-center justify-center text-base shadow-md">3</span>
+                        <h3 class="font-black text-base font-heading text-slate-800">Referendum Flash ⏱️</h3>
+                    </div>
+                    <p class="text-xs text-slate-600 font-extrabold leading-relaxed">
+                        Serve almeno il <span class="text-indigo-600 font-black">51% di favorevoli</span> per approvare l'opera. Se sblocchi il <span class="text-emerald-600 font-black">70%+</span>, incassi fantastici bonus in valuta!
+                    </p>
+                </div>
+
+                <!-- Rule 4 -->
+                <div class="playful-card p-5 rounded-3xl border-l-8 border-l-rose-500 space-y-2">
+                    <div class="flex items-center gap-3">
+                        <span class="w-9 h-9 rounded-xl bg-rose-500 text-white font-black flex items-center justify-center text-base shadow-md">4</span>
+                        <h3 class="font-black text-base font-heading text-slate-800">Fischi in Piazza! 📢</h3>
+                    </div>
+                    <p class="text-xs text-slate-600 font-extrabold leading-relaxed">
+                        Se i cittadini sfavorevoli superano i favorevoli (&lt; 51%), la tua reputazione subisce una pesante bastonata dall'opinione pubblica.
+                    </p>
+                </div>
+
+                <!-- Rule 5 -->
+                <div class="playful-card p-5 rounded-3xl border-l-8 border-l-amber-500 space-y-2">
+                    <div class="flex items-center gap-3">
+                        <span class="w-9 h-9 rounded-xl bg-amber-500 text-white font-black flex items-center justify-center text-base shadow-md">5</span>
+                        <h3 class="font-black text-base font-heading text-slate-800">Sfratto Immediato! 🚪</h3>
+                    </div>
+                    <p class="text-xs text-slate-600 font-extrabold leading-relaxed">
+                        Se la reputazione sprofonda sotto il <span class="text-amber-600 font-black">15%</span>, scatta la sfiducia! Potrai ricominciare da capo sotto un'altra brillante identità.
+                    </p>
+                </div>
+
+                <!-- Rule 6 -->
+                <div class="playful-card p-5 rounded-3xl border-l-8 border-l-emerald-500 space-y-2">
+                    <div class="flex items-center gap-3">
+                        <span class="w-9 h-9 rounded-xl bg-emerald-500 text-white font-black flex items-center justify-center text-base shadow-md">6</span>
+                        <h3 class="font-black text-base font-heading text-slate-800">Obiettivo Leggendario 👑</h3>
+                    </div>
+                    <p class="text-xs text-slate-600 font-extrabold leading-relaxed">
+                        Mantieni alta la tua popolarità, abbassa la febbre dei quartieri e trasforma la metropoli in un capolavoro di armonia e vivibilità!
+                    </p>
+                </div>
+
+                <!-- Rule 7 -->
+                <div class="playful-card p-5 rounded-3xl border-l-8 border-l-yellow-500 space-y-2">
+                    <div class="flex items-center gap-3">
+                        <span class="w-9 h-9 rounded-xl bg-yellow-500 text-amber-950 font-black flex items-center justify-center text-base shadow-md">7</span>
+                        <h3 class="font-black text-base font-heading text-slate-800">I Mitici GIGI 💰</h3>
+                    </div>
+                    <p class="text-xs text-slate-600 font-extrabold leading-relaxed">
+                        I <span class="text-amber-600 font-black">Gigi</span> sono la valuta ufficiale della città! Hanno lo stesso valore degli euro. Parti con un tesoretto iniziale di <span class="text-amber-600 font-black">800.000 Gigi</span>.
+                    </p>
+                </div>
+
+                <!-- Rule 8 -->
+                <div class="playful-card p-5 rounded-3xl border-l-8 border-l-orange-500 space-y-2">
+                    <div class="flex items-center gap-3">
+                        <span class="w-9 h-9 rounded-xl bg-orange-500 text-white font-black flex items-center justify-center text-base shadow-md">8</span>
+                        <h3 class="font-black text-base font-heading text-slate-800">Super Combo Verde 🔥</h3>
+                    </div>
+                    <p class="text-xs text-slate-600 font-extrabold leading-relaxed">
+                        Realizza <span class="text-orange-600 font-black">4 azioni ecologiche di fila</span> per far esplodere la Fiamma del Clima ed incassare un mega premio di <span class="text-emerald-600 font-black">250.000 Gigi</span>!
+                    </p>
+                </div>
+
+                <!-- Rule 9 -->
+                <div class="playful-card p-5 rounded-3xl border-l-8 border-l-stone-600 space-y-2">
+                    <div class="flex items-center gap-3">
+                        <span class="w-9 h-9 rounded-xl bg-stone-700 text-white font-black flex items-center justify-center text-base shadow-md">9</span>
+                        <h3 class="font-black text-base font-heading text-slate-800">Maledizione dello Smog 💀</h3>
+                    </div>
+                    <p class="text-xs text-slate-600 font-extrabold leading-relaxed">
+                        Attento alle scelte inquinanti! Accumulare <span class="text-rose-600 font-black">-5 azioni negative consecutive</span> farà scattare la sconfitta immediata ed irrevocabile.
+                    </p>
+                </div>
+
+            </div>
+
+            <!-- Start Playing Call-to-action Button -->
+            <div class="text-center pt-4">
+                <button onclick="switchTab('game')" class="px-8 py-4 rounded-3xl bg-gradient-to-r from-pink-500 via-purple-500 to-emerald-500 hover:from-pink-600 hover:to-emerald-600 text-white font-black text-lg shadow-xl shadow-purple-500/30 transform hover:scale-105 active:scale-95 transition-all border-4 border-white flex items-center gap-3 mx-auto font-heading">
+                    <span>🚀 ENTRA IN AZIONE E GOVERNA!</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- VIEW 2: IL GIOCO PRINCIPALE -->
+        <!-- ================================================================= -->
+        <section id="view-game" class="hidden space-y-6">
+
+            <!-- TOP MAYOR DASHBOARD STATUS BAR -->
+            <div class="playful-card rounded-3xl p-5 border-t-8 border-t-purple-500 flex flex-col md:flex-row items-center justify-between gap-6">
+                
+                <!-- Mayor Identity Info -->
+                <div class="flex items-center gap-4 w-full md:w-auto">
+                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-purple-600 via-pink-500 to-amber-400 text-white flex items-center justify-center text-3xl shadow-lg border-2 border-white">
+                        🏛️
+                    </div>
+                    <div>
+                        <span class="text-[10px] uppercase font-black tracking-widest text-purple-600">Primo Cittadino in Carica</span>
+                        <h2 id="mayor-name-display" class="text-xl font-black font-heading text-slate-900">Sindaco Marco Rossi</h2>
+                        <p id="mayor-status-tag" class="text-xs font-bold text-emerald-600">✨ Mandato Virtuoso & In salute</p>
+                    </div>
+                </div>
+
+                <!-- Stats Grid (Reputation, Global Temp, Budget) -->
+                <div class="grid grid-cols-3 gap-3 w-full md:w-auto">
+                    
+                    <!-- Reputation Stat -->
+                    <div class="bg-gradient-to-b from-pink-50 to-rose-50 p-3 rounded-2xl border-2 border-pink-200 text-center min-w-[105px]">
+                        <span class="text-[10px] font-black text-pink-600 uppercase block tracking-wider">Popolarità</span>
+                        <div class="flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-heart text-pink-500 text-xs"></i>
+                            <span id="stat-reputation" class="text-lg font-black text-slate-900 font-heading">85%</span>
+                        </div>
+                    </div>
+
+                    <!-- Global Temp Stat -->
+                    <div class="bg-gradient-to-b from-sky-50 to-indigo-50 p-3 rounded-2xl border-2 border-sky-200 text-center min-w-[105px]">
+                        <span class="text-[10px] font-black text-sky-600 uppercase block tracking-wider">Clima Medio</span>
+                        <div class="flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-temperature-half text-sky-500 text-xs"></i>
+                            <span id="stat-global-temp" class="text-lg font-black text-slate-900 font-heading">31.0°C</span>
+                        </div>
+                    </div>
+
+                    <!-- Budget Stat -->
+                    <div class="bg-gradient-to-b from-amber-50 to-yellow-50 p-3 rounded-2xl border-2 border-amber-200 text-center min-w-[115px]">
+                        <span class="text-[10px] font-black text-amber-700 uppercase block tracking-wider">Cassa Gigi</span>
+                        <div class="flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-coins text-amber-500 text-xs"></i>
+                            <span id="stat-budget" class="text-base sm:text-lg font-black text-slate-900 font-heading">800.000</span>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- MAIN GAME LAYOUT: MAP & CONTROLS -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+                <!-- LEFT COLUMN: CITY MAP WITH DISTRICT THERMOMETER (7 cols) -->
+                <div class="lg:col-span-7 playful-card rounded-3xl p-5 space-y-4 border-t-8 border-t-pink-500 flex flex-col justify-between">
+                    
+                    <!-- Map Header: Selected District & Dedicated Thermometer Widget -->
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-gradient-to-r from-pink-50 via-purple-50 to-sky-50 p-4 rounded-2xl border-2 border-pink-200">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-2xl">🗺️</span>
+                                <h3 class="text-xl font-black font-heading bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">Mappa dei 5 Quartieri</h3>
+                            </div>
+                            <p class="text-xs text-slate-600 font-bold">Seleziona un quartiere sulla mappa per esaminarlo!</p>
+                        </div>
+
+                        <!-- Top Right: Dedicated District Thermometer Widget -->
+                        <div class="flex items-center gap-3">
+                            <div class="bg-gradient-to-b from-rose-50 to-amber-50 border-2 border-rose-300 p-2.5 rounded-2xl shadow-sm flex items-center gap-2.5">
+                                <div class="w-4 h-16 bg-slate-200 rounded-full relative overflow-hidden border border-slate-400 flex flex-col justify-end">
+                                    <div id="district-mercury-bar" class="mercury-bar w-full bg-rose-500 rounded-b-full" style="height: 30%;"></div>
+                                </div>
+                                <div class="text-left">
+                                    <span class="text-[10px] font-black text-slate-500 uppercase tracking-wide block">Temp. Quartiere</span>
+                                    <span id="district-temp-header" class="text-lg font-black text-rose-600 font-heading">32.0°C</span>
+                                    <span class="text-[9px] block text-slate-400 font-semibold">(Min 27° - Max 40°)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MAP VECTOR CONTAINER -->
+                    <div class="relative w-full aspect-[4/3] bg-gradient-to-b from-sky-100 to-blue-200 rounded-2xl border-2 border-sky-300 overflow-hidden shadow-inner flex items-center justify-center">
+
+                        <!-- MAP SVG (5 SEPARATE DISTRICTS) -->
+                        <svg viewBox="0 0 800 600" class="w-full h-full object-cover">
+                            <!-- Background River -->
+                            <path d="M 0 150 Q 250 100 400 300 T 800 450 L 800 520 Q 400 370 0 220 Z" fill="#60a5fa" opacity="0.6" />
+                            
+                            <!-- District 1: Centro Storico -->
+                            <g onclick="selectDistrict(1)" class="group cursor-pointer">
+                                <path id="dist-path-1" class="district-path stroke-white stroke-2 active" fill="#fde047" d="M 280 200 L 450 180 L 500 320 L 320 380 L 250 280 Z" />
+                                <text x="360" y="260" font-family="Fredoka" font-size="19" font-weight="bold" fill="#854d0e" text-anchor="middle" pointer-events="none">1. Centro Storico</text>
+                                <text id="svg-temp-1" x="360" y="285" font-family="Plus Jakarta Sans" font-size="14" font-weight="800" fill="#713f12" text-anchor="middle" pointer-events="none">🌡️ 32.0°C</text>
+                                <g id="dist-icons-1" transform="translate(340, 300)"></g>
+                            </g>
+
+                            <!-- District 2: Quartiere Verde -->
+                            <g onclick="selectDistrict(2)" class="group cursor-pointer">
+                                <path id="dist-path-2" class="district-path stroke-white stroke-2" fill="#86efac" d="M 50 50 L 350 40 L 280 200 L 250 280 L 50 220 Z" />
+                                <text x="180" y="120" font-family="Fredoka" font-size="19" font-weight="bold" fill="#14532d" text-anchor="middle" pointer-events="none">2. Quartiere Verde</text>
+                                <text id="svg-temp-2" x="180" y="145" font-family="Plus Jakarta Sans" font-size="14" font-weight="800" fill="#14532d" text-anchor="middle" pointer-events="none">🌡️ 28.5°C</text>
+                                <g id="dist-icons-2" transform="translate(160, 160)"></g>
+                            </g>
+
+                            <!-- District 3: Zona Industriale -->
+                            <g onclick="selectDistrict(3)" class="group cursor-pointer">
+                                <path id="dist-path-3" class="district-path stroke-white stroke-2" fill="#cbd5e1" d="M 450 180 L 750 80 L 760 300 L 500 320 Z" />
+                                <text x="610" y="190" font-family="Fredoka" font-size="19" font-weight="bold" fill="#334155" text-anchor="middle" pointer-events="none">3. Zona Industriale</text>
+                                <text id="svg-temp-3" x="610" y="215" font-family="Plus Jakarta Sans" font-size="14" font-weight="800" fill="#1e293b" text-anchor="middle" pointer-events="none">🌡️ 34.0°C</text>
+                                <g id="dist-icons-3" transform="translate(590, 230)"></g>
+                            </g>
+
+                            <!-- District 4: Quartiere Residenziale -->
+                            <g onclick="selectDistrict(4)" class="group cursor-pointer">
+                                <path id="dist-path-4" class="district-path stroke-white stroke-2" fill="#fdba74" d="M 50 220 L 250 280 L 320 380 L 280 550 L 40 520 Z" />
+                                <text x="170" y="390" font-family="Fredoka" font-size="19" font-weight="bold" fill="#7c2d12" text-anchor="middle" pointer-events="none">4. Residenziale</text>
+                                <text id="svg-temp-4" x="170" y="415" font-family="Plus Jakarta Sans" font-size="14" font-weight="800" fill="#7c2d12" text-anchor="middle" pointer-events="none">🌡️ 30.5°C</text>
+                                <g id="dist-icons-4" transform="translate(150, 430)"></g>
+                            </g>
+
+                            <!-- District 5: Lungofiume & Costa -->
+                            <g onclick="selectDistrict(5)" class="group cursor-pointer">
+                                <path id="dist-path-5" class="district-path stroke-white stroke-2" fill="#67e8f9" d="M 320 380 L 500 320 L 760 300 L 740 540 L 280 550 Z" />
+                                <text x="520" y="430" font-family="Fredoka" font-size="19" font-weight="bold" fill="#164e63" text-anchor="middle" pointer-events="none">5. Lungofiume & Costa</text>
+                                <text id="svg-temp-5" x="520" y="455" font-family="Plus Jakarta Sans" font-size="14" font-weight="800" fill="#164e63" text-anchor="middle" pointer-events="none">🌡️ 29.5°C</text>
+                                <g id="dist-icons-5" transform="translate(500, 470)"></g>
+                            </g>
+                        </svg>
+
+                        <!-- Floating Action Launch Button -->
+                        <div class="absolute bottom-4 right-4 z-20">
+                            <button onclick="openActionsModal()" class="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-black px-6 py-3.5 rounded-2xl shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-1 flex items-center gap-3 text-base border-2 border-white font-heading">
+                                <i class="fa-solid fa-wand-magic-sparkles text-yellow-300 text-xl"></i>
+                                <span>AZIONI QUARTIERE</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Selected District Interventions Footer -->
+                    <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-black text-slate-500 uppercase">Quartiere Attivo:</span>
+                            <span id="selected-district-name-badge" class="font-extrabold text-xs px-3 py-1 rounded-xl bg-pink-100 text-pink-700 border border-pink-200">1. Centro Storico</span>
+                        </div>
+                        <div id="district-interventions-list" class="flex flex-wrap gap-1.5 text-xs">
+                            <span class="text-slate-400 italic">Nessun intervento ancora eseguito.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT COLUMN: TACHIMETRO & IMPACT CHART (5 cols) -->
+                <div class="lg:col-span-5 space-y-6 flex flex-col justify-between">
+                    
+                    <!-- CITIZEN APPROVAL GAUGE (TACHIMETRO) -->
+                    <div class="playful-card rounded-3xl p-5 space-y-4 border-t-8 border-t-pink-500">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <div class="flex items-center gap-2">
+                                <span class="text-2xl">📣</span>
+                                <h3 class="text-lg font-black font-heading text-slate-800">Tachimetro dell'Approvazione</h3>
+                            </div>
+                            <span id="tacho-status-badge" class="text-xs font-black px-3 py-1 rounded-xl bg-slate-100 text-slate-600">In attesa</span>
+                        </div>
+
+                        <!-- Gauge Semi-Circle Display -->
+                        <div class="flex flex-col items-center justify-center pt-2">
+                            <div class="relative w-56 h-28 overflow-hidden flex items-end justify-center">
+                                <!-- Background Arc -->
+                                <div class="w-56 h-56 rounded-full border-[18px] border-slate-100 border-b-transparent border-l-transparent transform rotate-[45deg] absolute top-0"></div>
+                                <!-- Colored Gauge Segments Overlay -->
+                                <svg class="w-56 h-28 absolute top-0" viewBox="0 0 200 100">
+                                    <path d="M 20 100 A 80 80 0 0 1 100 20" fill="none" stroke="#f43f5e" stroke-width="18" opacity="0.3"/>
+                                    <path d="M 100 20 A 80 80 0 0 1 152 43" fill="none" stroke="#3b82f6" stroke-width="18" opacity="0.3"/>
+                                    <path d="M 152 43 A 80 80 0 0 1 180 100" fill="none" stroke="#10b981" stroke-width="18" opacity="0.3"/>
+                                </svg>
+                                <!-- Needle -->
+                                <div id="gauge-needle" class="w-1.5 h-24 bg-slate-800 absolute bottom-0 origin-bottom transform -rotate-90 transition-all duration-700 rounded-full shadow-lg"></div>
+                                <div class="w-5 h-5 bg-pink-500 rounded-full absolute bottom-[-2px] border-2 border-white shadow"></div>
+                            </div>
+                            <div class="text-center mt-3">
+                                <div id="gauge-percentage-text" class="text-3xl font-black text-slate-800 font-heading">-- %</div>
+                                <div class="text-xs font-extrabold text-slate-500 flex items-center justify-center gap-4 mt-1">
+                                    <span class="text-emerald-600" id="fav-count-text"><i class="fa-solid fa-thumbs-up"></i> Favorevoli: --%</span>
+                                    <span class="text-rose-500" id="sfav-count-text"><i class="fa-solid fa-thumbs-down"></i> Sfavorevoli: --%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PRO / CONTRO HORIZONTAL IMPACT BAR CHART -->
+                    <div class="playful-card rounded-3xl p-5 space-y-3 flex-grow flex flex-col justify-between border-t-8 border-t-indigo-500">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                            <h3 class="font-black text-base font-heading text-slate-800 flex items-center gap-2">
+                                <i class="fa-solid fa-chart-column text-indigo-500"></i> Bilancio di Vivibilità Urbana
+                            </h3>
+                            <span class="text-xs font-extrabold text-slate-400">Indicatori 0-100%</span>
+                        </div>
+                        <div class="relative w-full h-52">
+                            <canvas id="impactChart"></canvas>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- BOTTOM CENTER STREAK COUNTERS (FIRE & SKULL) -->
+            <div class="bg-gradient-to-r from-pink-500 via-purple-600 to-indigo-600 p-6 rounded-3xl text-white shadow-2xl border-4 border-white flex flex-col sm:flex-row items-center justify-around gap-6">
+                
+                <!-- POSITIVE STREAK: FIRE 🔥 -->
+                <div class="flex items-center gap-4 bg-white/10 backdrop-blur-md px-6 py-4 rounded-2xl border border-white/20 w-full sm:w-auto justify-center">
+                    <div class="relative">
+                        <div id="fire-icon-box" class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-500 via-orange-500 to-red-500 flex items-center justify-center text-4xl text-yellow-200 shadow-xl border-2 border-yellow-300">
+                            <i class="fa-solid fa-fire"></i>
+                        </div>
+                        <span id="fire-count" class="absolute -top-2 -right-2 bg-yellow-400 text-amber-950 font-black text-sm w-7 h-7 rounded-full flex items-center justify-center border-2 border-white shadow-lg">0</span>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-1.5">
+                            <h4 class="font-black text-base font-heading">Combo Ecologica Esplosiva!</h4>
+                            <span class="bg-yellow-400/30 text-yellow-200 text-[10px] font-extrabold px-2 py-0.5 rounded-md">SUPER BONUS</span>
+                        </div>
+                        <p class="text-xs text-pink-100 font-bold">Colleziona 4 vittorie verdi di fila per <span class="text-yellow-300 font-black">+250.000 Gigi</span>!</p>
+                        <div class="w-36 bg-white/20 h-2 rounded-full mt-2 overflow-hidden">
+                            <div id="fire-progress" class="bg-amber-300 h-full transition-all" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STREAK DIVIDER -->
+                <div class="hidden sm:block w-0.5 h-12 bg-white/20"></div>
+
+                <!-- NEGATIVE STREAK: SKULL 💀 -->
+                <div class="flex items-center gap-4 bg-white/10 backdrop-blur-md px-6 py-4 rounded-2xl border border-white/20 w-full sm:w-auto justify-center">
+                    <div class="relative">
+                        <div id="skull-icon-box" class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-purple-800 via-rose-900 to-slate-900 flex items-center justify-center text-4xl text-rose-300 shadow-xl border-2 border-rose-400">
+                            <i class="fa-solid fa-skull"></i>
+                        </div>
+                        <span id="skull-count" class="absolute -top-2 -right-2 bg-rose-600 text-white font-black text-sm w-7 h-7 rounded-full flex items-center justify-center border-2 border-white shadow-lg">0</span>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-1.5">
+                            <h4 class="font-black text-base font-heading">Maledizione dello Smog</h4>
+                            <span class="bg-rose-500/30 text-rose-200 text-[10px] font-extrabold px-2 py-0.5 rounded-md">ALLERTA ROSSA</span>
+                        </div>
+                        <p class="text-xs text-rose-100 font-bold">A <span class="text-rose-300 font-black">-5 flop ambientali</span> vieni cacciato dal Municipio!</p>
+                        <div class="w-36 bg-white/20 h-2 rounded-full mt-2 overflow-hidden">
+                            <div id="skull-progress" class="bg-rose-500 h-full transition-all" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- ================================================================= -->
+    <!-- MODAL 1: TABELLONE DELLE AZIONI (UNIFIED ACTIONS MODAL) -->
+    <!-- ================================================================= -->
+    <div id="modal-actions" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl border-4 border-emerald-400 overflow-hidden">
+            
+            <!-- Modal Header -->
+            <div class="p-6 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white flex items-center justify-between">
+                <div>
+                    <h3 class="text-2xl font-black font-heading flex items-center gap-2">
+                        <span>⚡ TABELLONE DELLE AZIONI</span>
+                    </h3>
+                    <p class="text-xs text-emerald-100 font-bold">Lancia un intervento nel quartiere: <span id="modal-target-district" class="font-black underline text-white">Centro Storico</span></p>
+                </div>
+                <button onclick="closeActionsModal()" class="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-2xl flex items-center justify-center text-white transition-all font-bold">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Actions Grid (9 Actions) -->
+            <div class="p-6 overflow-y-auto flex-grow grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50">
+                
+                <!-- Action 1: Depaving -->
+                <div onclick="executeAction(1)" class="bg-white hover:bg-emerald-50/70 border-2 border-slate-200 hover:border-emerald-400 p-4 rounded-2xl cursor-pointer transition-all flex items-start gap-4 group shadow-sm hover:shadow-md">
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-2xl font-bold group-hover:scale-110 transition-transform">🌱</div>
+                    <div class="flex-grow space-y-1">
+                        <h4 class="font-black text-slate-800 text-base group-hover:text-emerald-700">Strappa l'Asfalto! (Depaving)</h4>
+                        <p class="text-xs text-slate-500 font-semibold">Rimuove l'asfalto grigio sostituendolo con prati fioriti e terreno drenante.</p>
+                        <div class="pt-1">
+                            <span class="text-xs font-black bg-amber-100 text-amber-900 px-3 py-1 rounded-xl border border-amber-300">
+                                <i class="fa-solid fa-coins mr-1 text-amber-500"></i> 245.000 Gigi
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action 2: Impianti di Nebulizzazione -->
+                <div onclick="executeAction(2)" class="bg-white hover:bg-cyan-50/70 border-2 border-slate-200 hover:border-cyan-400 p-4 rounded-2xl cursor-pointer transition-all flex items-start gap-4 group shadow-sm hover:shadow-md">
+                    <div class="w-12 h-12 rounded-2xl bg-cyan-100 text-cyan-600 flex items-center justify-center text-2xl font-bold group-hover:scale-110 transition-transform">💨</div>
+                    <div class="flex-grow space-y-1">
+                        <h4 class="font-black text-slate-800 text-base group-hover:text-cyan-700">Nebulizzatori di Freschezza</h4>
+                        <p class="text-xs text-slate-500 font-semibold">Spruzza micro-gocce d'acqua rinfrescanti nelle piazze affollate.</p>
+                        <div class="pt-1">
+                            <span class="text-xs font-black bg-amber-100 text-amber-900 px-3 py-1 rounded-xl border border-amber-300">
+                                <i class="fa-solid fa-coins mr-1 text-amber-500"></i> 75.000 Gigi (50k + 25k H2O)
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action 3: Parchi Pubblici -->
+                <div onclick="executeAction(3)" class="bg-white hover:bg-teal-50/70 border-2 border-slate-200 hover:border-teal-400 p-4 rounded-2xl cursor-pointer transition-all flex items-start gap-4 group shadow-sm hover:shadow-md">
+                    <div class="w-12 h-12 rounded-2xl bg-teal-100 text-teal-600 flex items-center justify-center text-2xl font-bold group-hover:scale-110 transition-transform">🏞️</div>
+                    <div class="flex-grow space-y-1">
+                        <h4 class="font-black text-slate-800 text-base group-hover:text-teal-700">Oasi Verde & Parchi Gioco</h4>
+                        <p class="text-xs text-slate-500 font-semibold">Crea aree alberate attrezzate con scivoli, panchine e scoiattoli felici.</p>
+                        <div class="pt-1">
+                            <span class="text-xs font-black bg-amber-100 text-amber-900 px-3 py-1 rounded-xl border border-amber-300">
+                                <i class="fa-solid fa-coins mr-1 text-amber-500"></i> 25.000 Gigi
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action 4: Albero Bioclimatico -->
+                <div onclick="executeAction(4)" class="bg-white hover:bg-green-50/70 border-2 border-slate-200 hover:border-green-400 p-4 rounded-2xl cursor-pointer transition-all flex items-start gap-4 group shadow-sm hover:shadow-md">
+                    <div class="w-12 h-12 rounded-2xl bg-green-100 text-green-600 flex items-center justify-center text-2xl font-bold group-hover:scale-110 transition-transform">🌳</div>
+                    <div class="flex-grow space-y-1">
+                        <h4 class="font-black text-slate-800 text-base group-hover:text-green-700">Super-Albero Bioclimatico</h4>
+                        <p class="text-xs text-slate-500 font-semibold">Installazione vegetale hi-tech che assorbe la CO2 e rinfresca il quartiere.</p>
+                        <div class="pt-1">
+                            <span class="text-xs font-black bg-amber-100 text-amber-900 px-3 py-1 rounded-xl border border-amber-300">
+                                <i class="fa-solid fa-coins mr-1 text-amber-500"></i> 300.000 Gigi
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action 5: Pannelli Solari -->
+                <div onclick="executeAction(5)" class="bg-white hover:bg-amber-50/70 border-2 border-slate-200 hover:border-amber-400 p-4 rounded-2xl cursor-pointer transition-all flex items-start gap-4 group shadow-sm hover:shadow-md">
+                    <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl font-bold group-hover:scale-110 transition-transform">☀️</div>
+                    <div class="flex-grow space-y-1">
+                        <h4 class="font-black text-slate-800 text-base group-hover:text-amber-700">Tetti Solari Scintillanti</h4>
+                        <p class="text-xs text-slate-500 font-semibold">Cattura l'energia del sole per alimentare le abitazioni della zona.</p>
+                        <div class="pt-1">
+                            <span class="text-xs font-black bg-amber-100 text-amber-900 px-3 py-1 rounded-xl border border-amber-300">
+                                <i class="fa-solid fa-coins mr-1 text-amber-500"></i> 130.000 Gigi
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action 6: Parcheggio Coperto -->
+                <div onclick="executeAction(6)" class="bg-white hover:bg-slate-100 border-2 border-slate-200 hover:border-slate-400 p-4 rounded-2xl cursor-pointer transition-all flex items-start gap-4 group shadow-sm hover:shadow-md">
+                    <div class="w-12 h-12 rounded-2xl bg-slate-200 text-slate-700 flex items-center justify-center text-2xl font-bold group-hover:scale-110 transition-transform">🅿️</div>
+                    <div class="flex-grow space-y-1">
+                        <h4 class="font-black text-slate-800 text-base">Parcheggio di Cemento</h4>
+                        <p class="text-xs text-slate-500 font-semibold">Costruzione di un complesso multipiano in cemento armato.</p>
+                        <div class="pt-1">
+                            <span class="text-xs font-black bg-amber-100 text-amber-900 px-3 py-1 rounded-xl border border-amber-300">
+                                <i class="fa-solid fa-coins mr-1 text-amber-500"></i> 180.000 Gigi
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action 7: Centro Commerciale -->
+                <div onclick="executeAction(7)" class="bg-white hover:bg-purple-50/70 border-2 border-slate-200 hover:border-purple-400 p-4 rounded-2xl cursor-pointer transition-all flex items-start gap-4 group shadow-sm hover:shadow-md">
+                    <div class="w-12 h-12 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center text-2xl font-bold group-hover:scale-110 transition-transform">🏢</div>
+                    <div class="flex-grow space-y-1">
+                        <h4 class="font-black text-slate-800 text-base">Tempio dello Shopping</h4>
+                        <p class="text-xs text-slate-500 font-semibold">Imponente galleria commerciale climatizzata ad alta intensità.</p>
+                        <div class="pt-1">
+                            <span class="text-xs font-black bg-amber-100 text-amber-900 px-3 py-1 rounded-xl border border-amber-300">
+                                <i class="fa-solid fa-coins mr-1 text-amber-500"></i> 350.000 Gigi
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action 8: Industria -->
+                <div onclick="executeAction(8)" class="bg-white hover:bg-rose-50/70 border-2 border-slate-200 hover:border-rose-400 p-4 rounded-2xl cursor-pointer transition-all flex items-start gap-4 group shadow-sm hover:shadow-md">
+                    <div class="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-2xl font-bold group-hover:scale-110 transition-transform">🏭</div>
+                    <div class="flex-grow space-y-1">
+                        <h4 class="font-black text-slate-800 text-base">Ecomostro Industriale</h4>
+                        <p class="text-xs text-slate-500 font-semibold">Ciminiere fumanti e macchinari che rilasciano calore continuo.</p>
+                        <div class="pt-1">
+                            <span class="text-xs font-black bg-amber-100 text-amber-900 px-3 py-1 rounded-xl border border-amber-300">
+                                <i class="fa-solid fa-coins mr-1 text-amber-500"></i> 400.000 Gigi
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action 9: Discarica -->
+                <div onclick="executeAction(9)" class="bg-white hover:bg-stone-100 border-2 border-slate-200 hover:border-stone-400 p-4 rounded-2xl cursor-pointer transition-all flex items-start gap-4 group shadow-sm hover:shadow-md md:col-span-2">
+                    <div class="w-12 h-12 rounded-2xl bg-stone-200 text-stone-700 flex items-center justify-center text-2xl font-bold group-hover:scale-110 transition-transform">🗑️</div>
+                    <div class="flex-grow space-y-1">
+                        <h4 class="font-black text-slate-800 text-base">Discarica Fumante</h4>
+                        <p class="text-xs text-slate-500 font-semibold">Sito di stoccaggio e accumulo rifiuti indifferenziati all'aperto.</p>
+                        <div class="pt-1">
+                            <span class="text-xs font-black bg-amber-100 text-amber-900 px-3 py-1 rounded-xl border border-amber-300">
+                                <i class="fa-solid fa-coins mr-1 text-amber-500"></i> 150.000 Gigi
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-4 bg-white border-t border-slate-200 text-right">
+                <button onclick="closeActionsModal()" class="px-6 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl font-black text-sm transition-all font-heading">
+                    Chiudi Tabellone
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- MODAL 2: RISULTATO VERDETTO (RESULT MODAL) -->
+    <!-- ================================================================= -->
+    <div id="modal-result" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 text-center space-y-5 shadow-2xl border-4 border-purple-300">
+            
+            <div id="res-icon-container" class="w-20 h-20 mx-auto rounded-3xl flex items-center justify-center text-4xl shadow-lg border-2 border-white">
+                <i id="res-icon" class="fa-solid fa-check"></i>
+            </div>
+
+            <div class="space-y-1">
+                <span id="res-badge" class="text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider">Approvata!</span>
+                <h3 id="res-title" class="text-2xl font-black font-heading text-slate-800">Azione Completata!</h3>
+                <p id="res-desc" class="text-xs font-bold text-slate-500">I cittadini hanno votato sul tuo intervento.</p>
+            </div>
+
+            <!-- Stats Impact Box -->
+            <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-3 text-sm">
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-600 font-extrabold"><i class="fa-solid fa-users text-indigo-500 mr-1.5"></i> Voto Cittadini:</span>
+                    <span id="res-fav-percent" class="font-black text-slate-900 font-heading">75%</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-600 font-extrabold"><i class="fa-solid fa-temperature-half text-rose-500 mr-1.5"></i> Temp. Quartiere:</span>
+                    <span id="res-temp-change" class="font-black text-emerald-600 font-heading">-1.2 °C</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-600 font-extrabold"><i class="fa-solid fa-coins text-amber-500 mr-1.5"></i> Bilancio Gigi:</span>
+                    <span id="res-money-change" class="font-black text-amber-600 font-heading">-245.000 Gigi</span>
+                </div>
+            </div>
+
+            <button onclick="closeResultModal()" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black py-3.5 rounded-2xl shadow-lg transition-all font-heading text-base">
+                Continua il Mandato 🚀
+            </button>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- MODAL 3: GAME OVER / NUOVA IDENTITA' -->
+    <!-- ================================================================= -->
+    <div id="modal-gameover" class="fixed inset-0 z-50 bg-rose-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-8 text-center space-y-6 shadow-2xl border-4 border-rose-300">
+            
+            <div class="w-20 h-20 mx-auto rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-4xl shadow-inner animate-bounce">
+                <i class="fa-solid fa-skull"></i>
+            </div>
+
+            <div class="space-y-2">
+                <h3 class="text-3xl font-black font-heading text-rose-600">GAME OVER!</h3>
+                <p id="gameover-reason" class="text-xs text-slate-600 font-extrabold">La tua reputazione è crollata o hai accumulato troppe azioni negative!</p>
+            </div>
+
+            <div class="bg-rose-50 p-4 rounded-2xl border border-rose-200 text-xs text-rose-900 space-y-1 font-extrabold">
+                <p>Il Consiglio Comunale ti ha sfiduciato.</p>
+                <p>Ricomincia da capo assumendo una nuova identità di Sindaco!</p>
+            </div>
+
+            <!-- New Mayor Name Input -->
+            <div class="space-y-2 text-left">
+                <label class="text-xs font-black text-slate-500 uppercase tracking-wider block">Nome del Nuovo Sindaco:</label>
+                <div class="flex gap-2">
+                    <input type="text" id="new-mayor-input" value="Sindaco Elena Verdi" class="flex-grow border-2 border-purple-300 rounded-xl px-4 py-2.5 text-sm font-black text-slate-800 focus:outline-none focus:border-purple-600">
+                    <button onclick="generateRandomMayorNameInModal()" class="bg-amber-400 hover:bg-amber-500 border border-amber-300 text-amber-950 px-3 py-2.5 rounded-xl text-sm font-black" title="Genera nome casuale">
+                        <i class="fa-solid fa-dice"></i>
+                    </button>
+                </div>
+            </div>
+
+            <button onclick="restartGameWithNewMayor()" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-black py-4 rounded-2xl shadow-xl transition-all text-base font-heading">
+                <i class="fa-solid fa-rotate-right mr-2"></i> Ricomincia Nuova Partita
+            </button>
+        </div>
+    </div>
+
+
+    <!-- ================================================================= -->
+    <!-- JAVASCRIPT GAME ENGINE -->
+    <!-- ================================================================= -->
+    <script>
+        // --- GAME STATE WITH INDEPENDENT DISTRICT TEMPERATURES ---
+        let gameState = {
+            mayorName: "Sindaco Marco Rossi",
+            budget: 800000,
+            reputation: 85, // percentage (0-100)
+            positiveStreak: 0,
+            negativeStreak: 0,
+            selectedDistrictId: 1,
+            districts: {
+                1: { name: "Centro Storico", temp: 32.0, actions: [] },
+                2: { name: "Quartiere Verde", temp: 28.5, actions: [] },
+                3: { name: "Zona Industriale", temp: 34.0, actions: [] },
+                4: { name: "Quartiere Residenziale", temp: 30.5, actions: [] },
+                5: { name: "Lungofiume & Costa", temp: 29.5, actions: [] }
+            }
+        };
+
+        // --- ACTIONS DICTIONARY ---
+        const ACTIONS = {
+            1: { id: 1, name: "Strappa l'Asfalto! (Depaving)", cost: 245000, isPositive: true, tempImpact: -1.4, baseFav: [70, 88], icon: "🌱" },
+            2: { id: 2, name: "Nebulizzatori di Freschezza", cost: 75000, isPositive: true, tempImpact: -0.9, baseFav: [74, 90], icon: "💨" },
+            3: { id: 3, name: "Oasi Verde & Parchi Gioco", cost: 25000, isPositive: true, tempImpact: -1.1, baseFav: [78, 94], icon: "🏞️" },
+            4: { id: 4, name: "Super-Albero Bioclimatico", cost: 300000, isPositive: true, tempImpact: -2.2, baseFav: [72, 89], icon: "🌳" },
+            5: { id: 5, name: "Tetti Solari Scintillanti", cost: 130000, isPositive: true, tempImpact: -1.6, baseFav: [71, 87], icon: "☀️" },
+            6: { id: 6, name: "Parcheggio di Cemento", cost: 180000, isPositive: false, tempImpact: 1.6, baseFav: [35, 52], icon: "🅿️" },
+            7: { id: 7, name: "Tempio dello Shopping", cost: 350000, isPositive: false, tempImpact: 2.2, baseFav: [38, 56], icon: "🏢" },
+            8: { id: 8, name: "Ecomostro Industriale", cost: 400000, isPositive: false, tempImpact: 3.0, baseFav: [24, 46], icon: "🏭" },
+            9: { id: 9, name: "Discarica Fumante", cost: 150000, isPositive: false, tempImpact: 2.5, baseFav: [18, 38], icon: "🗑️" }
+        };
+
+        // --- AUDIO SYNTH (Web Audio API) ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            if (!audioCtx) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                const now = audioCtx.currentTime;
+                if (type === 'success') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.exponentialRampToValueAtTime(880, now + 0.3);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'bonus') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now);
+                    osc.frequency.setValueAtTime(659.25, now + 0.1);
+                    osc.frequency.setValueAtTime(783.99, now + 0.2);
+                    osc.frequency.setValueAtTime(1046.50, now + 0.3);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                    osc.start(now);
+                    osc.stop(now + 0.4);
+                } else if (type === 'fail') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(120, now + 0.4);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                    osc.start(now);
+                    osc.stop(now + 0.4);
+                }
+            } catch (e) {
+                console.log(e);
+            }
+        }
+
+        // --- CHART JS HORIZONTAL BARS INITIALIZATION ---
+        let impactChart = null;
+        function initChart() {
+            const ctx = document.getElementById('impactChart').getContext('2d');
+            const avgTemp = getGlobalAverageTemp();
+            impactChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Popolarità 💖', 'Verde Urbano 🌿', 'Cassa Gigi 🪙', 'Clima Fresco ❄️', 'Consenso 🗣️'],
+                    datasets: [{
+                        label: 'Punti Vivibilità',
+                        data: [
+                            gameState.reputation, 
+                            Math.min(100, 50 + gameState.positiveStreak * 10), 
+                            (gameState.budget / 800000) * 100, 
+                            Math.max(0, 100 - ((avgTemp - 27) / 13) * 100), 
+                            gameState.reputation
+                        ],
+                        backgroundColor: [
+                            '#ec4899', // Pink - Popolarità
+                            '#10b981', // Emerald - Verde Urbano
+                            '#f59e0b', // Amber - Cassa Gigi
+                            '#06b6d4', // Cyan - Clima Fresco
+                            '#6366f1'  // Indigo - Consenso
+                        ],
+                        borderRadius: 12,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            min: 0,
+                            max: 100,
+                            grid: { color: 'rgba(203, 213, 225, 0.4)' },
+                            ticks: {
+                                font: { family: 'Fredoka', size: 11, weight: 'bold' },
+                                color: '#64748b',
+                                callback: function(value) { return value + '%'; }
+                            }
+                        },
+                        y: {
+                            grid: { display: false },
+                            ticks: {
+                                font: { family: 'Plus Jakarta Sans', size: 11, weight: '800' },
+                                color: '#334155'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ' Livello: ' + Math.round(context.raw) + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function getGlobalAverageTemp() {
+            let sum = 0;
+            for (let i = 1; i <= 5; i++) {
+                sum += gameState.districts[i].temp;
+            }
+            return sum / 5.0;
+        }
+
+        function updateChart() {
+            if (!impactChart) return;
+            const avgTemp = getGlobalAverageTemp();
+            const budgetRatio = Math.min(100, Math.max(0, (gameState.budget / 800000) * 100));
+            const climateRatio = Math.min(100, Math.max(0, 100 - ((avgTemp - 27) / 13) * 100));
+            impactChart.data.datasets[0].data = [
+                gameState.reputation,
+                Math.min(100, 50 + gameState.positiveStreak * 10),
+                budgetRatio,
+                climateRatio,
+                gameState.reputation
+            ];
+            impactChart.update();
+        }
+
+        // --- TAB NAVIGATION ---
+        function switchTab(tab) {
+            const introView = document.getElementById('view-intro');
+            const gameView = document.getElementById('view-game');
+            const introBtn = document.getElementById('nav-intro-btn');
+            const gameBtn = document.getElementById('nav-game-btn');
+
+            if (tab === 'intro') {
+                introView.classList.remove('hidden');
+                gameView.classList.add('hidden');
+                introBtn.className = "px-5 py-2 rounded-xl transition-all text-pink-900 bg-white shadow-md flex items-center gap-2";
+                gameBtn.className = "px-5 py-2 rounded-xl transition-all text-slate-600 hover:text-slate-900 flex items-center gap-2";
+            } else {
+                introView.classList.add('hidden');
+                gameView.classList.remove('hidden');
+                gameBtn.className = "px-5 py-2 rounded-xl transition-all text-pink-900 bg-white shadow-md flex items-center gap-2";
+                introBtn.className = "px-5 py-2 rounded-xl transition-all text-slate-600 hover:text-slate-900 flex items-center gap-2";
+                if (!impactChart) initChart();
+            }
+        }
+
+        // --- MAYOR NAME CUSTOMIZATION ---
+        function updateMayorNameFromInput(val) {
+            gameState.mayorName = val.trim() || "Sindaco Marco Rossi";
+            updateUI();
+        }
+
+        function generateRandomMayorName() {
+            const names = ["Marco Rossi", "Elena Verdi", "Giulia Bianchi", "Roberto Neri", "Sofia Contini", "Matteo Ferrari", "Chiara Romano", "Alessandro Lupo"];
+            const rand = names[Math.floor(Math.random() * names.length)];
+            const fullName = `Sindaco ${rand}`;
+            document.getElementById('intro-mayor-input').value = fullName;
+            gameState.mayorName = fullName;
+            updateUI();
+        }
+
+        function generateRandomMayorNameInModal() {
+            const names = ["Valeria Riva", "Leonardo Costa", "Serena Marchi", "Davide Galli", "Camilla Fontana", "Federico Marino"];
+            const rand = names[Math.floor(Math.random() * names.length)];
+            document.getElementById('new-mayor-input').value = `Sindaco ${rand}`;
+        }
+
+        // --- DISTRICT SELECTION ---
+        function selectDistrict(districtId) {
+            gameState.selectedDistrictId = districtId;
+            const dist = gameState.districts[districtId];
+
+            // Highlight SVG district path
+            for (let i = 1; i <= 5; i++) {
+                const path = document.getElementById(`dist-path-${i}`);
+                if (i === districtId) {
+                    path.classList.add('active');
+                } else {
+                    path.classList.remove('active');
+                }
+            }
+
+            // Update badge & list
+            document.getElementById('selected-district-name-badge').innerText = `${districtId}. ${dist.name}`;
+            updateUI();
+        }
+
+        function renderDistrictInterventions(districtId) {
+            const container = document.getElementById('district-interventions-list');
+            const actions = gameState.districts[districtId].actions;
+            if (actions.length === 0) {
+                container.innerHTML = `<span class="text-slate-400 italic">Nessun intervento ancora eseguito.</span>`;
+                return;
+            }
+            container.innerHTML = actions.map(act => `
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-slate-200 shadow-sm text-slate-800 font-extrabold text-[11px]">
+                    <span>${act.icon}</span> ${act.name}
+                </span>
+            `).join('');
+        }
+
+        // --- MODAL CONTROLS ---
+        function openActionsModal() {
+            const distName = gameState.districts[gameState.selectedDistrictId].name;
+            document.getElementById('modal-target-district').innerText = distName;
+            document.getElementById('modal-actions').classList.remove('hidden');
+        }
+
+        function closeActionsModal() {
+            document.getElementById('modal-actions').classList.add('hidden');
+        }
+
+        function closeResultModal() {
+            document.getElementById('modal-result').classList.add('hidden');
+        }
+
+        // --- ACTION EXECUTION LOGIC ---
+        function executeAction(actionId) {
+            const action = ACTIONS[actionId];
+            closeActionsModal();
+
+            // Check Budget
+            if (gameState.budget < action.cost) {
+                alert(`Budget Insufficiente!\n\nNon hai abbastanza Gigi per questa azione. Servono ${action.cost.toLocaleString('it-IT')} Gigi.`);
+                return;
+            }
+
+            // Deduct Cost
+            gameState.budget -= action.cost;
+
+            // Generate Citizen Approval Rate (%)
+            const minFav = action.baseFav[0];
+            const maxFav = action.baseFav[1];
+            const favorable = Math.floor(Math.random() * (maxFav - minFav + 1)) + minFav;
+
+            const isApproved = favorable >= 51;
+            const isSuperIncome = favorable >= 70;
+
+            // Update Selected District Temperature (Bounded between 27.0°C and 40.0°C)
+            const targetDistrict = gameState.districts[gameState.selectedDistrictId];
+            let tempDelta = action.tempImpact;
+            targetDistrict.temp = Math.min(40.0, Math.max(27.0, targetDistrict.temp + tempDelta));
+
+            // Super Income Bonus if approval >= 70%
+            let incomeBonus = 0;
+            if (isSuperIncome) {
+                incomeBonus = Math.floor(action.cost * 0.75) + 40000;
+                gameState.budget += incomeBonus;
+            }
+
+            // Reputation & Streaks logic
+            if (action.isPositive) {
+                gameState.positiveStreak += 1;
+                gameState.negativeStreak = 0; // reset negative streak
+                if (isApproved) gameState.reputation = Math.min(100, gameState.reputation + 4);
+            } else {
+                gameState.negativeStreak += 1; // step negative count (+1 negative)
+                gameState.positiveStreak = 0; // reset positive streak
+            }
+
+            if (!isApproved) {
+                // Lose reputation if disapproved (<51%)
+                gameState.reputation = Math.max(0, gameState.reputation - 15);
+            }
+
+            // Record action in district
+            targetDistrict.actions.push(action);
+
+            // Update Tachometer Gauge
+            updateTachometer(favorable, isApproved, isSuperIncome);
+
+            // Check Fire Streak Bonus (4 positive actions -> +250.000 Gigi)
+            let bonusAwarded = false;
+            if (gameState.positiveStreak >= 4) {
+                gameState.budget += 250000;
+                gameState.positiveStreak = 0;
+                bonusAwarded = true;
+                confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
+                playSound('bonus');
+            } else {
+                playSound(isApproved ? 'success' : 'fail');
+            }
+
+            // Update Dashboard Displays
+            updateUI();
+
+            // Show Result Verdict Modal
+            showResultModal(action, favorable, tempDelta, isApproved, isSuperIncome, incomeBonus, bonusAwarded);
+
+            // Check Game Over Conditions (Reputation <= 15% or Negative Streak >= 5)
+            if (gameState.reputation <= 15 || gameState.negativeStreak >= 5) {
+                setTimeout(() => {
+                    triggerGameOver(gameState.reputation <= 15 ? 
+                        "La tua reputazione è crollata sotto il 15%! I cittadini ti hanno sfiduciato." : 
+                        "Hai accumulato 5 azioni negative consecutive! Cittadini in protesta ed espulsione dal Municipio.");
+                }, 1200);
+            }
+        }
+
+        // --- UPDATE TACHOMETER GAUGE ---
+        function updateTachometer(favPercent, isApproved, isSuperIncome) {
+            const needle = document.getElementById('gauge-needle');
+            const text = document.getElementById('gauge-percentage-text');
+            const favText = document.getElementById('fav-count-text');
+            const sfavText = document.getElementById('sfav-count-text');
+            const badge = document.getElementById('tacho-status-badge');
+
+            // Needle angle range: -90deg (0%) to +90deg (100%)
+            const angle = -90 + (favPercent / 100) * 180;
+            needle.style.transform = `rotate(${angle}deg)`;
+
+            text.innerText = `${favPercent}%`;
+            favText.innerHTML = `<i class="fa-solid fa-thumbs-up"></i> Favorevoli: ${favPercent}%`;
+            sfavText.innerHTML = `<i class="fa-solid fa-thumbs-down"></i> Sfavorevoli: ${100 - favPercent}%`;
+
+            if (isSuperIncome) {
+                badge.className = "text-xs font-black px-3 py-1 rounded-xl bg-amber-100 text-amber-800 border border-amber-300 font-heading";
+                badge.innerText = "Super Profitto! 💰";
+            } else if (isApproved) {
+                badge.className = "text-xs font-black px-3 py-1 rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-300 font-heading";
+                badge.innerText = "Approvata 🎉";
+            } else {
+                badge.className = "text-xs font-black px-3 py-1 rounded-xl bg-rose-100 text-rose-800 border border-rose-300 font-heading";
+                badge.innerText = "Bocciata ❌";
+            }
+        }
+
+        // --- UPDATE MAIN UI DASHBOARD ---
+        function updateUI() {
+            // Mayor Name Displays
+            document.getElementById('mayor-name-display').innerText = gameState.mayorName;
+            document.getElementById('stat-mayor-header').innerText = gameState.mayorName;
+            
+            // Budget
+            const budgetFormatted = `${gameState.budget.toLocaleString('it-IT')} Gigi`;
+            document.getElementById('stat-budget').innerText = gameState.budget.toLocaleString('it-IT');
+            document.getElementById('stat-budget-header').innerText = budgetFormatted;
+
+            // Reputation
+            document.getElementById('stat-reputation').innerText = `${gameState.reputation}%`;
+
+            // Global Average Temperature
+            const avgTemp = getGlobalAverageTemp();
+            document.getElementById('stat-global-temp').innerText = `${avgTemp.toFixed(1)}°C`;
+
+            // District Temperatures SVG labels update
+            for (let i = 1; i <= 5; i++) {
+                const tempLabel = document.getElementById(`svg-temp-${i}`);
+                if (tempLabel) {
+                    tempLabel.textContent = `🌡️ ${gameState.districts[i].temp.toFixed(1)}°C`;
+                }
+            }
+
+            // Dedicated Selected District Thermometer Widget
+            const currentDistrict = gameState.districts[gameState.selectedDistrictId];
+            const distTemp = currentDistrict.temp;
+            document.getElementById('district-temp-header').innerText = `${distTemp.toFixed(1)}°C`;
+
+            // Thermometer Mercury height % (27°C = 0%, 40°C = 100%)
+            const mercuryPercent = Math.min(100, Math.max(0, ((distTemp - 27.0) / 13.0) * 100));
+            const mercuryBar = document.getElementById('district-mercury-bar');
+            mercuryBar.style.height = `${mercuryPercent}%`;
+
+            if (distTemp < 30) {
+                mercuryBar.className = "mercury-bar w-full bg-emerald-500 rounded-b-full";
+            } else if (distTemp < 35) {
+                mercuryBar.className = "mercury-bar w-full bg-amber-500 rounded-b-full";
+            } else {
+                mercuryBar.className = "mercury-bar w-full bg-rose-600 rounded-b-full";
+            }
+
+            // Fire Streak Counter & Progress Bar
+            document.getElementById('fire-count').innerText = gameState.positiveStreak;
+            const fireProgress = Math.min(100, (gameState.positiveStreak / 4) * 100);
+            document.getElementById('fire-progress').style.width = `${fireProgress}%`;
+            const fireBox = document.getElementById('fire-icon-box');
+            if (gameState.positiveStreak > 0) fireBox.classList.add('animate-fire');
+            else fireBox.classList.remove('animate-fire');
+
+            // Skull Streak Counter & Progress Bar
+            document.getElementById('skull-count').innerText = `- ${gameState.negativeStreak}`;
+            const skullProgress = Math.min(100, (gameState.negativeStreak / 5) * 100);
+            document.getElementById('skull-progress').style.width = `${skullProgress}%`;
+            const skullBox = document.getElementById('skull-icon-box');
+            if (gameState.negativeStreak > 0) skullBox.classList.add('animate-skull');
+            else skullBox.classList.remove('animate-skull');
+
+            // Refresh Radar Chart & Interventions list
+            updateChart();
+            renderDistrictInterventions(gameState.selectedDistrictId);
+        }
+
+        // --- SHOW RESULT MODAL ---
+        function showResultModal(action, favPercent, tempDelta, isApproved, isSuperIncome, incomeBonus, bonusAwarded) {
+            const modal = document.getElementById('modal-result');
+            const iconContainer = document.getElementById('res-icon-container');
+            const icon = document.getElementById('res-icon');
+            const badge = document.getElementById('res-badge');
+            const title = document.getElementById('res-title');
+            const desc = document.getElementById('res-desc');
+
+            const favPercentText = document.getElementById('res-fav-percent');
+            const tempChangeText = document.getElementById('res-temp-change');
+            const moneyChangeText = document.getElementById('res-money-change');
+
+            favPercentText.innerText = `${favPercent}%`;
+
+            if (tempDelta < 0) {
+                tempChangeText.className = "font-black text-emerald-600 font-heading";
+                tempChangeText.innerText = `${tempDelta.toFixed(1)} °C 🍃`;
+            } else {
+                tempChangeText.className = "font-black text-rose-600 font-heading";
+                tempChangeText.innerText = `+${tempDelta.toFixed(1)} °C 🔥`;
+            }
+
+            let netMoney = -action.cost + incomeBonus;
+            if (netMoney >= 0) {
+                moneyChangeText.className = "font-black text-emerald-600 font-heading";
+                moneyChangeText.innerText = `+${netMoney.toLocaleString('it-IT')} Gigi 🎉`;
+            } else {
+                moneyChangeText.className = "font-black text-amber-600 font-heading";
+                moneyChangeText.innerText = `${netMoney.toLocaleString('it-IT')} Gigi`;
+            }
+
+            if (isApproved) {
+                iconContainer.className = "w-20 h-20 mx-auto rounded-3xl bg-emerald-500 text-white flex items-center justify-center text-4xl shadow-lg border-2 border-white";
+                icon.className = "fa-solid fa-circle-check";
+                badge.className = "text-xs font-black px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 uppercase tracking-wider font-heading";
+                badge.innerText = isSuperIncome ? "Approvata col 70%+ Guadagno Extra! 💰" : "Approvata dalla Maggioranza! 🎉";
+                title.innerText = action.name;
+                desc.innerText = bonusAwarded ? 
+                    "🔥 SUPER COMBO VERDE! Hai completato 4 vittorie ecologiche consecutive e vinto un premio di +250.000 Gigi!" : 
+                    "La maggioranza dei cittadini festeggia l'inizio dei lavori!";
+            } else {
+                iconContainer.className = "w-20 h-20 mx-auto rounded-3xl bg-rose-500 text-white flex items-center justify-center text-4xl shadow-lg border-2 border-white";
+                icon.className = "fa-solid fa-triangle-exclamation";
+                badge.className = "text-xs font-black px-3 py-1 rounded-full bg-rose-100 text-rose-800 uppercase tracking-wider font-heading";
+                badge.innerText = "Opera Bocciata dai Cittadini!";
+                title.innerText = action.name;
+                desc.innerText = "Meno del 51% ha sostenuto l'iniziativa. La tua reputazione soffre una bastonata!";
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        // --- GAME OVER & RESTART WITH NEW MAYOR ---
+        function triggerGameOver(reasonText) {
+            document.getElementById('gameover-reason').innerText = reasonText;
+            document.getElementById('modal-gameover').classList.remove('hidden');
+        }
+
+        function restartGameWithNewMayor() {
+            const newMayorName = document.getElementById('new-mayor-input').value.trim() || "Sindaco Mario Rossi";
+            
+            // Reset state
+            gameState = {
+                mayorName: newMayorName,
+                budget: 800000,
+                reputation: 85,
+                positiveStreak: 0,
+                negativeStreak: 0,
+                selectedDistrictId: 1,
+                districts: {
+                    1: { name: "Centro Storico", temp: 32.0, actions: [] },
+                    2: { name: "Quartiere Verde", temp: 28.5, actions: [] },
+                    3: { name: "Zona Industriale", temp: 34.0, actions: [] },
+                    4: { name: "Quartiere Residenziale", temp: 30.5, actions: [] },
+                    5: { name: "Lungofiume & Costa", temp: 29.5, actions: [] }
+                }
+            };
+
+            document.getElementById('intro-mayor-input').value = newMayorName;
+            document.getElementById('modal-gameover').classList.add('hidden');
+            selectDistrict(1);
+            updateUI();
+        }
+
+        // --- INITIALIZATION ---
+        window.onload = function() {
+            selectDistrict(1);
+            updateUI();
+        };
+    </script>
+</body>
+</html>
