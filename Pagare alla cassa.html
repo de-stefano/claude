@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pagare alla cassa</title>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef6fa;--card:#fff;--ink:#12303f;--mut:#48677a;--acc:#0b6e99;--ok:#1d7a46;--okbg:#dff3e6;--no:#9c3d17;--nobg:#fbe9de;--line:#bfd5e0;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1d26;--card:#16303f;--ink:#e8f3f8;--mut:#a5c0cf;--acc:#6cc4ec;--ok:#7fdca4;--okbg:#17402b;--no:#ffb590;--nobg:#4a2815;--line:#2f5266}}
+:root[data-theme="dark"]{--bg:#0e1d26;--card:#16303f;--ink:#e8f3f8;--mut:#a5c0cf;--acc:#6cc4ec;--ok:#7fdca4;--okbg:#17402b;--no:#ffb590;--nobg:#4a2815;--line:#2f5266}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:20px/1.5 "Atkinson Hyperlegible",system-ui,Arial,sans-serif}
+main{max-width:860px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:2.1rem;line-height:1.15;margin:.4em 0 .2em}h2{font-size:1.6rem;margin:1.6em 0 .5em}h3{font-size:1.25rem;margin:0}
+p{margin:.4em 0}.mut{color:var(--mut)}
+nav{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+nav a{padding:6px 14px;border:2px solid var(--line);border-radius:99px;color:var(--ink);text-decoration:none;font-size:.9rem}
+.obj{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.obj div{border-left:6px solid var(--acc);padding:4px 0 4px 14px}.obj div:nth-child(2){border-color:#c98a0b}.obj div:nth-child(3){border-color:var(--ok)}
+.obj h3{margin-bottom:6px}.obj ul{margin:0;padding-left:18px;font-size:.95rem}
+.lv{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:18px;margin:20px 0}
+.lv header{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.dots{color:var(--acc);letter-spacing:3px;font-size:.9rem}
+.how{color:var(--mut);font-size:.95rem}.pg{font-size:.9rem;color:var(--mut)}
+.ask{font-size:1.2rem;font-weight:700;min-height:1.5em}
+.box{margin:10px 0}
+.coin{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:68px;height:68px;border-radius:50%;border:3px solid rgba(0,0,0,.28);font:inherit;color:#2b1b05;margin:4px;padding:0;cursor:default}
+button.coin{cursor:pointer}
+.coin b{font-size:1.2rem;line-height:1}.coin small{font-size:.7rem}
+.cu{background:#d9926a}.go{background:#f0c64a}.bi{background:radial-gradient(circle,#f0c64a 0 52%,#d7dce0 53%)}
+.nt{border-radius:10px;width:108px;height:60px;flex-direction:row;gap:4px;color:#10202a}.n5{background:#b9bec2}.n10{background:#e58b8b}.n20{background:#8fb7e8}
+.opts{display:flex;flex-wrap:wrap;gap:12px}
+.opt,.prod,button.primary,.re,.rd,.acts button{font:inherit;color:var(--ink);background:var(--card);border:2px solid var(--acc);border-radius:14px;padding:10px 18px;min-height:52px;cursor:pointer}
+.opt:disabled{opacity:.45;cursor:default}
+button.primary{background:var(--acc);color:var(--bg);font-weight:700}
+.re,.rd{border-color:var(--line);font-size:.9rem;min-height:44px}
+.bar{display:flex;gap:10px;margin-top:8px}
+.fb{min-height:1.6em;font-weight:700;padding:2px 0}.good{color:var(--ok)}.bad{color:var(--no)}
+.item{display:flex;align-items:center;gap:12px;background:var(--okbg);border-radius:14px;padding:10px 16px;margin:6px 6px 6px 0;width:fit-content}
+.em{font-size:2.2rem;line-height:1}.price{font-size:1.5rem;font-weight:700}
+.items2{display:flex;flex-wrap:wrap}
+.tr{min-height:84px;border:3px dashed var(--line);border-radius:14px;padding:4px;margin:10px 0}
+.tr i{color:var(--mut);padding:26px 12px;display:block}
+.sum{font-weight:700;min-height:1.5em}
+.acts{display:flex;gap:10px;margin-top:8px}
+.shop{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.prod{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:1rem}
+.prod[aria-pressed="true"]{background:var(--okbg);border-color:var(--ok)}
+.end{font-size:1.3rem;font-weight:700;color:var(--ok)}
+details{background:var(--card);border:2px solid var(--line);border-radius:14px;padding:12px 16px;font-size:.95rem}
+summary{cursor:pointer;font-weight:700;font-size:1.05rem}
+:focus-visible{outline:4px solid #e0a100;outline-offset:2px}
+</style></head><body><main>
+<h1>Pagare alla cassa</h1>
+<p class="mut">Impariamo a conoscere i soldi, a pagare e a controllare il resto. Si può sbagliare: si riprova con calma.</p>
+<nav aria-label="Sezioni"><a href="#obiettivi">Obiettivi</a><a href="#es">Esercizi</a><a href="#ins">Per l’insegnante</a></nav>
+
+<h2 id="obiettivi">Obiettivi</h2>
+<div class="obj">
+<div><h3>Conoscenze</h3><ul><li>Monete e banconote dell’euro</li><li>Ogni pezzo ha un valore e i valori si sommano</li><li>Parole: prezzo, totale, resto, cassa, scontrino</li><li>Regole alla cassa</li></ul></div>
+<div><h3>Abilità</h3><ul><li>Riconoscere e confrontare monete e banconote</li><li>Comporre una somma</li><li>Calcolare un totale</li><li>Scegliere come pagare e controllare il resto</li></ul></div>
+<div><h3>Competenze</h3><ul><li>Pagare in una situazione di acquisto con sempre meno aiuto</li><li>Comportarsi bene in negozio</li><li>Gestire una piccola somma: quanto ho, quanto spendo, quanto resta</li></ul></div>
+</div>
+
+<h2 id="es">Esercizi, dal più facile al più difficile</h2>
+<div id="lvs"></div>
+
+<h2 id="ins">Per l’insegnante</h2>
+<details><summary>Come rendere gli esercizi più facili o più difficili</summary>
+<p><b>Più facile:</b> fare solo i livelli 1–3, un solo prodotto per volta, leggere insieme la consegna con il tasto “Leggi”, contare con le dita o con monete vere, restare sui prezzi interi.</p>
+<p><b>Più difficile:</b> passare ai livelli 5–7, nascondere l’aiuto verbale, lavorare con i centesimi, proporre budget più bassi, far fare all’alunno il cassiere con monete vere.</p>
+<p>Non c’è punteggio che penalizza: ogni errore dà un suggerimento e si può riprovare. Valutate in base al PEI di ciascun alunno.</p></details>
+</main>
+<script>
+const $=s=>document.querySelector(s);
+const D=[1,2,5,10,20,50,100,200,500,1000,2000];
+const fmt=c=>c%100?(c/100).toFixed(2).replace('.',',')+' €':(c/100)+' €';
+const nm=c=>c<100?c+(c==1?' centesimo':' centesimi'):(c/100)+' euro'+(c>=500?' (banconota)':'');
+const r=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const pick=a=>a[r(0,a.length-1)];
+const shuf=a=>a.map(x=>[Math.random(),x]).sort((p,q)=>p[0]-q[0]).map(x=>x[1]);
+const IT=[['🍎','Mela'],['🥪','Panino'],['🧃','Succo'],['📒','Quaderno'],['✏️','Matita'],['🍪','Biscotti'],['🍫','Cioccolato'],['🥤','Bibita']];
+function coin(c,btn){const e=document.createElement(btn?'button':'div');if(btn)e.type='button';
+ e.className='coin '+(c<10?'cu':c<100?'go':c<500?'bi':'nt n'+c/100);e.setAttribute('aria-label',nm(c));
+ e.innerHTML=c<100?`<b>${c}</b><small>cent</small>`:`<b>${c/100}</b><small>${c>=500?'euro':'€'}</small>`;return e}
+const itemEl=(it,p)=>`<div class="item"><span class="em">${it[0]}</span><b>${it[1]}</b><span class="price">${fmt(p)}</span></div>`;
+function parts(s){return{box:s.querySelector('.box'),fb:s.querySelector('.fb'),ask:s.querySelector('.ask'),pg:s.querySelector('.pg')}}
+function good(fb,t){fb.textContent=t;fb.className='fb good'}function bad(fb,t){fb.textContent=t;fb.className='fb bad'}
+function end(p,ok,N){p.box.innerHTML=`<p class="end">Hai finito! ${ok} su ${N} al primo tentativo. Bravo!</p>`;p.ask.textContent='';p.fb.textContent='';p.pg.textContent=''}
+
+function quiz(s,gen,N=5){const p=parts(s);let i,ok,first;
+ function next(){if(i>=N)return end(p,ok,N);const q=gen();first=true;p.ask.innerHTML=q.ask;p.fb.textContent='';p.pg.textContent=`Domanda ${i+1} di ${N}`;p.box.innerHTML=q.show||'';
+  const o=document.createElement('div');o.className='opts';
+  shuf(q.opts).forEach(v=>{const b=document.createElement('button');b.className='opt';b.innerHTML=v.l;
+   b.onclick=()=>{if(v.ok){if(first)ok++;good(p.fb,'Bravo!');i++;o.querySelectorAll('button').forEach(x=>x.disabled=true);setTimeout(next,1100)}else{first=false;bad(p.fb,'Non è questa. Riprova con calma.');b.disabled=true}};o.append(b)});
+  p.box.append(o)}
+ s.restart=()=>{i=0;ok=0;next()};s.restart()}
+
+const g1=()=>{const c=pick(D),w=shuf(D.filter(x=>x!=c)).slice(0,2);return{ask:'Che moneta o banconota è questa?',show:coin(c).outerHTML,opts:[{l:nm(c),ok:1},...w.map(x=>({l:nm(x)}))]}};
+const g2=()=>{const a=pick(D);let b;do{b=pick(D)}while(b==a);const more=Math.random()<.7;const t=more?Math.max(a,b):Math.min(a,b);
+ return{ask:more?'Quale vale di più?':'Quale vale di meno?',opts:[a,b].map(x=>({l:coin(x).outerHTML,ok:x==t}))}};
+const g4=()=>{const a=pick(IT),b=pick(IT),p=r(1,6)*100,q=r(1,6)*100,t=p+q;
+ const w=shuf([t-100,t+100,t+200,t-200,p].filter(x=>x>0&&x!=t)).slice(0,2);
+ return{ask:'Quanto costano in tutto?',show:`<div class="items2">${itemEl(a,p)}${itemEl(b,q)}</div>`,opts:[{l:fmt(t),ok:1},...w.map(x=>({l:fmt(x)}))]}};
+const g5=()=>{const it=pick(IT),pr=r(1,9)*100,n=pick([500,1000,2000].filter(x=>x>pr)),c=n-pr;
+ const w=shuf([c+100,c-100,c+200,pr,n].filter(x=>x>0&&x!=c)).slice(0,2);
+ return{ask:`Paghi con ${nm(n)}. Quanto ti danno di resto?`,show:`<div class="items2">${itemEl(it,pr)}${coin(n).outerHTML}</div>`,opts:[{l:fmt(c),ok:1},...w.map(x=>({l:fmt(x)}))]}};
+
+function pay(s,mk,dens,show,N=4){const p=parts(s);let i,ok,first,price,tray;
+ function draw(){const sum=tray.reduce((a,b)=>a+b,0);const t=p.box.querySelector('.tr');t.innerHTML='';
+  if(!tray.length)t.innerHTML='<i>Il vassoio è vuoto</i>';tray.forEach(c=>t.append(coin(c)));
+  p.box.querySelector('.sum').textContent=show?'Hai messo: '+fmt(sum):'';return sum}
+ function next(){if(i>=N)return end(p,ok,N);price=mk();tray=[];first=true;p.fb.textContent='';p.pg.textContent=`Acquisto ${i+1} di ${N}`;
+  p.ask.textContent=show?'Metti sul vassoio i soldi giusti per pagare.':'Conta tu: metti sul vassoio la somma esatta per pagare.';
+  p.box.innerHTML=itemEl(pick(IT),price)+'<div class="tr"></div><p class="sum"></p><div class="den"></div><div class="acts"><button type="button" class="u">Togli l’ultima</button><button type="button" class="primary c">Controlla</button></div>';
+  dens.forEach(c=>{const b=coin(c,1);b.onclick=()=>{tray.push(c);draw()};p.box.querySelector('.den').append(b)});
+  p.box.querySelector('.u').onclick=()=>{tray.pop();draw()};
+  p.box.querySelector('.c').onclick=()=>{const sum=draw();
+   if(sum==price){if(first)ok++;good(p.fb,'Esatto! Hai pagato '+fmt(price)+'.');i++;setTimeout(next,1400)}
+   else{first=false;bad(p.fb,sum<price?(show?`Mancano ${fmt(price-sum)}.`:'Non basta ancora.'):'Hai messo troppo. Togli qualcosa.')}};
+  draw()}
+ s.restart=()=>{i=0;ok=0;next()};s.restart()}
+
+function bud(s){const p=parts(s);let ps,B,sel;
+ const upd=()=>{const sp=[...sel].reduce((a,k)=>a+ps[k][1],0);p.box.querySelector('.sum').textContent=sp>B?`Spesa: ${fmt(sp)}. Sei oltre di ${fmt(sp-B)}.`:`Spesa: ${fmt(sp)}. Ti restano: ${fmt(B-sp)}.`;return sp};
+ s.restart=()=>{ps=shuf(IT).slice(0,6).map(n=>[n,r(1,7)*50]);const ch=ps.map(x=>x[1]).sort((a,b)=>a-b).slice(0,3).reduce((a,b)=>a+b);
+  B=(Math.ceil(ch/100)+r(1,2))*100;sel=new Set();p.fb.textContent='';p.pg.textContent='';
+  p.ask.textContent=`Hai ${fmt(B)}. Scegli almeno 3 cose senza spendere più del tuo budget.`;
+  p.box.innerHTML='<div class="shop"></div><p class="sum"></p><button type="button" class="primary c">Controlla</button>';
+  ps.forEach((x,k)=>{const b=document.createElement('button');b.type='button';b.className='prod';b.setAttribute('aria-pressed','false');
+   b.innerHTML=`<span class="em">${x[0][0]}</span>${x[0][1]}<b>${fmt(x[1])}</b>`;
+   b.onclick=()=>{sel.has(k)?sel.delete(k):sel.add(k);b.setAttribute('aria-pressed',sel.has(k));upd()};p.box.querySelector('.shop').append(b)});
+  p.box.querySelector('.c').onclick=()=>{const sp=upd();
+   if(sel.size<3)bad(p.fb,'Scegli almeno 3 cose.');else if(sp>B)bad(p.fb,'Hai speso troppo. Toglierne una.');
+   else good(p.fb,`Bravo! Hai speso ${fmt(sp)} e ti restano ${fmt(B-sp)}. Premi “Ricomincia” per una nuova spesa.`)};upd()};
+ s.restart()}
+
+const L=[
+['Riconosco monete e banconote','Guarda e scegli il nome giusto.',s=>quiz(s,g1)],
+['Quale vale di più?','Confronta due monete o banconote.',s=>quiz(s,g2)],
+['Pago il prezzo giusto','Prezzi interi. Il vassoio ti mostra quanto hai messo.',s=>pay(s,()=>r(1,9)*100,[100,200,500],1)],
+['Calcolo il totale','Due prodotti: quanto costano in tutto?',s=>quiz(s,g4)],
+['Pago con una banconota e controllo il resto','Scegli il resto giusto.',s=>quiz(s,g5)],
+['Pago la somma esatta con i centesimi','Tutte le monete. Il totale non si vede: conta tu.',s=>pay(s,()=>Math.round(r(20,380)/5)*5,[1,2,5,10,20,50,100,200],0)],
+['Faccio la spesa con un budget','Scegli cosa comprare senza superare i soldi che hai.',s=>bud(s)]];
+L.forEach(([t,d,f],k)=>{const s=document.createElement('section');s.className='lv';s.id='l'+(k+1);
+ s.innerHTML=`<header><h3>Livello ${k+1}. ${t}</h3><span class="dots" role="img" aria-label="Difficoltà ${k+1} su 7">${'●'.repeat(k+1)}${'○'.repeat(6-k)}</span></header><p class="how">${d}</p><p class="pg"></p><p class="ask"></p><div class="box"></div><p class="fb" role="status"></p><div class="bar"><button type="button" class="re">Ricomincia</button><button type="button" class="rd">🔊 Leggi</button></div>`;
+ $('#lvs').append(s);s.querySelector('.re').onclick=()=>s.restart();
+ s.querySelector('.rd').onclick=()=>{try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(s.querySelector('.ask').textContent);u.lang='it-IT';speechSynthesis.speak(u)}catch(e){}};
+ f(s)});
+</script></body></html>
