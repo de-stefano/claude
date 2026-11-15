@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Affermazioni e domande</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--ink:#1d2433;--mut:#5b667a;--pri:#2f5bea;--ok:#1f9d55;--warn:#d9480f;--line:#d7dce8;--q:#fff4d6}
+@media(prefers-color-scheme:dark){:root{--bg:#141824;--card:#1e2433;--ink:#eef1f8;--mut:#a3adc2;--line:#34405a;--q:#4a3b12}}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--ink);padding:16px}
+.wrap{max-width:900px;margin:0 auto}
+header{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+h1{font-size:1.4rem;margin:0}
+button{font:inherit;border:0;border-radius:8px;padding:9px 14px;cursor:pointer;background:var(--pri);color:#fff}
+.gear{position:fixed;top:8px;right:8px;z-index:5;width:34px;height:34px;padding:0;border-radius:50%;font-size:1.15rem;line-height:1;opacity:.55;background:var(--card)}
+.gear:hover{opacity:1}
+button.sec{background:transparent;color:var(--ink);border:1px solid var(--line)}
+button.ok{background:var(--ok)}button.warn{background:var(--warn)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:14px}
+.hidden{display:none!important}
+label{display:block;font-weight:600;margin:10px 0 4px}
+input[type=text],input[type=password],input[type=number],textarea,select{width:100%;font:inherit;padding:9px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+textarea{resize:vertical;min-height:60px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.row>*{flex:1;min-width:140px}
+.row>button{flex:0 0 auto}
+.item{border:1px solid var(--line);border-radius:10px;padding:12px;margin:10px 0;background:var(--bg)}
+.mut{color:var(--mut);font-size:.9rem}
+#timer{font-size:1.6rem;font-weight:700;font-variant-numeric:tabular-nums}
+.timer-end{color:var(--warn)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-top:12px}
+.box{border:2px solid var(--line);border-radius:12px;padding:14px;background:var(--card);display:flex;flex-direction:column;gap:10px;min-height:150px;justify-content:space-between}
+.box.hid{background:var(--q);border-color:#e2b93b}
+.box .tag{font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;color:var(--mut)}
+.box p{margin:4px 0;font-size:1.05rem}
+.card2{border:1px solid var(--line);border-radius:10px;padding:12px;margin:12px 0;background:var(--bg)}
+.split{display:grid;grid-template-columns:1.2fr 1fr;gap:14px;margin-top:12px}
+.viewer{max-height:72vh;overflow:auto;border:1px solid var(--line);border-radius:10px;background:#8a8f99;padding:8px}
+.viewer canvas{display:block;margin:0 auto 8px;background:#fff}
+.editor{max-height:72vh;overflow:auto;padding-right:4px}
+@media(max-width:800px){.split{grid-template-columns:1fr}.viewer{max-height:55vh}.editor{max-height:none}}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px}
+.modal{background:var(--card);border-radius:12px;padding:22px;max-width:340px;width:100%}
+.err{color:var(--warn);min-height:1.2em;font-size:.9rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Affermazioni e domande</h1>
+  <button class="sec gear" id="btnImp" title="Impostazioni (docente)" aria-label="Impostazioni docente">⚙</button>
+</header>
+
+<!-- SCHEDA 1: DATI GIOCATORE -->
+<section class="panel" id="pDati">
+  <h2>1. I tuoi dati</h2>
+  <div class="row">
+    <div><label for="nome">Nome</label><input type="text" id="nome"></div>
+    <div><label for="cognome">Cognome</label><input type="text" id="cognome"></div>
+    <div><label for="classe">Classe</label><input type="text" id="classe"></div>
+  </div>
+  <div class="card2">
+    <h3 style="margin-top:0">A) Esercizio del docente</h3>
+    <label>File del docente (.json)</label>
+    <input type="file" id="fileGioc" accept=".json,application/json">
+    <p class="mut" id="statoDati"></p>
+    <button class="ok" id="btnVai">Vai al gioco ▶</button>
+  </div>
+  <div class="card2">
+    <h3 style="margin-top:0">B) Creo io le domande da un PDF</h3>
+    <label>File da leggere (.pdf)</label>
+    <input type="file" id="filePdf" accept=".pdf,application/pdf">
+    <p class="mut">Leggi il testo, scrivi le tue affermazioni e domande, poi ti eserciti.</p>
+    <button class="ok" id="btnPdf">Vai alla lettura ▶</button>
+  </div>
+  <span class="err" id="errDati"></span>
+</section>
+
+<!-- SCHEDA PDF: LETTURA E CREAZIONE -->
+<section class="panel hidden" id="pPdf">
+  <div class="row"><h2 style="margin:0">Leggi e crea le tue domande</h2><button class="sec" id="pdfIndietro">◀ Dati</button></div>
+  <div class="split">
+    <div>
+      <div class="row" style="justify-content:flex-start;gap:8px">
+        <button class="sec" id="zm">−</button><strong id="zl">100%</strong><button class="sec" id="zp">+</button>
+        <span class="mut" style="flex:1 1 100%">Usa − e + per ingrandire il testo.</span>
+      </div>
+      <div class="viewer" id="pdfBox"><div id="pdfPagine"></div></div>
+    </div>
+    <div class="editor">
+      <p class="mut" style="margin-top:0">Scrivi un'affermazione e la domanda che le corrisponde. Aggiungine quante vuoi.</p>
+      <div id="listaAlu"></div>
+      <div class="row" style="margin-top:8px">
+        <button class="sec" id="btnAddAlu">＋ Aggiungi</button>
+        <button class="ok" id="btnEser">Esercitati ▶</button>
+      </div>
+      <div class="err" id="errPdf"></div>
+    </div>
+  </div>
+</section>
+
+<!-- SCHEDA 2: GIOCO -->
+<section class="panel hidden" id="pGioco">
+  <div class="row">
+    <div><strong id="chi"></strong><div class="mut">Timer: <span id="timer">--</span></div></div>
+    <button class="sec" id="btnIndietro">◀ Dati</button>
+  </div>
+  <div class="row" style="margin-top:12px">
+    <div>
+      <label for="modo">Modalità</label>
+      <select id="modo">
+        <option value="man">Manuale: nascondo io, una alla volta</option>
+        <option value="rnd">Casuale</option>
+      </select>
+    </div>
+    <div id="boxRnd" class="hidden">
+      <label for="quante">Quante nascondere</label>
+      <select id="quante"></select>
+    </div>
+    <button id="btnRnd" class="hidden">🎲 Nascondi a caso</button>
+    <button class="sec" id="btnRiparti">↺ Mostra tutte</button>
+  </div>
+  <div class="grid" id="griglia"></div>
+</section>
+</div>
+
+<!-- MODALE PASSWORD -->
+<div class="overlay hidden" id="ovPw">
+  <div class="modal">
+    <h3 style="margin-top:0">Area docente</h3>
+    <label for="pw">Password</label>
+    <input type="password" id="pw" autocomplete="off">
+    <div class="err" id="errPw"></div>
+    <div class="row" style="margin-top:8px">
+      <button id="pwOk">Entra</button>
+      <button class="sec" id="pwNo">Annulla</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCHEDA DOCENTE -->
+<div class="overlay hidden" id="ovDoc" style="align-items:flex-start;overflow:auto">
+  <div class="modal" style="max-width:760px;margin:20px auto">
+    <div class="row"><h2 style="margin:0">Impostazioni docente</h2><button class="sec" id="docChiudi">✕ Chiudi</button></div>
+    <label for="tSec">Timer (secondi) – 0 = nessun timer</label>
+    <div class="row">
+      <input type="number" id="tSec" min="0" step="1">
+      <span class="mut" id="tFmt"></span>
+    </div>
+    <h3>Affermazioni e domande</h3>
+    <div id="lista"></div>
+    <button class="ok" id="btnAdd">＋ Aggiungi affermazione</button>
+    <h3>File JSON</h3>
+    <div class="row">
+      <button id="btnSalva">💾 Salva file JSON</button>
+      <div><input type="file" id="fileDoc" accept=".json,application/json"></div>
+    </div>
+    <p class="mut" id="msgDoc"></p>
+  </div>
+</div>
+
+<script>
+const PASSWORD="doc2026";
+let timerSec=300;
+let items=[{a:"L'Italia entrò nella prima guerra mondiale nel 1915.",q:"Quando l'Italia entrò nella prima guerra mondiale?"}];
+let nascosti=[],tInt=null,rimasti=0,finito=false;
+const $=id=>document.getElementById(id);
+
+function fmt(s){const m=Math.floor(s/60),r=s%60;return m+" min "+String(r).padStart(2,"0")+" s"}
+function normalizza(d){
+  if(!d||!Array.isArray(d.items))throw new Error("formato non valido");
+  const it=d.items.map(x=>({a:String(x.a??x.affermazione??""),q:String(x.q??x.domanda??"")}));
+  const t=Number.isFinite(+d.timer)&&+d.timer>=0?Math.floor(+d.timer):300;
+  return {items:it,timer:t};
+}
+function leggiFile(file,cb){
+  const r=new FileReader();
+  r.onload=()=>{try{cb(normalizza(JSON.parse(r.result)))}catch(e){cb(null)}};
+  r.readAsText(file);
+}
+
+/* ---------- Dati giocatore ---------- */
+function aggiornaStato(){$("statoDati").textContent=items.filter(i=>i.a.trim()&&i.q.trim()).length+" affermazioni caricate · timer: "+(timerSec?fmt(timerSec):"nessuno")}
+$("fileGioc").onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  leggiFile(f,d=>{
+    if(!d){$("errDati").textContent="File non valido.";return}
+    items=d.items;timerSec=d.timer;$("errDati").textContent="";aggiornaStato();
+  });
+};
+function datiOk(){
+  if(!$("nome").value.trim()||!$("cognome").value.trim()||!$("classe").value.trim()){$("errDati").textContent="Compila nome, cognome e classe.";return false}
+  return true;
+}
+$("btnVai").onclick=()=>{
+  if(!datiOk())return;
+  if(!items.some(i=>i.a.trim()&&i.q.trim())){$("errDati").textContent="Nessuna affermazione: carica il file del docente.";return}
+  $("errDati").textContent="";avvia(items,true);
+};
+$("btnIndietro").onclick=()=>{fermaTimer();$("pGioco").classList.add("hidden");$(origine).classList.remove("hidden")};
+
+/* ---------- Gioco ---------- */
+let sorg=null,usaTimer=true,origine="pDati";
+function validi(){return (sorg||items).filter(i=>i.a.trim()&&i.q.trim())}
+function avvia(arr,conTimer){
+  sorg=arr;usaTimer=conTimer;origine=conTimer?"pDati":"pPdf";
+  const v=validi();nascosti=v.map(()=>false);finito=false;
+  $("chi").textContent=$("nome").value.trim()+" "+$("cognome").value.trim()+" – "+$("classe").value.trim();
+  const sel=$("quante");sel.innerHTML="";
+  for(let i=1;i<=v.length;i++){const o=document.createElement("option");o.value=i;o.textContent=i;sel.appendChild(o)}
+  $("pDati").classList.add("hidden");$("pPdf").classList.add("hidden");$("pGioco").classList.remove("hidden");
+  disegna();avviaTimer();modoCambiato();
+}
+function disegna(){
+  const v=validi(),g=$("griglia");g.innerHTML="";
+  const man=$("modo").value==="man";
+  v.forEach((it,i)=>{
+    const b=document.createElement("div");b.className="box"+(nascosti[i]?" hid":"");
+    const t=document.createElement("div");
+    const tag=document.createElement("div");tag.className="tag";tag.textContent=nascosti[i]?"Domanda":"Affermazione";
+    const p=document.createElement("p");p.textContent=nascosti[i]?it.q:it.a;
+    t.append(tag,p);b.appendChild(t);
+    if(man||nascosti[i]){
+      const bt=document.createElement("button");bt.className=nascosti[i]?"sec":"";
+      bt.textContent=nascosti[i]?"👁 Mostra affermazione":"🙈 Nascondi";
+      bt.disabled=finito;
+      bt.onclick=()=>{nascosti[i]=!nascosti[i];disegna()};
+      b.appendChild(bt);
+    }
+    g.appendChild(b);
+  });
+}
+function modoCambiato(){
+  const rnd=$("modo").value==="rnd";
+  $("boxRnd").classList.toggle("hidden",!rnd);$("btnRnd").classList.toggle("hidden",!rnd);disegna();
+}
+$("modo").onchange=modoCambiato;
+$("btnRnd").onclick=()=>{
+  if(finito)return;
+  const n=+$("quante").value;
+  const vis=nascosti.map((h,i)=>h?-1:i).filter(i=>i>=0);
+  for(let i=vis.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[vis[i],vis[j]]=[vis[j],vis[i]]}
+  vis.slice(0,n).forEach(i=>nascosti[i]=true);disegna();
+};
+$("btnRiparti").onclick=()=>{nascosti=nascosti.map(()=>false);disegna()};
+
+/* ---------- Timer ---------- */
+function fermaTimer(){clearInterval(tInt);tInt=null}
+function mostraTimer(){
+  const el=$("timer");
+  if(!(usaTimer&&timerSec)){el.textContent="nessun timer";el.classList.remove("timer-end");return}
+  el.textContent=String(Math.floor(rimasti/60)).padStart(2,"0")+":"+String(rimasti%60).padStart(2,"0");
+  el.classList.toggle("timer-end",rimasti===0);
+}
+function avviaTimer(){
+  fermaTimer();rimasti=usaTimer?timerSec:0;mostraTimer();
+  if(!(usaTimer&&timerSec))return;
+  tInt=setInterval(()=>{
+    rimasti--;mostraTimer();
+    if(rimasti<=0){fermaTimer();finito=true;$("timer").textContent="00:00 – tempo scaduto!";disegna()}
+  },1000);
+}
+
+/* ---------- Area docente ---------- */
+$("btnImp").onclick=()=>{$("pw").value="";$("errPw").textContent="";$("ovPw").classList.remove("hidden");$("pw").focus()};
+$("pwNo").onclick=()=>$("ovPw").classList.add("hidden");
+function provaPw(){
+  if($("pw").value===PASSWORD){$("ovPw").classList.add("hidden");apriDoc()}
+  else $("errPw").textContent="Password errata.";
+}
+$("pwOk").onclick=provaPw;
+$("pw").onkeydown=e=>{if(e.key==="Enter")provaPw()};
+function apriDoc(){$("tSec").value=timerSec;aggTFmt();disegnaLista();$("msgDoc").textContent="";$("ovDoc").classList.remove("hidden")}
+$("docChiudi").onclick=()=>{$("ovDoc").classList.add("hidden");aggiornaStato()};
+function aggTFmt(){const s=Math.max(0,Math.floor(+$("tSec").value||0));$("tFmt").textContent=s?"= "+fmt(s):"= nessun timer"}
+$("tSec").oninput=()=>{timerSec=Math.max(0,Math.floor(+$("tSec").value||0));aggTFmt()};
+function disegnaLista(L,arr){
+  L=L||$("lista");arr=arr||items;L.innerHTML="";
+  arr.forEach((it,i)=>{
+    const d=document.createElement("div");d.className="item";
+    const l1=document.createElement("label");l1.textContent="Affermazione "+(i+1);
+    const a=document.createElement("textarea");a.value=it.a;a.oninput=()=>it.a=a.value;
+    const l2=document.createElement("label");l2.textContent="Domanda";
+    const q=document.createElement("textarea");q.value=it.q;q.oninput=()=>it.q=q.value;
+    const del=document.createElement("button");del.className="warn";del.style.marginTop="8px";del.textContent="🗑 Elimina";
+    del.onclick=()=>{arr.splice(i,1);disegnaLista(L,arr)};
+    d.append(l1,a,l2,q,del);L.appendChild(d);
+  });
+}
+$("btnAdd").onclick=()=>{items.push({a:"",q:""});disegnaLista();const t=$("lista").querySelectorAll("textarea");t[t.length-2].focus()};
+$("btnSalva").onclick=()=>{
+  const dati={timer:timerSec,items:items.filter(i=>i.a.trim()||i.q.trim())};
+  const url=URL.createObjectURL(new Blob([JSON.stringify(dati,null,2)],{type:"application/json"}));
+  const a=document.createElement("a");a.href=url;a.download="affermazioni-domande.json";a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  $("msgDoc").textContent="File salvato ("+dati.items.length+" elementi).";
+};
+$("fileDoc").onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  leggiFile(f,d=>{
+    if(!d){$("msgDoc").textContent="File non valido.";return}
+    items=d.items;timerSec=d.timer;$("tSec").value=timerSec;aggTFmt();disegnaLista();
+    $("msgDoc").textContent="Caricati "+items.length+" elementi.";
+  });
+};
+aggiornaStato();
+
+/* ---------- Modalità B: PDF + domande dell'alunno ---------- */
+const WORKER="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+let pdfDoc=null,zoom=1,tok=0,mieiItems=[{a:"",q:""}];
+$("btnPdf").onclick=async()=>{
+  if(!datiOk())return;
+  const f=$("filePdf").files[0];
+  if(!f){$("errDati").textContent="Scegli prima un file PDF.";return}
+  $("errDati").textContent="";
+  $("pDati").classList.add("hidden");$("pPdf").classList.remove("hidden");
+  disegnaLista($("listaAlu"),mieiItems);
+  await caricaPdf(f);
+};
+$("pdfIndietro").onclick=()=>{$("pPdf").classList.add("hidden");$("pDati").classList.remove("hidden")};
+async function caricaPdf(f){
+  const box=$("pdfPagine");box.innerHTML="<p style='color:#fff'>Caricamento…</p>";
+  const buf=await f.arrayBuffer();
+  if(window.pdfjsLib){
+    try{
+      pdfjsLib.GlobalWorkerOptions.workerSrc=WORKER;
+      pdfDoc=await pdfjsLib.getDocument({data:buf.slice(0)}).promise;
+      await rendi();return;
+    }catch(e){}
+  }
+  pdfDoc=null;box.innerHTML="";
+  const fr=document.createElement("iframe");
+  fr.src=URL.createObjectURL(new Blob([buf],{type:"application/pdf"}));
+  fr.style.cssText="width:100%;height:68vh;border:0;background:#fff";box.appendChild(fr);
+}
+async function rendi(){
+  if(!pdfDoc)return;
+  const box=$("pdfPagine");box.innerHTML="";const t=++tok;
+  const w=Math.max(200,$("pdfBox").clientWidth-20),dpr=window.devicePixelRatio||1;
+  for(let n=1;n<=pdfDoc.numPages;n++){
+    if(t!==tok)return;
+    const pg=await pdfDoc.getPage(n);
+    const v1=pg.getViewport({scale:1}),sc=(w/v1.width)*zoom;
+    const vp=pg.getViewport({scale:sc*dpr});
+    const c=document.createElement("canvas");
+    c.width=vp.width;c.height=vp.height;c.style.width=vp.width/dpr+"px";c.style.height=vp.height/dpr+"px";
+    box.appendChild(c);
+    await pg.render({canvasContext:c.getContext("2d"),viewport:vp}).promise;
+  }
+}
+function cambiaZoom(d){zoom=Math.max(.5,Math.min(3,zoom+d));$("zl").textContent=Math.round(zoom*100)+"%";rendi()}
+$("zm").onclick=()=>cambiaZoom(-.25);$("zp").onclick=()=>cambiaZoom(.25);
+$("btnAddAlu").onclick=()=>{
+  mieiItems.push({a:"",q:""});disegnaLista($("listaAlu"),mieiItems);
+  const t=$("listaAlu").querySelectorAll("textarea");t[t.length-2].focus();
+};
+$("btnEser").onclick=()=>{
+  if(!mieiItems.some(i=>i.a.trim()&&i.q.trim())){$("errPdf").textContent="Scrivi almeno un'affermazione con la sua domanda.";return}
+  $("errPdf").textContent="";avvia(mieiItems,false);
+};
+</script>
+</body>
+</html>
