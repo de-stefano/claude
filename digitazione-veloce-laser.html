@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Digitazione Veloce — Lavagna delle sillabe</title>
+<style>
+  :root{
+    --board:#2c4234;
+    --board-dark:#213328;
+    --wood:#8a5a34;
+    --wood-dark:#5f3c20;
+    --wood-light:#a9713f;
+    --chalk:#f4f1e6;
+    --chalk-dim:#cfd6c9;
+    --chalk-yellow:#e7c369;
+    --chalk-red:#d16a4a;
+    --chalk-green:#93c07d;
+    --mono: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+    --hand: "Bradley Hand", "Segoe Print", "Chalkboard SE", "Comic Sans MS", cursive;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:
+      repeating-linear-gradient(90deg, var(--wood-dark) 0 6px, var(--wood) 6px 46px, var(--wood-light) 46px 48px);
+    font-family:var(--hand);
+    color:var(--chalk);
+    padding:24px;
+  }
+  #frame{
+    width:min(880px, 100%);
+    background:var(--wood-dark);
+    border-radius:14px;
+    padding:14px;
+    box-shadow:0 20px 50px rgba(0,0,0,.45), inset 0 0 0 3px var(--wood-light);
+  }
+  #board{
+    background:var(--board);
+    border-radius:8px;
+    box-shadow:inset 0 0 40px rgba(0,0,0,.45);
+    padding:28px;
+    min-height:560px;
+    display:flex;
+    flex-direction:column;
+    position:relative;
+  }
+  h1{
+    margin:0 0 6px;
+    font-family:var(--hand);
+    font-weight:400;
+    font-size:2.1rem;
+    letter-spacing:.5px;
+    color:var(--chalk);
+    text-align:center;
+  }
+  .sub{
+    text-align:center;
+    color:var(--chalk-dim);
+    margin:0 0 22px;
+    font-size:1.05rem;
+  }
+  .screen{display:none;}
+  .screen.active{display:flex; flex-direction:column; flex:1;}
+
+  /* ---- Setup screen ---- */
+  .card{
+    background:rgba(244,241,230,.06);
+    border:1.5px dashed var(--chalk-dim);
+    border-radius:10px;
+    padding:20px 24px;
+    margin-bottom:16px;
+  }
+  .row{
+    display:flex;
+    gap:18px;
+    flex-wrap:wrap;
+    margin-bottom:14px;
+  }
+  .field{flex:1; min-width:160px;}
+  label{
+    display:block;
+    font-size:1rem;
+    color:var(--chalk-yellow);
+    margin-bottom:6px;
+  }
+  input[type=text], input[type=number]{
+    width:100%;
+    padding:9px 10px;
+    font-family:var(--mono);
+    font-size:1rem;
+    border-radius:6px;
+    border:none;
+    background:var(--chalk);
+    color:var(--board-dark);
+  }
+  .segmented{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .segmented button{
+    font-family:var(--hand);
+    font-size:.95rem;
+    padding:8px 14px;
+    border-radius:20px;
+    border:1.5px solid var(--chalk-dim);
+    background:transparent;
+    color:var(--chalk);
+    cursor:pointer;
+  }
+  .segmented button.active{
+    background:var(--chalk-yellow);
+    color:var(--board-dark);
+    border-color:var(--chalk-yellow);
+    font-weight:bold;
+  }
+  .checks{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .checks label{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    color:var(--chalk);
+    font-size:1rem;
+    cursor:pointer;
+  }
+  .checks input{transform:scale(1.2);}
+  .instructions{
+    font-size:.95rem;
+    line-height:1.5;
+    color:var(--chalk-dim);
+    background:rgba(0,0,0,.18);
+    border-left:3px solid var(--chalk-yellow);
+    padding:12px 14px;
+    border-radius:6px;
+    margin-bottom:16px;
+  }
+  .instructions b{color:var(--chalk-yellow);}
+  .big-btn{
+    font-family:var(--hand);
+    font-size:1.25rem;
+    padding:14px;
+    border-radius:10px;
+    border:none;
+    background:var(--chalk-green);
+    color:#183018;
+    cursor:pointer;
+    font-weight:bold;
+  }
+  .big-btn:hover{filter:brightness(1.08);}
+  .err{color:var(--chalk-red); font-size:.9rem; margin-top:6px; min-height:1.2em;}
+
+  /* ---- Game screen ---- */
+  #topbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-family:var(--mono);
+    font-size:1.1rem;
+    margin-bottom:10px;
+    color:var(--chalk);
+  }
+  #timerDisplay{color:var(--chalk-yellow); font-weight:bold;}
+  #playfield{
+    position:relative;
+    flex:1;
+    min-height:360px;
+    border-radius:6px;
+    overflow:hidden;
+    background:
+      linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px) 0 0/100% 40px;
+  }
+  .falling-word{
+    position:absolute;
+    left:50%;
+    transform:translateX(-50%);
+    top:0;
+    font-family:var(--mono);
+    font-size:2rem;
+    letter-spacing:2px;
+    color:var(--chalk);
+    padding:4px 14px;
+    white-space:nowrap;
+  }
+  #baseline{
+    position:absolute;
+    left:0; right:0;
+    bottom:54px;
+    height:3px;
+    background:var(--chalk-red);
+    box-shadow:0 0 8px var(--chalk-red);
+  }
+  #typeInput,#laserInput{
+    margin-top:10px;
+    width:100%;
+    padding:12px;
+    font-family:var(--mono);
+    font-size:1.3rem;
+    text-align:center;
+    border-radius:8px;
+    border:2px solid var(--chalk-yellow);
+    background:var(--chalk);
+    color:var(--board-dark);
+  }
+  .hint{
+    text-align:center;
+    color:var(--chalk-dim);
+    font-size:.9rem;
+    margin-top:6px;
+  }
+
+  /* ---- Result screen ---- */
+  .stats{
+    background:rgba(244,241,230,.06);
+    border:1.5px dashed var(--chalk-dim);
+    border-radius:10px;
+    padding:20px 24px;
+    font-family:var(--mono);
+    font-size:1rem;
+    line-height:1.9;
+  }
+  .stats .label{color:var(--chalk-dim);}
+  .stats .val{color:var(--chalk-yellow); font-weight:bold;}
+  .actions{
+    display:flex;
+    gap:14px;
+    margin-top:18px;
+  }
+  .actions button{
+    flex:1;
+    font-family:var(--hand);
+    font-size:1.1rem;
+    padding:12px;
+    border-radius:8px;
+    border:none;
+    cursor:pointer;
+  }
+  #btnReport{background:var(--chalk-yellow); color:#3a2c0f;}
+  #btnReplay{background:var(--chalk-dim); color:var(--board-dark);}
+  /* tema spaziale: attivo nella modalità laser */
+  body.space{background:radial-gradient(1200px 600px at 50% -10%, #1c2565 0%, #0a0e27 60%, #05071a 100%);font-family:"Segoe UI",system-ui,-apple-system,sans-serif;}
+  body.space #frame{background:rgba(255,255,255,.04);border-radius:22px;box-shadow:0 20px 60px rgba(0,0,0,.6), inset 0 0 0 1px rgba(120,150,255,.28);}
+  body.space #board{background:linear-gradient(180deg,#0b1030,#141a45);border-radius:16px;box-shadow:inset 0 0 50px rgba(60,80,200,.15);}
+  body.space h1{font-family:inherit;font-weight:800;color:#fff;}
+  body.space .sub{color:#aeb9e6;}
+  body.space .instructions{background:rgba(255,255,255,.05);border-left-color:#ff5fa2;color:#c3ccf0;}
+  body.space .instructions b{color:#ffd86b;}
+  body.space .card,body.space .stats{background:rgba(255,255,255,.04);border:1px solid rgba(120,150,255,.3);border-radius:14px;font-family:inherit;}
+  body.space label{color:#9fd0ff;}
+  body.space .checks label{color:#e8ecff;}
+  body.space .segmented button,body.space .big-btn,body.space .actions button{font-family:inherit;}
+  body.space .segmented button{border-color:rgba(150,170,255,.5);color:#dfe6ff;}
+  body.space .segmented button.active{background:linear-gradient(90deg,#ff5fa2,#8f6bff);border-color:transparent;color:#fff;}
+  body.space .big-btn{background:linear-gradient(90deg,#4fd1ff,#8f6bff);color:#fff;border-radius:12px;}
+  body.space #topbar{font-family:inherit;color:#cfd8ff;}
+  body.space #timerDisplay,body.space .stats .val{color:#ffd86b;}
+  body.space .stats .label{color:#9aa6d8;}
+  body.space #laserInput{background:#f4f6ff;border:2px solid #ff5fa2;border-radius:12px;font-family:inherit;}
+  body.space .hint{color:#8d98c9;}
+  body.space #btnReplay{background:#2a3270;color:#e8ecff;}
+  #laserCanvas{display:block;width:100%;height:auto;border-radius:14px;border:1.5px solid #4a6fbf;box-shadow:0 0 30px rgba(80,110,255,.25);cursor:crosshair}
+  #btnPrint{background:var(--chalk-green); color:#183018;}
+  #printArea{display:none;}
+  @media print{
+    body,body.space{display:block;background:#fff;color:#000;padding:0;font-family:Arial,Helvetica,sans-serif;}
+    #frame{display:none;}
+    #printArea{display:block;}
+    #printArea h1{color:#000;text-align:left;font-size:20pt;font-family:inherit;}
+    #printArea h2{font-size:14pt;margin:18px 0 6px;}
+    #printArea table{border-collapse:collapse;width:100%;font-size:11pt;margin-bottom:10px;}
+    #printArea th,#printArea td{border:1px solid #888;padding:4px 8px;text-align:left;}
+    #printArea th{background:#eee;width:38%;}
+    #printArea tr{page-break-inside:avoid;}
+  }
+</style>
+</head>
+<body>
+<div id="frame">
+  <div id="board">
+
+    <!-- SETUP -->
+    <div class="screen active" id="screen-setup">
+      <h1>Digitazione Veloce</h1>
+      <p class="sub">Allenati a scrivere sillabe e parole prima che raggiungano la riga rossa</p>
+
+      <div class="instructions" id="instrLaser" style="display:none;">
+        <b>Come si gioca (Laser):</b> un bersaglio scende con una lettera, una sillaba o una parola. Scrivi le lettere nell'ordine giusto:
+        a <b>ogni lettera corretta il laser spara</b>. Quando la parola è completa il bersaglio esplode. Non serve premere Invio.
+        Se il bersaglio raggiunge la riga rossa è mancato.
+      </div>
+      <div class="instructions" id="instrLavagna">
+        <b>Come si gioca:</b> una sillaba o una parola scende dall'alto della lavagna. Scrivila nel campo di digitazione
+        e premi <b>INVIO</b> per confermarla: solo a quel punto la parola successiva inizierà a scendere.
+        Se la parola raggiunge la riga rossa in fondo prima che tu prema Invio, viene conteggiata come errata.
+      </div>
+
+      <div class="card">
+        <div class="row">
+          <div class="field" style="flex-basis:100%;">
+            <label>Modalità di gioco</label>
+            <div class="segmented" id="modeButtons">
+              <button type="button" data-val="lavagna" class="active">Lavagna (Invio per confermare)</button>
+              <button type="button" data-val="laser">Laser (spara a ogni lettera giusta)</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label for="inpNome">Nome</label>
+            <input type="text" id="inpNome" placeholder="Nome del giocatore">
+          </div>
+          <div class="field">
+            <label for="inpCognome">Cognome</label>
+            <input type="text" id="inpCognome" placeholder="Cognome del giocatore">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label for="inpTempo">Durata partita (secondi)</label>
+            <input type="number" id="inpTempo" value="120" min="5" max="600" step="5">
+          </div>
+          <div class="field">
+            <label>Testo mostrato</label>
+            <div class="segmented" id="caseButtons">
+              <button type="button" data-val="minuscolo" class="active">minuscolo</button>
+              <button type="button" data-val="maiuscolo">MAIUSCOLO</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field" style="flex-basis:100%;">
+            <label>Velocità di caduta</label>
+            <div class="segmented" id="speedButtons">
+              <button type="button" data-val="molto-lento">molto lento</button>
+              <button type="button" data-val="lento">lento</button>
+              <button type="button" data-val="medio" class="active">medio</button>
+              <button type="button" data-val="veloce">veloce</button>
+              <button type="button" data-val="molto-veloce">molto veloce</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field" style="flex-basis:100%;">
+            <label>Liste da usare (il sistema pescherà a caso tra quelle spuntate)</label>
+            <div class="checks">
+              <label><input type="checkbox" value="sillabe2" checked> Sillabe di 2 lettere</label>
+              <label><input type="checkbox" value="sillabe3" checked> Sillabe di 3 lettere</label>
+              <label><input type="checkbox" value="parole4" checked> Parole di 4 lettere</label>
+              <label><input type="checkbox" value="parole5" checked> Parole di 5 lettere</label>
+              <label><input type="checkbox" value="parole6" checked> Parole di 6 lettere</label>
+              <label><input type="checkbox" value="lettere"> Lettere singole</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="err" id="setupErr"></div>
+        <button class="big-btn" id="btnStart">Inizia a giocare</button>
+      </div>
+    </div>
+
+    <!-- GAME -->
+    <div class="screen" id="screen-game">
+      <div id="topbar">
+        <span id="playerDisplay"></span>
+        <span>Tempo: <span id="timerDisplay">120</span>s</span>
+      </div>
+      <div id="playfield">
+        <div id="baseline"></div>
+      </div>
+      <input type="text" id="typeInput" autocomplete="off" spellcheck="false" placeholder="Scrivi qui e premi Invio...">
+      <div class="hint">Premi <b>INVIO</b> per confermare la sillaba/parola e far scendere la successiva</div>
+    </div>
+
+    <!-- LASER -->
+    <div class="screen" id="screen-laser">
+      <div id="topbar">
+        <span id="laserPlayer"></span>
+        <span>Punti: <span id="laserScore">0</span> &middot; Tempo: <span id="laserTime">120</span>s</span>
+      </div>
+      <canvas id="laserCanvas" width="800" height="440" aria-label="Campo di gioco del laser"></canvas>
+      <input type="text" id="laserInput" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Scrivi qui le lettere del bersaglio...">
+      <div class="hint">Non serve premere Invio: a ogni lettera giusta il laser spara</div>
+    </div>
+
+    <!-- RESULT -->
+    <div class="screen" id="screen-result">
+      <h1>Partita terminata</h1>
+      <div class="stats" id="statsBox"></div>
+      <div class="actions">
+        <button id="btnPrint">Stampa report</button>
+        <button id="btnReport">Scarica report (.txt)</button>
+        <button id="btnReplay">Rigioca (azzera le scelte)</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="printArea"></div>
+<script>
+  // ---- Liste fornite ----
+  const LISTE = {
+    sillabe2: "ba be bi bo bu ca ce ci co cu da de di do du fa fe fi fo fu ga ge gi go gu la le li lo lu ma me mi mo mu na ne ni no nu pa pe pi po pu ra re ri ro ru".split(" "),
+    sillabe3: "bra bre bri bro bru cra cre cri cro cru dra dre dri dro dru fra fre fri fro fru gra gre gri gro gru pra pre pri pro pru tra tre tri tro tru sta ste sti sto stu spa spe spi spo spu sca sce sci sco scu".split(" "),
+    parole4: "casa mano pane sole luna mare cane sale rosa vino riso aria dado dito muro orso pero moto rete nave lupo lago buio faro gelo nido zero mela pera sera cera tela vela gita lite remi rate rana nano dono cavo sono capo lato muto nero vero bene male dopo".split(" "),
+    parole5: "gatto carta porta testa mondo campo tempo libro dolce verde rosso nonno nonna treno banco lampo corpo fungo sasso passo fiore cuore sogno monte lieve dieta serie borsa gonna penna torta gomma mucca barca carro corda forno sedia vetro ferro burro fiume pesce latte pollo sette lento denti anima acqua".split(" "),
+    parole6: "quadro strada scuola denaro numero albero giorno estate sedano canale natale legume cinema teatro musica matita camera cucina limone divano salone tavolo dolore calore colore valore sapore rumore favore medico logico tipico antico veloce felice audace potere sapere volere venire dovere vedere sedere cadere tenere tacere temere cedere godere vivere".split(" ")
+  };
+
+  const SPEED_MS = {
+    "molto-lento": 10000,
+    "lento": 7500,
+    "medio": 5500,
+    "veloce": 4000,
+    "molto-veloce": 2500
+  };
+  const SPEED_LABEL = {
+    "molto-lento": "molto lento",
+    "lento": "lento",
+    "medio": "medio",
+    "veloce": "veloce",
+    "molto-veloce": "molto veloce"
+  };
+  const LISTE_LABEL = {
+    sillabe2: "sillabe di 2 lettere",
+    sillabe3: "sillabe di 3 lettere",
+    parole4: "parole di 4 lettere",
+    parole5: "parole di 5 lettere",
+    parole6: "parole di 6 lettere"
+  };
+  function listeUsateLabel(){
+    return state.liste.map(k => LISTE_LABEL[k]).join(", ");
+  }
+
+  // ---- Stato ----
+  let state = {
+    nome: "", cognome: "", tempoImpostato: 120, caso: "minuscolo",
+    velocita: "medio", liste: ["sillabe2","sillabe3","parole4","parole5","parole6"]
+  };
+  let session = null;
+
+  const $ = (id) => document.getElementById(id);
+  const setupErr = $("setupErr");
+
+  function showScreen(id){
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+    $(id).classList.add("active");
+  }
+
+  // segmented buttons behaviour
+  function wireSegmented(containerId, onPick){
+    const buttons = document.querySelectorAll("#" + containerId + " button");
+    buttons.forEach(b => {
+      b.addEventListener("click", () => {
+        buttons.forEach(x => x.classList.remove("active"));
+        b.classList.add("active");
+        onPick(b.dataset.val);
+      });
+    });
+  }
+  wireSegmented("caseButtons", v => state.caso = v);
+  wireSegmented("speedButtons", v => state.velocita = v);
+
+  $("btnStart").addEventListener("click", () => {
+    state.nome = $("inpNome").value.trim() || "Giocatore";
+    state.cognome = $("inpCognome").value.trim();
+    let t = parseInt($("inpTempo").value, 10);
+    let tempoAvviso = "";
+    if (isNaN(t)){
+      t = 120;
+      tempoAvviso = "Tempo non valido: impostati 120 secondi di default.";
+    } else if (t < 5){
+      t = 5;
+      tempoAvviso = "Il tempo minimo è 5 secondi: impostati 5 secondi.";
+    } else if (t > 600){
+      t = 600;
+      tempoAvviso = "Il tempo massimo è 600 secondi: impostati 600 secondi.";
+    }
+    state.tempoImpostato = t;
+    $("inpTempo").value = t;
+
+    state.liste = Array.from(document.querySelectorAll("#screen-setup .checks input:checked")).map(i => i.value);
+
+    if (state.liste.length === 0){
+      setupErr.textContent = "Seleziona almeno una lista di sillabe o parole prima di iniziare.";
+      return;
+    }
+    setupErr.textContent = tempoAvviso;
+    if (tempoAvviso) return; // fai correggere/confermare all'utente, poi rilancia
+    if (state.modalita === "laser") startLaser(); else startGame();
+  });
+
+  function pickWord(){
+    const listKey = state.liste[Math.floor(Math.random() * state.liste.length)];
+    const arr = LISTE[listKey];
+    const word = arr[Math.floor(Math.random() * arr.length)];
+    return word;
+  }
+
+  function displayWord(w){
+    return state.caso === "maiuscolo" ? w.toUpperCase() : w.toLowerCase();
+  }
+
+  function stopSession(s){
+    if (!s) return;
+    s.running = false;
+    if (s.raf) cancelAnimationFrame(s.raf);
+    if (s.timerInterval) clearInterval(s.timerInterval);
+  }
+
+  function startGame(){
+    // ferma in modo definitivo qualunque partita/timer precedente prima di crearne uno nuovo
+    stopSession(session);
+
+    const mySession = {
+      correctLetters: 0,
+      incorrectLetters: 0,
+      wordsTyped: 0,
+      timeLeft: state.tempoImpostato,
+      currentWord: "",
+      wordStartTs: 0,
+      raf: null,
+      timerInterval: null,
+      running: true
+    };
+    session = mySession;
+
+    $("playerDisplay").textContent = (state.nome + " " + state.cognome).trim();
+    $("timerDisplay").textContent = mySession.timeLeft;
+    $("typeInput").value = "";
+    clearFallingWord();
+
+    showScreen("screen-game");
+    $("typeInput").focus();
+
+    mySession.timerInterval = setInterval(() => {
+      if (session !== mySession){ clearInterval(mySession.timerInterval); return; }
+      mySession.timeLeft--;
+      $("timerDisplay").textContent = mySession.timeLeft;
+      if (mySession.timeLeft <= 0){
+        endGame(mySession);
+      }
+    }, 1000);
+
+    spawnWord(mySession);
+  }
+
+  function clearFallingWord(){
+    const pf = $("playfield");
+    const old = pf.querySelector(".falling-word");
+    if (old) old.remove();
+  }
+
+  function spawnWord(mySession){
+    if (session !== mySession || !mySession.running) return;
+    clearFallingWord();
+    const word = pickWord();
+    mySession.currentWord = word;
+
+    const pf = $("playfield");
+    const el = document.createElement("div");
+    el.className = "falling-word";
+    el.textContent = displayWord(word);
+    pf.appendChild(el);
+
+    const duration = SPEED_MS[state.velocita] || SPEED_MS.medio;
+    const maxTop = pf.clientHeight - el.offsetHeight - 60; // stop just above baseline
+    const start = performance.now();
+    mySession.wordStartTs = start;
+
+    function step(now){
+      if (session !== mySession || !mySession.running) return;
+      const elapsed = now - start;
+      const frac = Math.min(elapsed / duration, 1);
+      el.style.top = (frac * maxTop) + "px";
+      if (frac >= 1){
+        resolveWord(mySession, false); // tempo scaduto: non digitata in tempo
+      } else {
+        mySession.raf = requestAnimationFrame(step);
+      }
+    }
+    mySession.raf = requestAnimationFrame(step);
+  }
+
+  function resolveWord(mySession, byEnter){
+    if (session !== mySession || !mySession.running) return;
+    if (mySession.raf) cancelAnimationFrame(mySession.raf);
+
+    const typed = $("typeInput").value;
+    const target = mySession.currentWord;
+    const maxLen = Math.max(typed.length, target.length);
+    for (let i = 0; i < maxLen; i++){
+      const t = (typed[i] || "").toLowerCase();
+      const g = (target[i] || "").toLowerCase();
+      if (t && t === g){
+        mySession.correctLetters++;
+      } else {
+        mySession.incorrectLetters++;
+      }
+    }
+    mySession.wordsTyped++;
+    $("typeInput").value = "";
+    if (mySession.running) spawnWord(mySession);
+  }
+
+  $("typeInput").addEventListener("keydown", (e) => {
+    if (e.key === "Enter"){
+      e.preventDefault();
+      if (session) resolveWord(session, true);
+    }
+  });
+
+  function endGame(mySession){
+    if (session !== mySession) return;
+    stopSession(mySession);
+    clearFallingWord();
+    showResults();
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+
+  function righe(){
+    const L = session.correctLetters, E = session.incorrectLetters, T = L + E;
+    const pc = T ? (L / T * 100).toFixed(1) : "0.0", pe = T ? (E / T * 100).toFixed(1) : "0.0";
+    const laser = state.modalita === "laser";
+    const r = [
+      ["Giocatore", (state.nome + " " + state.cognome).trim()],
+      ["Modalità", laser ? "Laser" : "Lavagna"],
+      ["Tempo impostato", state.tempoImpostato + " s"],
+      ["Testo mostrato", state.caso],
+      ["Velocità", SPEED_LABEL[state.velocita]],
+      ["Liste utilizzate", listeUsateLabel()],
+      [laser ? "Colpi laser a segno (lettere corrette)" : "Lettere corrette", L + " / " + T + " (" + pc + "%)"],
+      ["Lettere errate", E + " / " + T + " (" + pe + "%)"],
+      [laser ? "Bersagli colpiti" : "Sillabe/parole digitate", session.wordsTyped]
+    ];
+    if (laser) r.push(["Bersagli mancati", session.missed], ["Punteggio", session.score]);
+    return r;
+  }
+
+  function showResults(){
+    $("statsBox").innerHTML = righe().map(([a, b]) =>
+      `<div><span class="label">${escapeHtml(a)}:</span> <span class="val">${escapeHtml(b)}</span></div>`).join("");
+    showScreen("screen-result");
+  }
+
+  $("btnReport").addEventListener("click", () => {
+    const now = new Date();
+    const report = "REPORT DIGITAZIONE VELOCE\nData: " + now.toLocaleDateString("it-IT") + " " + now.toLocaleTimeString("it-IT") + "\n\n" +
+      righe().map(([a, b]) => a + ": " + b).join("\n") + "\n" +
+      (session.log && session.log.length ? "\nDETTAGLIO BERSAGLI\n" + session.log.map((x, i) =>
+        (i + 1) + ". " + x.parola + " - " + (x.ok ? "colpito" : "mancato") + " - errori: " + x.errori).join("\n") + "\n" : "");
+    const blob = new Blob([report], {type: "text/plain;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const safeName = ((state.nome + "_" + state.cognome).trim().replace(/\s+/g, "_") || "report");
+    a.href = url;
+    a.download = "report_digitazione_" + safeName + ".txt";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  $("btnPrint").addEventListener("click", () => {
+    const now = new Date();
+    let h = "<h1>Report Digitazione Veloce</h1><p>" + now.toLocaleDateString("it-IT") + " " + now.toLocaleTimeString("it-IT") + "</p><table>" +
+      righe().map(([a, b]) => "<tr><th>" + escapeHtml(a) + "</th><td>" + escapeHtml(b) + "</td></tr>").join("") + "</table>";
+    if (session.log && session.log.length){
+      h += "<h2>Dettaglio bersagli</h2><table><tr><th style='width:8%'>N.</th><th>Bersaglio</th><th>Esito</th><th>Errori</th></tr>" +
+        session.log.map((x, i) => "<tr><td>" + (i + 1) + "</td><td>" + escapeHtml(x.parola) + "</td><td>" +
+          (x.ok ? "colpito" : "mancato") + "</td><td>" + x.errori + "</td></tr>").join("") + "</table>";
+    }
+    $("printArea").innerHTML = h;
+    window.print();
+  });
+
+  $("btnReplay").addEventListener("click", () => {
+    // azzera tutte le scelte precedenti
+    $("inpNome").value = "";
+    $("inpCognome").value = "";
+    $("inpTempo").value = 120;
+    document.querySelectorAll("#caseButtons button").forEach(b => b.classList.remove("active"));
+    document.querySelector("#caseButtons button[data-val='minuscolo']").classList.add("active");
+    document.querySelectorAll("#speedButtons button").forEach(b => b.classList.remove("active"));
+    document.querySelector("#speedButtons button[data-val='medio']").classList.add("active");
+    document.querySelectorAll("#screen-setup .checks input").forEach(i => i.checked = i.value !== "lettere");
+    state = {nome:"", cognome:"", tempoImpostato:120, caso:"minuscolo", velocita:"medio",
+             liste:["sillabe2","sillabe3","parole4","parole5","parole6"]};
+    setupErr.textContent = "";
+    document.querySelector("#modeButtons button[data-val='lavagna']").click();
+    showScreen("screen-setup");
+  });
+  /* ===== MODALITÀ LASER ===== */
+  LISTE.lettere = "a b c d e f g h i l m n o p q r s t u v z".split(" ");
+  LISTE_LABEL.lettere = "lettere singole";
+
+  wireSegmented("modeButtons", v => {
+    state.modalita = v;
+    document.body.classList.toggle("space", v === "laser");
+    $("instrLaser").style.display = v === "laser" ? "block" : "none";
+    $("instrLavagna").style.display = v === "laser" ? "none" : "block";
+  });
+
+  const LW = 800, LH = 440, CX = LW / 2, CY = LH - 40, LIMITE = LH - 150;
+  const cvs = $("laserCanvas"), g2 = cvs.getContext("2d");
+
+  function startLaser(){
+    stopSession(session);
+    const s = session = {correctLetters:0, incorrectLetters:0, wordsTyped:0, missed:0, score:0, log:[],
+      timeLeft:state.tempoImpostato, running:true, raf:null, timerInterval:null,
+      target:null, ultimo:null, beams:[], parts:[], flash:0, nextAt:0, last:performance.now()};
+    $("laserPlayer").textContent = (state.nome + " " + state.cognome).trim();
+    $("laserTime").textContent = s.timeLeft;
+    $("laserScore").textContent = 0;
+    $("laserInput").value = "";
+    showScreen("screen-laser");
+    $("laserInput").focus();
+    s.timerInterval = setInterval(() => {
+      if (session !== s){ clearInterval(s.timerInterval); return; }
+      s.timeLeft--;
+      $("laserTime").textContent = s.timeLeft;
+      if (s.timeLeft <= 0) endLaser(s);
+    }, 1000);
+    nuovoBersaglio(s);
+    s.raf = requestAnimationFrame(t => ciclo(s, t));
+  }
+
+  function endLaser(s){
+    if (session !== s) return;
+    stopSession(s);
+    showResults();
+  }
+
+  function nuovoBersaglio(s){
+    const parola = pickWord();
+    s.ultimo = null;
+    s.target = {parola, testo:displayWord(parola), i:0, x:90 + Math.random() * (LW - 180), y:70, errori:0, shake:0};
+  }
+
+  function chiudi(s, ok){
+    const g = s.target;
+    if (!g) return;
+    s.log.push({parola:g.testo, ok, errori:g.errori});
+    if (ok){
+      s.wordsTyped++; s.score += 20; s.ultimo = {x:g.x, y:g.y};
+      for (let k = 0; k < 26; k++){
+        const a = Math.random() * 6.283, v = 0.05 + Math.random() * 0.22;
+        s.parts.push({x:g.x, y:g.y, vx:Math.cos(a) * v, vy:Math.sin(a) * v, life:600,
+          c:["#ff7ab8", "#7fd4ff", "#ffe08a"][k % 3]});
+      }
+    } else {
+      s.missed++; s.flash = 300;
+    }
+    $("laserScore").textContent = s.score;
+    s.target = null;
+    s.nextAt = performance.now() + 400;
+  }
+
+  function sparo(s, ch){
+    const g = s.target;
+    if (ch.toLowerCase() === g.parola[g.i].toLowerCase()){
+      s.correctLetters++; s.score += 10; g.i++; g.shake = 160;
+      s.beams.push({life:140});
+      if (g.i >= g.parola.length) chiudi(s, true);
+    } else {
+      s.incorrectLetters++; g.errori++; s.flash = 160;
+    }
+    $("laserScore").textContent = s.score;
+  }
+
+  $("laserInput").addEventListener("input", e => {
+    const v = e.target.value;
+    e.target.value = "";
+    const s = session;
+    if (!s || !s.running || state.modalita !== "laser") return;
+    for (const ch of v){
+      if (!/\S/.test(ch)) continue;
+      if (!s.target) break;
+      sparo(s, ch);
+    }
+  });
+  cvs.addEventListener("click", () => $("laserInput").focus());
+
+  function ciclo(s, t){
+    if (session !== s || !s.running) return;
+    const dt = Math.min(t - s.last, 50);
+    s.last = t;
+    if (s.target){
+      s.target.y += (LIMITE - 70) / (SPEED_MS[state.velocita] || 5500) * dt;
+      if (s.target.y >= LIMITE) chiudi(s, false);
+    } else if (t >= s.nextAt){
+      nuovoBersaglio(s);
+    }
+    disegnaLaser(s, dt);
+    s.raf = requestAnimationFrame(tt => ciclo(s, tt));
+  }
+
+  const stelle = Array.from({length:90}, () => ({x:Math.random() * LW, y:Math.random() * LH, r:Math.random() * 1.6 + .4, f:Math.random() * 6.28}));
+  const EMOJI = "'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif";
+
+  function pill(x, y, w, h, r){
+    g2.beginPath(); g2.moveTo(x + r, y);
+    g2.arcTo(x + w, y, x + w, y + h, r); g2.arcTo(x + w, y + h, x, y + h, r);
+    g2.arcTo(x, y + h, x, y, r); g2.arcTo(x, y, x + w, y, r); g2.closePath();
+  }
+
+  function disegnaLaser(s, dt){
+    s.t = (s.t || 0) + dt;
+    // cielo e stelle
+    const sf = g2.createLinearGradient(0, 0, 0, LH);
+    sf.addColorStop(0, "#070a1e"); sf.addColorStop(1, "#1b2153");
+    g2.fillStyle = sf; g2.fillRect(0, 0, LW, LH);
+    g2.fillStyle = "#cfdcff";
+    stelle.forEach(st => { g2.globalAlpha = .25 + .6 * Math.abs(Math.sin(s.t / 900 + st.f)); g2.fillRect(st.x, st.y, st.r, st.r); });
+    g2.globalAlpha = 1;
+    g2.textBaseline = "middle"; g2.textAlign = "left";
+    g2.font = "13px 'Segoe UI',system-ui,sans-serif";
+    if ("letterSpacing" in g2) g2.letterSpacing = "1.5px";
+    g2.fillStyle = "rgba(170,190,240,.8)"; g2.fillText("SETTORE GALATTICO // DIFESA ATTIVA", 14, 22);
+    if ("letterSpacing" in g2) g2.letterSpacing = "0px";
+    // linea di difesa
+    g2.setLineDash([8, 8]); g2.strokeStyle = "rgba(255,95,162,.45)"; g2.lineWidth = 2;
+    g2.beginPath(); g2.moveTo(0, LH - 92); g2.lineTo(LW, LH - 92); g2.stroke(); g2.setLineDash([]);
+
+    const t = s.target, mira = t || s.ultimo;
+    const ang = mira ? Math.atan2(mira.y - CY, mira.x - CX) : -Math.PI / 2;
+
+    // laser
+    s.beams = s.beams.filter(b => (b.life -= dt) > 0);
+    if (mira) s.beams.forEach(() => {
+      g2.save(); g2.lineCap = "round"; g2.shadowColor = "#3fd8ff"; g2.shadowBlur = 18;
+      g2.strokeStyle = "#59e1ff"; g2.lineWidth = 6;
+      g2.beginPath(); g2.moveTo(CX + Math.cos(ang) * 34, CY + Math.sin(ang) * 34); g2.lineTo(mira.x, mira.y); g2.stroke();
+      g2.strokeStyle = "#fff"; g2.lineWidth = 2; g2.stroke();
+      g2.restore();
+    });
+
+    // razzo (l'emoji punta in alto a destra: si ruota verso il bersaglio)
+    g2.save(); g2.translate(CX, CY); g2.rotate(ang + Math.PI / 4);
+    g2.shadowColor = "#6fc8ff"; g2.shadowBlur = 20;
+    g2.font = "40px " + EMOJI; g2.textAlign = "center"; g2.fillText("🚀", 0, 0);
+    g2.restore();
+
+    // alieno con etichetta
+    if (t){
+      const x = t.x + (t.shake > 0 ? (Math.random() - .5) * 8 : 0), y = t.y;
+      t.shake = Math.max(0, t.shake - dt);
+      g2.save(); g2.shadowColor = "rgba(170,90,255,.95)"; g2.shadowBlur = 26;
+      g2.font = "44px " + EMOJI; g2.textAlign = "center"; g2.fillText("👾", x, y); g2.restore();
+      g2.font = "bold 24px 'Trebuchet MS','Segoe UI',system-ui,sans-serif"; g2.textAlign = "left";
+      const w = g2.measureText(t.testo).width, pw = w + 30, px = x - pw / 2, py = y + 28;
+      pill(px, py, pw, 38, 12);
+      g2.fillStyle = "rgba(16,14,44,.88)"; g2.fill();
+      g2.strokeStyle = "#ff5fa2"; g2.lineWidth = 1.5; g2.stroke();
+      const fatte = t.testo.slice(0, t.i);
+      g2.fillStyle = "#6ef3b0"; g2.fillText(fatte, px + 15, py + 20);
+      g2.fillStyle = "#fff"; g2.fillText(t.testo.slice(t.i), px + 15 + g2.measureText(fatte).width, py + 20);
+    }
+
+    // esplosione e lampo d'errore
+    s.parts = s.parts.filter(p => (p.life -= dt) > 0);
+    s.parts.forEach(p => {
+      p.x += p.vx * dt; p.y += p.vy * dt;
+      g2.globalAlpha = Math.max(0, p.life / 600); g2.fillStyle = p.c;
+      g2.beginPath(); g2.arc(p.x, p.y, 3.5, 0, 6.2832); g2.fill();
+    });
+    g2.globalAlpha = 1;
+    if (s.flash > 0){ s.flash -= dt; g2.fillStyle = "rgba(255,80,140,.16)"; g2.fillRect(0, 0, LW, LH); }
+  }
+</script>
+</body>
+</html>
