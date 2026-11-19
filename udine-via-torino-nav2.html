@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Udine – Via Torino a 360°</title>
+<style>
+  html,body{margin:0;height:100%;background:#111;font-family:system-ui,Arial,sans-serif;overflow:hidden}
+  #view{position:fixed;inset:0;cursor:grab;touch-action:none}
+  #view.drag{cursor:grabbing}
+  #view.place{cursor:crosshair}
+  #title{position:fixed;top:12px;left:12px;color:#fff;background:rgba(0,0,0,.55);padding:8px 14px;border-radius:8px;font-size:16px}
+  #bar{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:8px;flex-wrap:wrap;justify-content:center;width:95%}
+  .btn{border:0;border-radius:8px;padding:10px 14px;font-size:15px;background:rgba(0,0,0,.6);color:#fff;cursor:pointer}
+  .btn:hover{background:rgba(0,0,0,.85)}
+  .btn.on{background:rgba(30,120,220,.9)}
+  #msg{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;text-align:center;padding:20px;pointer-events:none}
+  #hint{position:fixed;bottom:64px;left:50%;transform:translateX(-50%);color:#fff;background:rgba(0,0,0,.55);padding:6px 12px;border-radius:8px;font-size:14px;transition:opacity 1s;pointer-events:none;text-align:center}
+  #banner{position:fixed;top:12px;left:50%;transform:translateX(-50%);background:#e8a200;color:#000;padding:8px 16px;border-radius:8px;font-weight:600;display:none;z-index:15}
+
+  .hs{position:fixed;left:0;top:0;width:44px;height:44px;margin:0;border-radius:50%;border:3px solid #fff;
+      background:rgba(20,110,220,.92);color:#fff;font-size:22px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.6);
+      display:none;align-items:center;justify-content:center;padding:0;animation:pulse 2s infinite}
+  .hs.link{background:rgba(30,150,70,.92);width:auto;padding:0 16px;border-radius:24px;font-size:16px;font-weight:600;white-space:nowrap}
+  .hs:hover{filter:brightness(.85)}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,255,255,.7)}70%{box-shadow:0 0 0 14px rgba(255,255,255,0)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}}
+
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:20;padding:12px;box-sizing:border-box}
+  .box{background:#fff;color:#222;border-radius:12px;max-width:720px;width:100%;max-height:92vh;overflow:auto;padding:20px;position:relative;box-sizing:border-box}
+  .box h2{margin:0 30px 12px 0;font-size:22px}
+  .box img.pic{width:100%;border-radius:8px;margin-bottom:12px}
+  .box iframe,.box video{width:100%;aspect-ratio:16/9;border:0;border-radius:8px;margin-bottom:12px}
+  .box p{line-height:1.5;margin:0 0 10px;font-size:16px}
+  .box p.h{font-weight:700;font-size:18px;margin-top:14px}
+  .x{position:absolute;top:8px;right:10px;border:0;background:none;font-size:26px;cursor:pointer;color:#555}
+  label{display:block;font-weight:600;margin:10px 0 4px;font-size:14px}
+  input[type=text],input[type=password],select,textarea{width:100%;box-sizing:border-box;padding:8px;font-size:15px;border:1px solid #aaa;border-radius:6px;font-family:inherit}
+  textarea{min-height:160px}
+  .row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+  .row .btn{background:#1b5fb8}
+  .row .btn.red{background:#c0392b}
+  .row .btn.gray{background:#666}
+  .row .btn.on{background:#e8a200;color:#000;font-weight:700}
+  .nav{position:fixed;top:50%;transform:translateY(-50%);z-index:5;border:0;border-radius:12px;padding:16px 12px;background:rgba(0,0,0,.6);color:#fff;font-size:16px;cursor:pointer;max-width:130px;display:none}
+  .nav:hover{background:rgba(0,0,0,.85)}
+  #navPrev{left:10px}
+  #navNext{right:10px}
+  #list div{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #ddd;gap:8px}
+  .scn{background:#f1f3f6;border-radius:8px;padding:8px 10px;margin-top:8px}
+  .err{color:#c0392b;font-size:14px;margin-top:6px}
+</style>
+</head>
+<body>
+<div id="view"></div>
+<div id="title"></div>
+<div id="banner"></div>
+<div id="msg">Caricamento immagine…</div>
+<div id="hint">Trascina per guardarti intorno • rotellina per zoom • clicca le icone per aprire le schede o passare all'altra foto</div>
+<div id="hsLayer"></div>
+<button class="nav" id="navPrev"></button><button class="nav" id="navNext"></button>
+
+<div id="bar">
+  <button class="btn" id="bZin" title="Zoom +">＋</button>
+  <button class="btn" id="bZout" title="Zoom −">－</button>
+  <button class="btn" id="bAuto">⟳ Rotazione</button>
+  <button class="btn" id="bFull">⛶ Schermo intero</button>
+  <button class="btn" id="bDoc">🔒 Area docente</button>
+</div>
+
+<!-- Scheda visualizzata dagli alunni -->
+<div class="overlay" id="cardOv"><div class="box"><button class="x" id="cardX">✕</button><div id="cardBody"></div></div></div>
+
+<!-- Login docente -->
+<div class="overlay" id="loginOv"><div class="box" style="max-width:360px">
+  <button class="x" id="loginX">✕</button>
+  <h2>Area docente</h2>
+  <label for="pw">Password</label>
+  <input type="password" id="pw">
+  <div class="err" id="pwErr"></div>
+  <div class="row"><button class="btn" id="pwOk">Entra</button></div>
+</div></div>
+
+<!-- Pannello docente -->
+<div class="overlay" id="docOv"><div class="box" style="max-width:560px">
+  <button class="x" id="docX">✕</button>
+  <h2>Area docente</h2>
+  <div style="font-size:14px;margin-bottom:6px">Scegli la foto da modificare:</div>
+  <div class="row" id="docTabs" style="margin-top:0"></div>
+  <div style="font-size:14px;margin-top:8px">Stai modificando: <b id="docScene"></b></div>
+  <div class="row" style="margin-top:8px">
+    <button class="btn" id="dAdd">➕ Aggiungi icona con scheda</button>
+    <button class="btn" id="dAddLink">➡️ Aggiungi freccia verso l'altra foto</button>
+  </div>
+  <h3 style="margin:16px 0 0">Icone di questa foto</h3>
+  <div id="list"></div>
+  <h3 style="margin:16px 0 0">Le due foto</h3>
+  <div id="scenesEd"></div>
+  <label style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" id="optNav"> Mostra agli alunni i pulsanti avanti/indietro sulla foto</label>
+  <div class="row">
+    <button class="btn" id="dSave">💾 Salva file JSON</button>
+    <button class="btn gray" id="dLoad">📂 Carica file JSON</button>
+    <button class="btn red" id="dExit">Esci dalla modalità docente</button>
+  </div>
+  <input type="file" id="fileIn" accept=".json" style="display:none">
+</div></div>
+
+<!-- Modulo modifica icona -->
+<div class="overlay" id="editOv"><div class="box">
+  <button class="x" id="editX">✕</button>
+  <h2 id="eHead">Scheda</h2>
+  <div class="infoOnly">
+    <label>Icona</label>
+    <select id="eIcon">
+      <option value="ℹ️">ℹ️ Informazione</option>
+      <option value="📷">📷 Foto</option>
+      <option value="▶️">▶️ Video</option>
+      <option value="❓">❓ Domanda</option>
+      <option value="📖">📖 Testo</option>
+      <option value="⭐">⭐ Importante</option>
+    </select>
+  </div>
+  <label id="eTitleLb">Titolo</label><input type="text" id="eTitle">
+  <div class="linkOnly">
+    <label>Porta alla foto</label>
+    <select id="eTarget"></select>
+  </div>
+  <div class="infoOnly">
+    <label>Link immagine (opzionale)</label><input type="text" id="eImg" placeholder="https://...">
+    <label>Link video YouTube o file video (opzionale)</label><input type="text" id="eVid" placeholder="https://www.youtube.com/watch?v=...">
+    <label>Testo (opzionale)</label><textarea id="eText"></textarea>
+  </div>
+  <div class="row">
+    <button class="btn" id="eOk">Salva</button>
+    <button class="btn gray" id="eMove">📍 Sposta</button>
+    <button class="btn red" id="eDel">Elimina</button>
+  </div>
+</div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const JSON_FILE = "panorama-schede.json";   // se presente nella stessa cartella, viene caricato in automatico
+const PASSWORD = "doc2026";
+
+/* ---------- Dati iniziali (usati se non esiste il file JSON) ---------- */
+const CARD_TEXT =
+"Una nuova serie di interventi sono stati programmati al campo d’atletica “Dal Dan” a Paderno: tra questi l’eliminazione delle barriere architettoniche, una nuova palestra al chiuso e il rinnovo del locale infermeria. Il nuovo pacchetto di opere previsto dal Comune di Udine fa seguito al rifacimento della pista e agli altri interventi che erano seguiti quando lo storico “camposcuola” era stato restituito agli sportivi a fine 2023.\n" +
+"Gli interventi\n" +
+"Come approvato nel corso dell’ultima seduta di giunta dell’anno 2024, l'investimento per queste opere sarà pari a 340 mila euro. In estate poi arriverà anche il momento di rivedere il Palaindoor “Bernes”, che sarà adeguato ai tempi con interventi per rimettere a nuovo la pista interna, gli spalti, gli spazi comuni e le vie di accesso. Per questo ulteriore intervento sono stati stanziati 715 mila euro. “Lo sport è inevitabilmente una colonna portante di una società sana, per questo l’impegno della nostra amministrazione per migliorare i nostri impianti sportivi è concreto. Nel 2024 solo per gli interventi di riqualificazione sui campi di calcio comunali, abbiamo investito ben oltre 3 milioni di euro ma altrettanto importante è l'impegno per la realizzazione, la manutenzione, l'ammodernamento e la messa in sicurezza di palestre, palazzetti, impianti di rugby, tennis, bocce, sport rotellistici, piscine e playground nei quartieri”, ha spiegato l'assessora allo Sport Chiara Dazzan.\n" +
+"I lavori\n" +
+"La giunta ha intanto approvato il progetto di fattibilità tecnica ed economica. Tra i lavori principali, è prevista la riconversione dell’ex alloggio del custode in una nuova palestra al chiuso, dotata di servizi igienici completamente rinnovati e di una rampa d’accesso per persone con disabilità. Un altro punto degli interventi riguarda la riqualificazione del locale infermeria, che vedrà l’ampliamento dei servizi igienici, ma anche una generale manutenzione che la renderà un ambiente più accogliente. Inoltre, saranno ricavati un nuovo ufficio e nuovi spogliatoi, utilizzando anche la zona precedentemente adibita a magazzino, con un rinnovamento completo dei pavimenti e l’installazione di un controsoffitto. Tutta la struttura sarà dotata di un nuovo impianto di condizionamento e verranno aggiornati gli impianti elettrico e idrico sanitario, a completare un massiccio quadro di interventi di manutenzione.\n" +
+"Fonte: UdineToday – https://www.udinetoday.it/cronaca/interventi-impianto-ateldica-udine.html";
+
+let scenes = [
+  { id: "s1", name: "Via Torino 1", image: "https://de-stefano.github.io/claude/udine-via-torino.jpeg", hotspots: [] },
+  { id: "s2", name: "Via Torino 2", image: "https://de-stefano.github.io/claude/udine-via-torino2.jpeg", hotspots: [{
+      id: "h1", type: "info", lon: 0, lat: 0, icon: "ℹ️",
+      title: "Nuove opere di riqualificazione al Campo Dal Dan per 340.000 euro",
+      img: "https://www.sporteimpianti.it/wp-content/uploads/2024/02/355-udine-in-breve_int3.jpg",
+      vid: "", text: CARD_TEXT
+  }]}
+];
+let cur = 0, showNav = true;
+
+const $ = id => document.getElementById(id);
+const box = $("view");
+const R = 500, rad = THREE.MathUtils.degToRad, deg = THREE.MathUtils.radToDeg;
+let teacher = false, placingTarget = null, editingId = null, loadId = 0;
+const curScene = () => scenes[cur];
+
+/* ---------- Three.js ---------- */
+const scene3 = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1100);
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+box.appendChild(renderer.domElement);
+
+const geo = new THREE.SphereGeometry(R, 80, 50); geo.scale(-1, 1, 1);
+const mat = new THREE.MeshBasicMaterial({color: 0x222222});
+const sphere = new THREE.Mesh(geo, mat);
+scene3.add(sphere);
+
+const texCache = {};
+function getTex(url, ok, fail){
+  if(texCache[url]) return ok(texCache[url]);
+  new THREE.TextureLoader().setCrossOrigin("anonymous").load(url, t => { t.minFilter = THREE.LinearFilter; texCache[url] = t; ok(t); }, undefined, fail);
+}
+function showScene(i){
+  cur = i; const my = ++loadId; const s = curScene();
+  $("msg").style.display = "flex"; $("msg").textContent = "Caricamento immagine…";
+  getTex(s.image, t => {
+    if(my !== loadId) return;
+    mat.map = t; mat.color.set(0xffffff); mat.needsUpdate = true; $("msg").style.display = "none";
+  }, () => { if(my === loadId) $("msg").textContent = "Impossibile caricare l'immagine. Controlla il link o la connessione."; });
+  renderHotspots(); updateNav();
+  if($("docOv").style.display === "flex") openDoc();
+}
+function setTitle(){
+  $("title").textContent = "📍 Udine – " + curScene().name + (scenes.length > 1 ? " (" + (cur + 1) + "/" + scenes.length + ")" : "");
+}
+function updateNav(){
+  setTitle();
+  const n = scenes.length, show = showNav && n > 1 && !placingTarget;
+  $("navPrev").style.display = $("navNext").style.display = show ? "block" : "none";
+  $("navPrev").textContent = "◀ " + scenes[(cur - 1 + n) % n].name;
+  $("navNext").textContent = scenes[(cur + 1) % n].name + " ▶";
+}
+$("navPrev").onclick = () => showScene((cur - 1 + scenes.length) % scenes.length);
+$("navNext").onclick = () => showScene((cur + 1) % scenes.length);
+
+/* ---------- Movimento ---------- */
+let lon = 0, lat = 0, fov = 75, auto = false;
+let velLon = 0, velLat = 0, dragging = false, lastX = 0, lastY = 0, startX = 0, startY = 0, moved = 0;
+
+function down(x, y){ dragging = true; lastX = startX = x; lastY = startY = y; moved = 0; velLon = velLat = 0; box.classList.add("drag"); }
+function move(x, y){
+  if(!dragging) return;
+  const k = fov / 700;
+  velLon = -(x - lastX) * k; velLat = (y - lastY) * k;
+  lon += velLon; lat += velLat; lastX = x; lastY = y;
+  moved = Math.max(moved, Math.abs(x - startX) + Math.abs(y - startY));
+}
+function up(x, y){
+  if(!dragging) return;
+  dragging = false; box.classList.remove("drag");
+  if(moved < 6 && placingTarget) placeAt(x, y);
+}
+box.addEventListener("mousedown", e => down(e.clientX, e.clientY));
+addEventListener("mousemove", e => move(e.clientX, e.clientY));
+addEventListener("mouseup", e => up(e.clientX, e.clientY));
+box.addEventListener("touchstart", e => { const t = e.touches[0]; down(t.clientX, t.clientY); }, {passive:true});
+box.addEventListener("touchmove", e => { const t = e.touches[0]; move(t.clientX, t.clientY); }, {passive:true});
+box.addEventListener("touchend", e => { const t = e.changedTouches[0]; up(t.clientX, t.clientY); });
+box.addEventListener("wheel", e => { e.preventDefault(); zoom(e.deltaY * 0.05); }, {passive:false});
+
+function zoom(d){ fov = Math.max(25, Math.min(100, fov + d)); camera.fov = fov; camera.updateProjectionMatrix(); }
+$("bZin").onclick = () => zoom(-8);
+$("bZout").onclick = () => zoom(8);
+$("bAuto").onclick = e => { auto = !auto; e.target.classList.toggle("on", auto); };
+$("bFull").onclick = () => { if(!document.fullscreenElement) document.documentElement.requestFullscreen?.(); else document.exitFullscreen?.(); };
+addEventListener("keydown", e => {
+  if(/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+  if(e.key === "ArrowLeft") lon -= 4;
+  if(e.key === "ArrowRight") lon += 4;
+  if(e.key === "ArrowUp") lat += 4;
+  if(e.key === "ArrowDown") lat -= 4;
+  if(e.key === "+") zoom(-6);
+  if(e.key === "-") zoom(6);
+});
+addEventListener("resize", () => { camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+
+/* ---------- Icone sulla panoramica ---------- */
+function toVec(h){
+  const la = rad(h.lat), lo = rad(h.lon);
+  return new THREE.Vector3(R*Math.cos(la)*Math.cos(lo), R*Math.sin(la), R*Math.cos(la)*Math.sin(lo));
+}
+function renderHotspots(){
+  const layer = $("hsLayer"); layer.innerHTML = "";
+  curScene().hotspots.forEach(h => {
+    const b = document.createElement("button");
+    const isLink = h.type === "link";
+    b.className = "hs" + (isLink ? " link" : "");
+    if(isLink){ const t = scenes.find(x => x.id === h.target); b.textContent = "➡️ " + (h.title || ("Vai alla foto" + (t ? ": " + t.name : ""))); }
+    else b.textContent = h.icon || "ℹ️";
+    b.title = h.title || "";
+    b.onclick = () => {
+      if(teacher) openEdit(h.id);
+      else if(isLink){ const i = scenes.findIndex(s => s.id === h.target); if(i >= 0) showScene(i); }
+      else openCard(h);
+    };
+    h.el = b; layer.appendChild(b);
+  });
+  refreshList();
+}
+function updateHotspots(){
+  const dir = new THREE.Vector3(); camera.getWorldDirection(dir);
+  curScene().hotspots.forEach(h => {
+    if(!h.el) return;
+    const v = toVec(h);
+    if(v.clone().normalize().dot(dir) <= 0.05){ h.el.style.display = "none"; return; }
+    const p = v.project(camera);
+    h.el.style.display = "flex";
+    h.el.style.transform = `translate(${(p.x*0.5+0.5)*innerWidth}px, ${(-p.y*0.5+0.5)*innerHeight}px) translate(-50%,-50%)`;
+  });
+}
+
+/* ---------- Posizionamento (docente) ---------- */
+function startPlacing(target){
+  placingTarget = target; updateNav();
+  box.classList.add("place");
+  $("banner").style.display = "block";
+  $("banner").textContent = "Clicca sulla panoramica nel punto in cui vuoi l'icona";
+  $("docOv").style.display = "none"; $("editOv").style.display = "none";
+}
+function endPlacing(){ placingTarget = null; box.classList.remove("place"); $("banner").style.display = "none"; updateNav(); }
+function placeAt(x, y){
+  const ndc = new THREE.Vector2(x/innerWidth*2-1, -(y/innerHeight)*2+1);
+  const rc = new THREE.Raycaster(); rc.setFromCamera(ndc, camera);
+  const hit = rc.intersectObject(sphere)[0]; if(!hit) return;
+  const p = hit.point;
+  const nl = deg(Math.asin(p.y / p.length())), no = deg(Math.atan2(p.z, p.x));
+  const target = placingTarget;
+  endPlacing();
+  const list = curScene().hotspots;
+  if(target === "new-info" || target === "new-link"){
+    const other = scenes.find((s, i) => i !== cur);
+    const h = target === "new-link"
+      ? {id: "h" + Date.now(), type: "link", lon: no, lat: nl, title: "", target: other ? other.id : ""}
+      : {id: "h" + Date.now(), type: "info", lon: no, lat: nl, icon: "ℹ️", title: "", img: "", vid: "", text: ""};
+    list.push(h); renderHotspots(); openEdit(h.id);
+  } else {
+    const h = list.find(k => k.id === target);
+    if(h){ h.lon = no; h.lat = nl; }
+    renderHotspots(); openEdit(target);
+  }
+}
+
+/* ---------- Scheda per gli alunni ---------- */
+function ytEmbed(u){
+  const m = u.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/);
+  return m ? "https://www.youtube.com/embed/" + m[1] : null;
+}
+function openCard(h){
+  const body = $("cardBody"); body.innerHTML = "";
+  if(h.title){ const t = document.createElement("h2"); t.textContent = h.title; body.appendChild(t); }
+  if(h.img){ const i = document.createElement("img"); i.className = "pic"; i.referrerPolicy = "no-referrer"; i.src = h.img; body.appendChild(i); }
+  if(h.vid){
+    const y = ytEmbed(h.vid);
+    if(y){ const f = document.createElement("iframe"); f.src = y; f.allowFullscreen = true; body.appendChild(f); }
+    else { const v = document.createElement("video"); v.src = h.vid; v.controls = true; body.appendChild(v); }
+  }
+  (h.text || "").split("\n").filter(l => l.trim()).forEach(l => {
+    const p = document.createElement("p"); p.textContent = l;
+    if(l.length < 30 && !/[.:;]$/.test(l)) p.className = "h";
+    body.appendChild(p);
+  });
+  $("cardOv").style.display = "flex";
+}
+function closeCard(){ $("cardOv").style.display = "none"; $("cardBody").innerHTML = ""; }
+$("cardX").onclick = closeCard;
+$("cardOv").onclick = e => { if(e.target === $("cardOv")) closeCard(); };
+
+/* ---------- Area docente ---------- */
+$("bDoc").onclick = () => {
+  if(teacher){ openDoc(); return; }
+  $("pw").value = ""; $("pwErr").textContent = ""; $("loginOv").style.display = "flex"; $("pw").focus();
+};
+$("loginX").onclick = () => $("loginOv").style.display = "none";
+function tryLogin(){
+  if($("pw").value === PASSWORD){
+    teacher = true; $("loginOv").style.display = "none";
+    $("bDoc").textContent = "🛠 Area docente (attiva)"; $("bDoc").classList.add("on");
+    openDoc();
+  } else $("pwErr").textContent = "Password errata.";
+}
+$("pwOk").onclick = tryLogin;
+$("pw").addEventListener("keydown", e => { if(e.key === "Enter") tryLogin(); });
+
+function renderTabs(){
+  const t = $("docTabs"); t.innerHTML = "";
+  scenes.forEach((sc, i) => {
+    const b = document.createElement("button");
+    b.className = "btn" + (i === cur ? " on" : ""); b.textContent = "🖼 " + sc.name;
+    b.onclick = () => showScene(i);
+    t.appendChild(b);
+  });
+}
+function openDoc(){
+  $("docScene").textContent = curScene().name; $("optNav").checked = showNav;
+  renderTabs(); refreshList(); renderScenesEditor(); $("docOv").style.display = "flex";
+}
+$("optNav").onchange = e => { showNav = e.target.checked; updateNav(); };
+$("docX").onclick = () => $("docOv").style.display = "none";
+$("dExit").onclick = () => {
+  teacher = false; $("docOv").style.display = "none";
+  $("bDoc").textContent = "🔒 Area docente"; $("bDoc").classList.remove("on");
+};
+$("dAdd").onclick = () => startPlacing("new-info");
+$("dAddLink").onclick = () => startPlacing("new-link");
+$("dSave").onclick = () => {
+  const data = {showNav, scenes: scenes.map(s => ({id: s.id, name: s.name, image: s.image, hotspots: s.hotspots.map(({el, ...rest}) => rest)}))};
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type: "application/json"}));
+  a.download = JSON_FILE; a.click();
+};
+$("dLoad").onclick = () => $("fileIn").click();
+$("fileIn").onchange = e => {
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = () => { try { applyData(JSON.parse(r.result)); showScene(Math.min(cur, scenes.length - 1)); } catch(err){ alert("File non valido."); } };
+  r.readAsText(f); e.target.value = "";
+};
+function applyData(d){
+  if(Array.isArray(d)){            // vecchio formato: solo le icone della seconda foto
+    scenes[1].hotspots = d.map(h => ({type: "info", ...h}));
+  } else if(d && Array.isArray(d.scenes) && d.scenes.length){
+    if(typeof d.showNav === "boolean") showNav = d.showNav;
+    scenes = d.scenes.map(s => ({id: s.id, name: s.name, image: s.image, hotspots: (s.hotspots || []).map(h => ({type: "info", ...h}))}));
+  }
+}
+function refreshList(){
+  const l = $("list"); l.innerHTML = "";
+  const hs = curScene().hotspots;
+  if(!hs.length){ l.textContent = "Nessuna icona in questa foto."; return; }
+  hs.forEach(h => {
+    const d = document.createElement("div");
+    const s = document.createElement("span");
+    s.textContent = h.type === "link" ? "➡️ Freccia" + (h.title ? ": " + h.title : "") : (h.icon || "ℹ️") + " " + (h.title || "(senza titolo)");
+    const b = document.createElement("button"); b.className = "btn"; b.style.background = "#1b5fb8"; b.textContent = "Modifica";
+    b.onclick = () => { $("docOv").style.display = "none"; openEdit(h.id); };
+    d.append(s, b); l.appendChild(d);
+  });
+}
+function renderScenesEditor(){
+  const c = $("scenesEd"); c.innerHTML = "";
+  scenes.forEach((s, i) => {
+    const d = document.createElement("div"); d.className = "scn";
+    d.innerHTML = "<label>Nome foto " + (i+1) + "</label><input type='text'><label>Link immagine 360°</label><input type='text'>";
+    const [n, u] = d.querySelectorAll("input");
+    n.value = s.name; u.value = s.image;
+    n.onchange = () => { s.name = n.value.trim() || s.name; updateNav(); renderTabs(); if(i === cur) $("docScene").textContent = s.name; };
+    u.onchange = () => { s.image = u.value.trim(); if(i === cur) showScene(cur); };
+    c.appendChild(d);
+  });
+}
+
+/* ---------- Modulo modifica ---------- */
+function openEdit(id){
+  const h = curScene().hotspots.find(k => k.id === id); if(!h) return;
+  editingId = id;
+  const isLink = h.type === "link";
+  document.querySelectorAll(".infoOnly").forEach(e => e.style.display = isLink ? "none" : "block");
+  document.querySelectorAll(".linkOnly").forEach(e => e.style.display = isLink ? "block" : "none");
+  $("eHead").textContent = isLink ? "Freccia verso un'altra foto" : "Scheda";
+  $("eTitleLb").textContent = isLink ? "Etichetta (opzionale)" : "Titolo";
+  $("eTitle").value = h.title || "";
+  if(isLink){
+    $("eTarget").innerHTML = "";
+    scenes.forEach(s => { if(s.id !== curScene().id){ const o = document.createElement("option"); o.value = s.id; o.textContent = s.name; $("eTarget").appendChild(o); } });
+    $("eTarget").value = h.target;
+  } else {
+    $("eIcon").value = h.icon || "ℹ️"; $("eImg").value = h.img || ""; $("eVid").value = h.vid || ""; $("eText").value = h.text || "";
+  }
+  $("editOv").style.display = "flex";
+}
+$("editX").onclick = () => { $("editOv").style.display = "none"; openDoc(); };
+$("eOk").onclick = () => {
+  const h = curScene().hotspots.find(k => k.id === editingId); if(!h) return;
+  h.title = $("eTitle").value.trim();
+  if(h.type === "link") h.target = $("eTarget").value;
+  else { h.icon = $("eIcon").value; h.img = $("eImg").value.trim(); h.vid = $("eVid").value.trim(); h.text = $("eText").value; }
+  $("editOv").style.display = "none"; renderHotspots(); openDoc();
+};
+$("eMove").onclick = () => startPlacing(editingId);
+$("eDel").onclick = () => {
+  if(!confirm("Eliminare questa icona?")) return;
+  curScene().hotspots = curScene().hotspots.filter(k => k.id !== editingId);
+  $("editOv").style.display = "none"; renderHotspots(); openDoc();
+};
+
+/* ---------- Avvio ---------- */
+fetch(JSON_FILE).then(r => r.ok ? r.json() : Promise.reject()).then(applyData).catch(() => {}).finally(() => showScene(0));
+
+function animate(){
+  requestAnimationFrame(animate);
+  if(!dragging){ lon += velLon; lat += velLat; velLon *= 0.95; velLat *= 0.95; if(auto) lon += 0.15; }
+  lat = Math.max(-85, Math.min(85, lat));
+  const phi = rad(90 - lat), theta = rad(lon);
+  camera.lookAt(R*Math.sin(phi)*Math.cos(theta), R*Math.cos(phi), R*Math.sin(phi)*Math.sin(theta));
+  camera.updateMatrixWorld();
+  renderer.render(scene3, camera);
+  updateHotspots();
+}
+animate();
+</script>
+</body>
+</html>
