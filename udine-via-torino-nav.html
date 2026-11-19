@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Udine – Via Torino a 360°</title>
+<style>
+  html,body{margin:0;height:100%;background:#111;font-family:system-ui,Arial,sans-serif;overflow:hidden}
+  #view{position:fixed;inset:0;cursor:grab;touch-action:none}
+  #view.drag{cursor:grabbing}
+  #view.place{cursor:crosshair}
+  #title{position:fixed;top:12px;left:12px;color:#fff;background:rgba(0,0,0,.55);padding:8px 14px;border-radius:8px;font-size:16px}
+  #bar{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:8px;flex-wrap:wrap;justify-content:center;width:95%}
+  .btn{border:0;border-radius:8px;padding:10px 14px;font-size:15px;background:rgba(0,0,0,.6);color:#fff;cursor:pointer}
+  .btn:hover{background:rgba(0,0,0,.85)}
+  .btn.on{background:rgba(30,120,220,.9)}
+  #msg{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;text-align:center;padding:20px;pointer-events:none}
+  #hint{position:fixed;bottom:64px;left:50%;transform:translateX(-50%);color:#fff;background:rgba(0,0,0,.55);padding:6px 12px;border-radius:8px;font-size:14px;transition:opacity 1s;pointer-events:none;text-align:center}
+  #banner{position:fixed;top:12px;left:50%;transform:translateX(-50%);background:#e8a200;color:#000;padding:8px 16px;border-radius:8px;font-weight:600;display:none;z-index:15}
+
+  .hs{position:fixed;left:0;top:0;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;border:3px solid #fff;
+      background:rgba(20,110,220,.92);color:#fff;font-size:22px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.6);
+      display:none;align-items:center;justify-content:center;padding:0;animation:pulse 2s infinite}
+  .hs:hover{background:#0b57b5}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,255,255,.7)}70%{box-shadow:0 0 0 14px rgba(255,255,255,0)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}}
+
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:20;padding:12px;box-sizing:border-box}
+  .box{background:#fff;color:#222;border-radius:12px;max-width:720px;width:100%;max-height:92vh;overflow:auto;padding:20px;position:relative;box-sizing:border-box}
+  .box h2{margin:0 30px 12px 0;font-size:22px}
+  .box img.pic{width:100%;border-radius:8px;margin-bottom:12px}
+  .box iframe,.box video{width:100%;aspect-ratio:16/9;border:0;border-radius:8px;margin-bottom:12px}
+  .box p{line-height:1.5;margin:0 0 10px;font-size:16px}
+  .box p.h{font-weight:700;font-size:18px;margin-top:14px}
+  .x{position:absolute;top:8px;right:10px;border:0;background:none;font-size:26px;cursor:pointer;color:#555}
+  label{display:block;font-weight:600;margin:10px 0 4px;font-size:14px}
+  input[type=text],input[type=password],select,textarea{width:100%;box-sizing:border-box;padding:8px;font-size:15px;border:1px solid #aaa;border-radius:6px;font-family:inherit}
+  textarea{min-height:160px}
+  .row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+  .row .btn{background:#1b5fb8}
+  .row .btn.red{background:#c0392b}
+  .row .btn.gray{background:#666}
+  #list{margin-top:8px}
+  #list div{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #ddd;gap:8px}
+  .err{color:#c0392b;font-size:14px;margin-top:6px}
+</style>
+</head>
+<body>
+<div id="view"></div>
+<div id="title">📍 Udine – Via Torino</div>
+<div id="banner"></div>
+<div id="msg">Caricamento immagine…</div>
+<div id="hint">Trascina per guardarti intorno • rotellina per zoom • clicca le icone blu per aprire le schede</div>
+<div id="hsLayer"></div>
+
+<div id="bar">
+  <button class="btn" id="bZin" title="Zoom +">＋</button>
+  <button class="btn" id="bZout" title="Zoom −">－</button>
+  <button class="btn" id="bAuto">⟳ Rotazione automatica</button>
+  <button class="btn" id="bFull">⛶ Schermo intero</button>
+  <button class="btn" id="bDoc">🔒 Area docente</button>
+</div>
+
+<!-- Scheda visualizzata dagli alunni -->
+<div class="overlay" id="cardOv"><div class="box"><button class="x" id="cardX">✕</button><div id="cardBody"></div></div></div>
+
+<!-- Login docente -->
+<div class="overlay" id="loginOv"><div class="box" style="max-width:360px">
+  <button class="x" id="loginX">✕</button>
+  <h2>Area docente</h2>
+  <label for="pw">Password</label>
+  <input type="password" id="pw">
+  <div class="err" id="pwErr"></div>
+  <div class="row"><button class="btn" id="pwOk">Entra</button></div>
+</div></div>
+
+<!-- Pannello docente -->
+<div class="overlay" id="docOv"><div class="box" style="max-width:520px">
+  <button class="x" id="docX">✕</button>
+  <h2>Area docente</h2>
+  <div class="row" style="margin-top:0">
+    <button class="btn" id="dAdd">➕ Aggiungi icona</button>
+    <button class="btn" id="dSave">💾 Salva file JSON</button>
+    <button class="btn gray" id="dLoad">📂 Carica file JSON</button>
+    <button class="btn red" id="dExit">Esci dalla modalità docente</button>
+  </div>
+  <input type="file" id="fileIn" accept=".json" style="display:none">
+  <h3 style="margin:16px 0 0">Icone presenti</h3>
+  <div id="list"></div>
+</div></div>
+
+<!-- Modulo modifica icona -->
+<div class="overlay" id="editOv"><div class="box">
+  <button class="x" id="editX">✕</button>
+  <h2>Scheda</h2>
+  <label>Icona</label>
+  <select id="eIcon">
+    <option value="ℹ️">ℹ️ Informazione</option>
+    <option value="📷">📷 Foto</option>
+    <option value="▶️">▶️ Video</option>
+    <option value="❓">❓ Domanda</option>
+    <option value="📖">📖 Testo</option>
+    <option value="⭐">⭐ Importante</option>
+  </select>
+  <label>Titolo</label><input type="text" id="eTitle">
+  <label>Link immagine (opzionale)</label><input type="text" id="eImg" placeholder="https://...">
+  <label>Link video YouTube o file video (opzionale)</label><input type="text" id="eVid" placeholder="https://www.youtube.com/watch?v=...">
+  <label>Testo (opzionale)</label><textarea id="eText"></textarea>
+  <div class="row">
+    <button class="btn" id="eOk">Salva</button>
+    <button class="btn gray" id="eMove">📍 Sposta</button>
+    <button class="btn red" id="eDel">Elimina</button>
+  </div>
+</div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const IMG = "https://de-stefano.github.io/claude/udine-via-torino2.jpeg";
+const JSON_FILE = "panorama-schede.json";   // se presente nella stessa cartella, viene caricato in automatico
+const PASSWORD = "doc2026";
+
+/* ---------- Scheda iniziale (usata se non esiste il file JSON) ---------- */
+let hotspots = [{
+  id: "h1", lon: 0, lat: 0, icon: "ℹ️",
+  title: "Nuove opere di riqualificazione al Campo Dal Dan per 340.000 euro",
+  img: "https://www.sporteimpianti.it/wp-content/uploads/2024/02/355-udine-in-breve_int3.jpg",
+  vid: "",
+  text:
+"Una nuova serie di interventi sono stati programmati al campo d’atletica “Dal Dan” a Paderno: tra questi l’eliminazione delle barriere architettoniche, una nuova palestra al chiuso e il rinnovo del locale infermeria. Il nuovo pacchetto di opere previsto dal Comune di Udine fa seguito al rifacimento della pista e agli altri interventi che erano seguiti quando lo storico “camposcuola” era stato restituito agli sportivi a fine 2023.\n" +
+"Gli interventi\n" +
+"Come approvato nel corso dell’ultima seduta di giunta dell’anno 2024, l'investimento per queste opere sarà pari a 340 mila euro. In estate poi arriverà anche il momento di rivedere il Palaindoor “Bernes”, che sarà adeguato ai tempi con interventi per rimettere a nuovo la pista interna, gli spalti, gli spazi comuni e le vie di accesso. Per questo ulteriore intervento sono stati stanziati 715 mila euro. “Lo sport è inevitabilmente una colonna portante di una società sana, per questo l’impegno della nostra amministrazione per migliorare i nostri impianti sportivi è concreto. Nel 2024 solo per gli interventi di riqualificazione sui campi di calcio comunali, abbiamo investito ben oltre 3 milioni di euro ma altrettanto importante è l'impegno per la realizzazione, la manutenzione, l'ammodernamento e la messa in sicurezza di palestre, palazzetti, impianti di rugby, tennis, bocce, sport rotellistici, piscine e playground nei quartieri”, ha spiegato l'assessora allo Sport Chiara Dazzan.\n" +
+"I lavori\n" +
+"La giunta ha intanto approvato il progetto di fattibilità tecnica ed economica. Tra i lavori principali, è prevista la riconversione dell’ex alloggio del custode in una nuova palestra al chiuso, dotata di servizi igienici completamente rinnovati e di una rampa d’accesso per persone con disabilità. Un altro punto degli interventi riguarda la riqualificazione del locale infermeria, che vedrà l’ampliamento dei servizi igienici, ma anche una generale manutenzione che la renderà un ambiente più accogliente. Inoltre, saranno ricavati un nuovo ufficio e nuovi spogliatoi, utilizzando anche la zona precedentemente adibita a magazzino, con un rinnovamento completo dei pavimenti e l’installazione di un controsoffitto. Tutta la struttura sarà dotata di un nuovo impianto di condizionamento e verranno aggiornati gli impianti elettrico e idrico sanitario, a completare un massiccio quadro di interventi di manutenzione.\n" +
+"Fonte: UdineToday – https://www.udinetoday.it/cronaca/interventi-impianto-ateldica-udine.html"
+}];
+
+const $ = id => document.getElementById(id);
+const box = $("view");
+const R = 500, rad = THREE.MathUtils.degToRad, deg = THREE.MathUtils.radToDeg;
+let teacher = false, placingTarget = null, editingId = null;
+
+/* ---------- Three.js ---------- */
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1100);
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+box.appendChild(renderer.domElement);
+let sphere = null;
+
+new THREE.TextureLoader().setCrossOrigin("anonymous").load(IMG, tex => {
+  tex.minFilter = THREE.LinearFilter;
+  const geo = new THREE.SphereGeometry(R, 80, 50);
+  geo.scale(-1, 1, 1);
+  sphere = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({map: tex}));
+  scene.add(sphere);
+  $("msg").remove();
+  setTimeout(() => $("hint").style.opacity = 0, 6000);
+}, undefined, () => { $("msg").textContent = "Impossibile caricare l'immagine. Controlla il link o la connessione."; });
+
+let lon = 0, lat = 0, fov = 75, auto = false;
+let velLon = 0, velLat = 0, dragging = false, lastX = 0, lastY = 0, startX = 0, startY = 0, moved = 0;
+
+function down(x, y){ dragging = true; lastX = startX = x; lastY = startY = y; moved = 0; velLon = velLat = 0; box.classList.add("drag"); }
+function move(x, y){
+  if(!dragging) return;
+  const k = fov / 700;
+  velLon = -(x - lastX) * k; velLat = (y - lastY) * k;
+  lon += velLon; lat += velLat; lastX = x; lastY = y;
+  moved = Math.max(moved, Math.abs(x - startX) + Math.abs(y - startY));
+}
+function up(x, y){
+  if(!dragging) return;
+  dragging = false; box.classList.remove("drag");
+  if(moved < 6 && placingTarget) placeAt(x, y);   // un click (non un trascinamento) posiziona l'icona
+}
+box.addEventListener("mousedown", e => down(e.clientX, e.clientY));
+addEventListener("mousemove", e => move(e.clientX, e.clientY));
+addEventListener("mouseup", e => up(e.clientX, e.clientY));
+box.addEventListener("touchstart", e => { const t = e.touches[0]; down(t.clientX, t.clientY); }, {passive:true});
+box.addEventListener("touchmove", e => { const t = e.touches[0]; move(t.clientX, t.clientY); }, {passive:true});
+box.addEventListener("touchend", e => { const t = e.changedTouches[0]; up(t.clientX, t.clientY); });
+box.addEventListener("wheel", e => { e.preventDefault(); zoom(e.deltaY * 0.05); }, {passive:false});
+
+function zoom(d){ fov = Math.max(25, Math.min(100, fov + d)); camera.fov = fov; camera.updateProjectionMatrix(); }
+$("bZin").onclick = () => zoom(-8);
+$("bZout").onclick = () => zoom(8);
+$("bAuto").onclick = e => { auto = !auto; e.target.classList.toggle("on", auto); };
+$("bFull").onclick = () => { if(!document.fullscreenElement) document.documentElement.requestFullscreen?.(); else document.exitFullscreen?.(); };
+addEventListener("keydown", e => {
+  if(/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+  if(e.key === "ArrowLeft") lon -= 4;
+  if(e.key === "ArrowRight") lon += 4;
+  if(e.key === "ArrowUp") lat += 4;
+  if(e.key === "ArrowDown") lat -= 4;
+  if(e.key === "+") zoom(-6);
+  if(e.key === "-") zoom(6);
+});
+addEventListener("resize", () => { camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+
+/* ---------- Icone sulla panoramica ---------- */
+function toVec(h){
+  const la = rad(h.lat), lo = rad(h.lon);
+  return new THREE.Vector3(R*Math.cos(la)*Math.cos(lo), R*Math.sin(la), R*Math.cos(la)*Math.sin(lo));
+}
+function renderHotspots(){
+  const layer = $("hsLayer"); layer.innerHTML = "";
+  hotspots.forEach(h => {
+    const b = document.createElement("button");
+    b.className = "hs"; b.textContent = h.icon || "ℹ️"; b.title = h.title || "";
+    b.onclick = () => teacher ? openEdit(h.id) : openCard(h);
+    h.el = b; layer.appendChild(b);
+  });
+  refreshList();
+}
+function updateHotspots(){
+  const dir = new THREE.Vector3(); camera.getWorldDirection(dir);
+  hotspots.forEach(h => {
+    if(!h.el) return;
+    const v = toVec(h);
+    if(v.clone().normalize().dot(dir) <= 0.05){ h.el.style.display = "none"; return; }
+    const p = v.project(camera);
+    h.el.style.display = "flex";
+    h.el.style.transform = `translate(${(p.x*0.5+0.5)*innerWidth}px, ${(-p.y*0.5+0.5)*innerHeight}px)`;
+  });
+}
+
+/* ---------- Posizionamento (docente) ---------- */
+function startPlacing(target){
+  placingTarget = target;
+  box.classList.add("place");
+  $("banner").style.display = "block";
+  $("banner").textContent = "Clicca sulla panoramica nel punto in cui vuoi l'icona";
+  $("docOv").style.display = "none"; $("editOv").style.display = "none";
+}
+function endPlacing(){ placingTarget = null; box.classList.remove("place"); $("banner").style.display = "none"; }
+function placeAt(x, y){
+  if(!sphere) return;
+  const ndc = new THREE.Vector2(x/innerWidth*2-1, -(y/innerHeight)*2+1);
+  const rc = new THREE.Raycaster(); rc.setFromCamera(ndc, camera);
+  const hit = rc.intersectObject(sphere)[0]; if(!hit) return;
+  const p = hit.point;
+  const nl = deg(Math.asin(p.y / p.length())), no = deg(Math.atan2(p.z, p.x));
+  const target = placingTarget;
+  endPlacing();
+  if(target === "new"){
+    const h = {id: "h" + Date.now(), lon: no, lat: nl, icon: "ℹ️", title: "", img: "", vid: "", text: ""};
+    hotspots.push(h); renderHotspots(); openEdit(h.id);
+  } else {
+    const h = hotspots.find(k => k.id === target);
+    if(h){ h.lon = no; h.lat = nl; }
+    renderHotspots(); openEdit(target);
+  }
+}
+
+/* ---------- Scheda per gli alunni ---------- */
+function ytEmbed(u){
+  const m = u.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/);
+  return m ? "https://www.youtube.com/embed/" + m[1] : null;
+}
+function openCard(h){
+  const body = $("cardBody"); body.innerHTML = "";
+  if(h.title){ const t = document.createElement("h2"); t.textContent = h.title; body.appendChild(t); }
+  if(h.img){ const i = document.createElement("img"); i.className = "pic"; i.referrerPolicy = "no-referrer"; i.src = h.img; body.appendChild(i); }
+  if(h.vid){
+    const y = ytEmbed(h.vid);
+    if(y){ const f = document.createElement("iframe"); f.src = y; f.allowFullscreen = true; body.appendChild(f); }
+    else { const v = document.createElement("video"); v.src = h.vid; v.controls = true; body.appendChild(v); }
+  }
+  (h.text || "").split("\n").filter(l => l.trim()).forEach(l => {
+    const p = document.createElement("p"); p.textContent = l;
+    if(l.length < 30 && !/[.:;]$/.test(l)) p.className = "h";
+    body.appendChild(p);
+  });
+  $("cardOv").style.display = "flex";
+}
+function closeCard(){ $("cardOv").style.display = "none"; $("cardBody").innerHTML = ""; }
+$("cardX").onclick = closeCard;
+$("cardOv").onclick = e => { if(e.target === $("cardOv")) closeCard(); };
+
+/* ---------- Area docente ---------- */
+$("bDoc").onclick = () => {
+  if(teacher){ openDoc(); return; }
+  $("pw").value = ""; $("pwErr").textContent = ""; $("loginOv").style.display = "flex"; $("pw").focus();
+};
+$("loginX").onclick = () => $("loginOv").style.display = "none";
+function tryLogin(){
+  if($("pw").value === PASSWORD){
+    teacher = true; $("loginOv").style.display = "none";
+    $("bDoc").textContent = "🛠 Area docente (attiva)"; $("bDoc").classList.add("on");
+    openDoc();
+  } else $("pwErr").textContent = "Password errata.";
+}
+$("pwOk").onclick = tryLogin;
+$("pw").addEventListener("keydown", e => { if(e.key === "Enter") tryLogin(); });
+
+function openDoc(){ refreshList(); $("docOv").style.display = "flex"; }
+$("docX").onclick = () => $("docOv").style.display = "none";
+$("dExit").onclick = () => {
+  teacher = false; $("docOv").style.display = "none";
+  $("bDoc").textContent = "🔒 Area docente"; $("bDoc").classList.remove("on");
+};
+$("dAdd").onclick = () => startPlacing("new");
+$("dSave").onclick = () => {
+  const data = hotspots.map(({el, ...rest}) => rest);
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type: "application/json"}));
+  a.download = JSON_FILE; a.click();
+};
+$("dLoad").onclick = () => $("fileIn").click();
+$("fileIn").onchange = e => {
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = () => { try { hotspots = JSON.parse(r.result); renderHotspots(); } catch(err){ alert("File non valido."); } };
+  r.readAsText(f); e.target.value = "";
+};
+function refreshList(){
+  const l = $("list"); l.innerHTML = "";
+  if(!hotspots.length){ l.textContent = "Nessuna icona."; return; }
+  hotspots.forEach(h => {
+    const d = document.createElement("div");
+    const s = document.createElement("span"); s.textContent = (h.icon || "ℹ️") + " " + (h.title || "(senza titolo)");
+    const b = document.createElement("button"); b.className = "btn"; b.style.background = "#1b5fb8"; b.textContent = "Modifica";
+    b.onclick = () => { $("docOv").style.display = "none"; openEdit(h.id); };
+    d.append(s, b); l.appendChild(d);
+  });
+}
+
+/* ---------- Modulo modifica ---------- */
+function openEdit(id){
+  const h = hotspots.find(k => k.id === id); if(!h) return;
+  editingId = id;
+  $("eIcon").value = h.icon || "ℹ️"; $("eTitle").value = h.title || "";
+  $("eImg").value = h.img || ""; $("eVid").value = h.vid || ""; $("eText").value = h.text || "";
+  $("editOv").style.display = "flex";
+}
+$("editX").onclick = () => { $("editOv").style.display = "none"; openDoc(); };
+$("eOk").onclick = () => {
+  const h = hotspots.find(k => k.id === editingId); if(!h) return;
+  h.icon = $("eIcon").value; h.title = $("eTitle").value.trim(); h.img = $("eImg").value.trim();
+  h.vid = $("eVid").value.trim(); h.text = $("eText").value;
+  $("editOv").style.display = "none"; renderHotspots(); openDoc();
+};
+$("eMove").onclick = () => startPlacing(editingId);
+$("eDel").onclick = () => {
+  if(!confirm("Eliminare questa icona?")) return;
+  hotspots = hotspots.filter(k => k.id !== editingId);
+  $("editOv").style.display = "none"; renderHotspots(); openDoc();
+};
+
+/* ---------- Avvio ---------- */
+fetch(JSON_FILE).then(r => r.ok ? r.json() : Promise.reject()).then(d => { if(Array.isArray(d)) hotspots = d; }).catch(() => {}).finally(renderHotspots);
+
+function animate(){
+  requestAnimationFrame(animate);
+  if(!dragging){ lon += velLon; lat += velLat; velLon *= 0.95; velLat *= 0.95; if(auto) lon += 0.15; }
+  lat = Math.max(-85, Math.min(85, lat));
+  const phi = rad(90 - lat), theta = rad(lon);
+  camera.lookAt(R*Math.sin(phi)*Math.cos(theta), R*Math.cos(phi), R*Math.sin(phi)*Math.sin(theta));
+  camera.updateMatrixWorld();
+  renderer.render(scene, camera);
+  updateHotspots();
+}
+animate();
+</script>
+</body>
+</html>
