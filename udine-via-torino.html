@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Udine – Via Torino a 360°</title>
+<style>
+  html,body{margin:0;height:100%;background:#111;font-family:system-ui,Arial,sans-serif;overflow:hidden}
+  #view{position:fixed;inset:0;cursor:grab;touch-action:none}
+  #view.drag{cursor:grabbing}
+  #title{position:fixed;top:12px;left:12px;color:#fff;background:rgba(0,0,0,.55);padding:8px 14px;border-radius:8px;font-size:16px}
+  #bar{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:8px}
+  #bar button{border:0;border-radius:8px;padding:10px 14px;font-size:15px;background:rgba(0,0,0,.6);color:#fff;cursor:pointer}
+  #bar button:hover{background:rgba(0,0,0,.85)}
+  #msg{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;text-align:center;padding:20px;pointer-events:none}
+  #hint{position:fixed;bottom:64px;left:50%;transform:translateX(-50%);color:#fff;background:rgba(0,0,0,.55);padding:6px 12px;border-radius:8px;font-size:14px;transition:opacity 1s}
+</style>
+</head>
+<body>
+<div id="view"></div>
+<div id="title">📍 Udine – Via Torino</div>
+<div id="msg">Caricamento immagine…</div>
+<div id="hint">Trascina con il mouse per guardarti intorno • rotellina per zoom</div>
+<div id="bar">
+  <button id="bZin" title="Zoom +">＋</button>
+  <button id="bZout" title="Zoom −">－</button>
+  <button id="bAuto">⟳ Rotazione automatica</button>
+  <button id="bFull">⛶ Schermo intero</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const IMG = "https://de-stefano.github.io/claude/udine-via-torino.jpeg";
+const box = document.getElementById("view");
+const msg = document.getElementById("msg");
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1100);
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+box.appendChild(renderer.domElement);
+
+let lon = 0, lat = 0, fov = 75, auto = false;
+let velLon = 0, velLat = 0, dragging = false, lastX = 0, lastY = 0;
+
+new THREE.TextureLoader().setCrossOrigin("anonymous").load(IMG, tex => {
+  tex.minFilter = THREE.LinearFilter;
+  const geo = new THREE.SphereGeometry(500, 80, 50);
+  geo.scale(-1, 1, 1);
+  scene.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({map: tex})));
+  msg.remove();
+  setTimeout(() => document.getElementById("hint").style.opacity = 0, 5000);
+}, undefined, () => {
+  msg.textContent = "Impossibile caricare l'immagine. Controlla il link o la connessione.";
+});
+
+function down(x, y){ dragging = true; lastX = x; lastY = y; velLon = velLat = 0; box.classList.add("drag"); }
+function move(x, y){
+  if(!dragging) return;
+  const k = fov / 700;
+  velLon = -(x - lastX) * k;
+  velLat = (y - lastY) * k;
+  lon += velLon; lat += velLat;
+  lastX = x; lastY = y;
+}
+function up(){ dragging = false; box.classList.remove("drag"); }
+
+box.addEventListener("mousedown", e => down(e.clientX, e.clientY));
+addEventListener("mousemove", e => move(e.clientX, e.clientY));
+addEventListener("mouseup", up);
+box.addEventListener("touchstart", e => { const t = e.touches[0]; down(t.clientX, t.clientY); }, {passive:true});
+box.addEventListener("touchmove", e => { const t = e.touches[0]; move(t.clientX, t.clientY); }, {passive:true});
+box.addEventListener("touchend", up);
+box.addEventListener("wheel", e => { e.preventDefault(); zoom(e.deltaY * 0.05); }, {passive:false});
+
+function zoom(d){ fov = Math.max(25, Math.min(100, fov + d)); camera.fov = fov; camera.updateProjectionMatrix(); }
+document.getElementById("bZin").onclick = () => zoom(-8);
+document.getElementById("bZout").onclick = () => zoom(8);
+document.getElementById("bAuto").onclick = e => {
+  auto = !auto;
+  e.target.style.background = auto ? "rgba(30,120,220,.9)" : "";
+};
+document.getElementById("bFull").onclick = () => {
+  if(!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+  else document.exitFullscreen?.();
+};
+addEventListener("keydown", e => {
+  const s = 4;
+  if(e.key === "ArrowLeft") lon -= s;
+  if(e.key === "ArrowRight") lon += s;
+  if(e.key === "ArrowUp") lat += s;
+  if(e.key === "ArrowDown") lat -= s;
+  if(e.key === "+") zoom(-6);
+  if(e.key === "-") zoom(6);
+});
+addEventListener("resize", () => {
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+function animate(){
+  requestAnimationFrame(animate);
+  if(!dragging){
+    lon += velLon; lat += velLat;
+    velLon *= 0.95; velLat *= 0.95;
+    if(auto) lon += 0.15;
+  }
+  lat = Math.max(-85, Math.min(85, lat));
+  const phi = THREE.MathUtils.degToRad(90 - lat);
+  const theta = THREE.MathUtils.degToRad(lon);
+  camera.lookAt(
+    500 * Math.sin(phi) * Math.cos(theta),
+    500 * Math.cos(phi),
+    500 * Math.sin(phi) * Math.sin(theta)
+  );
+  renderer.render(scene, camera);
+}
+animate();
+</script>
+</body>
+</html>
