@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Patentino del pedone e del ciclista</title>
+<style>
+:root{--blu:#1f4e79;--ver:#1e8449;--ros:#b03a2e;--gia:#f4d03f;--bg:#fdf6e3;--tx:#1b2631}
+*{box-sizing:border-box}
+body{margin:0;font-family:Verdana,Tahoma,system-ui,sans-serif;background:var(--bg);color:var(--tx);font-size:20px;line-height:1.4}
+#app{max-width:780px;margin:0 auto;padding:12px}
+h1{font-size:1.9rem;color:var(--blu);margin:.3em 0}
+h2{font-size:1.4rem;margin:.4em 0;color:var(--blu)}
+.top{display:flex;justify-content:space-between;font-weight:bold;background:#fff;border:3px solid var(--blu);border-radius:12px;padding:6px 14px}
+svg{width:100%;height:auto;display:block;border:4px solid var(--blu);border-radius:14px;background:#fff}
+.btn{font:inherit;font-weight:bold;font-size:1.15rem;padding:14px 18px;border:3px solid var(--blu);border-radius:14px;background:#fff;color:var(--blu);cursor:pointer;margin:6px 6px 6px 0}
+.btn:hover,.btn:focus-visible{background:var(--gia);outline:3px solid var(--tx)}
+.btn.go{background:var(--blu);color:#fff;font-size:1.3rem}
+.btn.f{background:var(--ver);color:#fff;border-color:var(--ver)}
+.btn.rev{background:#abebc6;animation:p 1s infinite}
+.chs{display:flex;flex-direction:column;margin-top:8px}
+.z{fill:transparent;cursor:pointer}
+.z:hover{fill:rgba(244,208,63,.4)}
+.z.f{fill:rgba(30,132,73,.35);stroke:var(--ver);stroke-width:5}
+.z.rev{fill:rgba(30,132,73,.3);stroke:var(--ver);stroke-width:5;animation:p 1s infinite}
+@keyframes p{50%{opacity:.4}}
+#fb{margin:10px 0;padding:12px 16px;border-radius:12px;min-height:3.4em;font-weight:bold;background:#fff;border:3px dashed #999}
+#fb.ok{background:#d5f5e3;border:3px solid var(--ver)}
+#fb.no{background:#fadbd8;border:3px solid var(--ros)}
+input{font:inherit;padding:10px;border:3px solid var(--blu);border-radius:10px;width:100%;max-width:360px}
+table{border-collapse:collapse;width:100%;background:#fff}
+td,th{border:2px solid var(--blu);padding:6px 10px;text-align:left}
+.stars{font-size:3rem}
+@media print{.btn,#sp{display:none}body{background:#fff}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const $=s=>document.querySelector(s);
+const PT=[10,6,3,0];
+let i=0,tr=0,found=0,done=false,res=[],name="",voice=true;
+
+/* ---------- disegni ---------- */
+const P=(x,y,c="#e67e22")=>`<g transform="translate(${x},${y})"><ellipse cy="22" rx="15" ry="4" fill="#0003"/><rect x="-8" y="2" width="6" height="18" rx="2" fill="#2c3e50"/><rect x="2" y="2" width="6" height="18" rx="2" fill="#2c3e50"/><rect x="-9" y="19" width="8" height="5" rx="2" fill="#111"/><rect x="1" y="19" width="9" height="5" rx="2" fill="#111"/><rect x="-15" y="-23" width="6" height="22" rx="3" fill="${c}"/><rect x="9" y="-23" width="6" height="22" rx="3" fill="${c}"/><rect x="-10" y="-26" width="20" height="31" rx="8" fill="${c}"/><circle cx="-12" cy="-1" r="3" fill="#f5cba7"/><circle cx="12" cy="-1" r="3" fill="#f5cba7"/><rect x="-3" y="-31" width="6" height="7" fill="#f5cba7"/><circle cy="-39" r="11" fill="#f5cba7"/><path d="M-11-41a11 11 0 0 1 22 0c-6-6-16-6-22 0z" fill="#5d4037"/><circle cx="-4" cy="-38" r="1.6" fill="#222"/><circle cx="4" cy="-38" r="1.6" fill="#222"/></g>`;
+const C=(x,y,c="#c0392b",an)=>`<g ${an?"":`transform="translate(${x},${y})"`}><ellipse cx="48" cy="37" rx="54" ry="5" fill="#0003"/><path d="M2 24V14Q2 6 12 6H22L34-10H66L80 6H86Q96 6 96 14V24Z" fill="${c}"/><path d="M37-6H49V6H28Z" fill="#aed6f1"/><path d="M53-6H64L76 6H53Z" fill="#aed6f1"/><rect x="2" y="18" width="94" height="6" fill="#0003"/><rect x="90" y="10" width="6" height="5" fill="#f9e79f"/><rect x="2" y="10" width="4" height="5" fill="#e74c3c"/><circle cx="22" cy="26" r="10" fill="#1c1c1c"/><circle cx="22" cy="26" r="4" fill="#bdc3c7"/><circle cx="72" cy="26" r="10" fill="#1c1c1c"/><circle cx="72" cy="26" r="4" fill="#bdc3c7"/>${an?`<animateTransform attributeName="transform" type="translate" from="-120 ${y}" to="680 ${y}" dur="5s" repeatCount="indefinite"/>`:""}</g>`;
+const B=(x,y,h)=>`<g transform="translate(${x},${y})"><ellipse cy="14" rx="36" ry="3" fill="#0003"/><circle cx="-18" r="13" fill="none" stroke="#222" stroke-width="3"/><circle cx="18" r="13" fill="none" stroke="#222" stroke-width="3"/><path d="M-30 0H-6M-18-12V12M30 0H6M18-12V12" stroke="#999"/><path d="M-18 0L-5-15H12L18 0M-5-15L0 0H-18M12-15L10-23" stroke="#c0392b" stroke-width="3" fill="none"/><path d="M0-16L2-34" stroke="#2980b9" stroke-width="10" stroke-linecap="round"/><path d="M2-30L14-24" stroke="#2980b9" stroke-width="5" stroke-linecap="round"/><path d="M0-14L8-2" stroke="#2c3e50" stroke-width="6" stroke-linecap="round"/><circle cx="3" cy="-44" r="9" fill="#f5cba7"/><path d="M-6-45a9 9 0 0 1 18 0z" fill="${h===0?"#5d4037":"#e74c3c"}"/></g>`;
+const L=(x,y,c)=>`<g transform="translate(${x},${y})"><rect x="-4" y="-70" width="8" height="70" fill="#7f8c8d"/><rect x="-14" y="-70" width="28" height="56" rx="8" fill="#222"/><circle cy="-56" r="8" fill="${c=="r"?"#e74c3c":"#555"}"/><circle cy="-30" r="8" fill="${c=="g"?"#2ecc71":"#555"}"/></g>`;
+const S=(x,y)=>`<g transform="translate(${x},${y})"><rect x="-3" y="24" width="6" height="52" fill="#7f8c8d"/><polygon points="-11,-26 11,-26 26,-11 26,11 11,26 -11,26 -26,11 -26,-11" fill="#c0392b" stroke="#fff" stroke-width="3"/><text y="5" font-size="12" font-weight="bold" fill="#fff" text-anchor="middle">STOP</text></g>`;
+const Z=()=>[0,1,2,3,4,5,6,7].map(k=>`<rect x="250" y="${124+k*14}" width="90" height="9" fill="#fff"/>`).join("");
+const Bd=(x,w,c)=>{let t=`<rect x="${x}" y="4" width="${w}" height="46" fill="${c}"/>`;for(let a=x+8;a<x+w-14;a+=22)t+=`<rect x="${a}" y="10" width="12" height="12" fill="#d6eaf8"/><rect x="${a}" y="30" width="12" height="12" fill="#d6eaf8"/>`;return t};
+const base=()=>`<rect width="600" height="320" fill="#d6eaf8"/>`+Bd(10,100,"#e59866")+Bd(125,80,"#f7dc6f")+Bd(220,120,"#a9cce3")+Bd(355,95,"#d7bde2")+Bd(465,125,"#f1948a")+`<rect y="50" width="600" height="70" fill="#d5d8dc"/><rect y="118" width="600" height="4" fill="#95a5a6"/><rect y="120" width="600" height="120" fill="#566573"/><path d="M0 180H600" stroke="#fff" stroke-width="4" stroke-dasharray="24 16"/><rect y="238" width="600" height="4" fill="#95a5a6"/><rect y="240" width="600" height="80" fill="#d5d8dc"/>`;
+
+/* ---------- scene ----------
+ z: [x,y,w,h,giusto,messaggio]   ch: [testo,giusto,messaggio] */
+const SCN=[
+{q:"Dove deve camminare il pedone?",v:()=>base()+P(300,285),z:[
+ [0,50,600,70,1,"Giusto! Il marciapiede è il posto sicuro per i pedoni."],
+ [0,120,600,120,0,"No: la strada è per le auto."],
+ [0,240,600,80,1,"Giusto! Il marciapiede è il posto sicuro per i pedoni."]]},
+{q:"Dove attraversi la strada?",v:()=>base()+Z()+P(110,285)+C(30,142,"#2874a6")+C(440,196,"#c0392b"),z:[
+ [250,120,90,120,1,"Giusto! Si attraversa sulle strisce pedonali."],
+ [0,120,250,120,0,"Qui non ci sono le strisce: è pericoloso."],
+ [340,120,260,120,0,"Qui non ci sono le strisce: è pericoloso."]]},
+{q:"Il semaforo è rosso. Cosa fai?",v:()=>base()+Z()+P(290,285)+L(380,305,"r")+C(0,194,"#c0392b",1),ch:[
+ ["Aspetto sul marciapiede",1,"Bravo! Rosso: le auto passano, io aspetto."],
+ ["Vado subito",0,"No: con il rosso le auto passano. Bisogna aspettare."]]},
+{q:"Il semaforo è verde per i pedoni. Cosa fai?",v:()=>base()+Z()+P(290,285)+L(380,305,"g")+C(120,194,"#c0392b")+C(450,142,"#2874a6"),ch:[
+ ["Guardo a destra e a sinistra, poi attraverso",1,"Bravo! Verde: posso andare, ma prima guardo sempre."],
+ ["Corro senza guardare",0,"No: anche con il verde si guarda e non si corre."]]},
+{q:"Dove deve andare la bicicletta?",v:()=>base()+`<rect y="206" width="600" height="34" fill="#58d68d"/><text x="300" y="231" font-size="22" text-anchor="middle">🚲 🚲 🚲</text>`+P(150,100,"#8e44ad")+P(430,100,"#16a085")+B(90,300),z:[
+ [0,206,600,34,1,"Giusto! La bici va sulla pista ciclabile."],
+ [0,50,600,70,0,"No: il marciapiede è per i pedoni."],
+ [0,120,600,86,0,"No: in mezzo alla strada ci sono le auto. Meglio la pista ciclabile."],
+ [0,240,600,80,0,"No: il marciapiede è per i pedoni."]]},
+{q:"La bici arriva a uno STOP. Cosa fai?",v:()=>base()+`<rect y="206" width="600" height="34" fill="#58d68d"/>`+B(120,222)+S(250,262)+C(0,142,"#c0392b",1),ch:[
+ ["Mi fermo allo STOP e guardo",1,"Bravo! Allo STOP ci si ferma sempre e si guarda."],
+ ["Passo veloce senza fermarmi",0,"No: lo STOP obbliga a fermarsi."],
+ ["Suono il campanello e passo",0,"No: il campanello non basta. Bisogna fermarsi."]]},
+{q:"Trova i 3 errori! Tocca chi sbaglia.",need:3,v:()=>base()+L(500,305,"r")+P(60,100,"#8e44ad")+B(340,106)+P(150,198,"#27ae60")+P(540,172,"#e67e22"),z:[
+ [128,150,44,76,1,"Giusto! Un bambino non corre in mezzo alla strada."],
+ [305,58,70,58,1,"Giusto! La bici non va sul marciapiede dei pedoni."],
+ [518,132,44,62,1,"Giusto! Con il rosso non si attraversa."],
+ [36,58,48,64,0,"Qui va bene: cammina sul marciapiede."]]}
+];
+
+/* ---------- livelli, scene extra, cartelli, docente ---------- */
+[1,1,1,1,2,2,2].forEach((l,k)=>SCN[k].lv=l);
+const DA=(x,y)=>`<g transform="translate(${x},${y})"><rect x="-3" y="24" width="6" height="52" fill="#7f8c8d"/><circle r="28" fill="#c0392b" stroke="#fff" stroke-width="3"/><rect x="-18" y="-5" width="36" height="10" fill="#fff"/></g>`;
+const bay=()=>`<rect y="206" width="600" height="34" fill="#2e86c1" opacity=".4"/>`+[0,1,2,3,4,5,6,7,8,9].map(k=>`<rect x="${k*60}" y="206" width="3" height="34" fill="#fff"/>`).join("")+`<text x="100" y="232" font-size="24" font-weight="bold" fill="#fff">P</text><text x="460" y="232" font-size="24" font-weight="bold" fill="#fff">P</text>`;
+const grass=()=>`<rect width="600" height="320" fill="#7dcea0"/>`;
+SCN.push(
+{lv:2,q:"C’è il divieto di accesso. L’auto può entrare?",v:()=>base()+DA(120,250)+C(380,196,"#2874a6"),ch:[["No, non posso entrare",1,"Giusto! Il cartello rosso con la barra bianca vieta l’accesso."],["Sì, entro piano piano",0,"No: il divieto vale per tutti, anche piano piano."]]},
+{lv:2,q:"Dove può parcheggiare l’auto?",v:()=>base()+bay()+Z()+C(30,142,"#2874a6"),z:[
+ [0,206,600,34,1,"Giusto! Si parcheggia negli spazi blu."],
+ [250,120,90,86,0,"Davanti alle strisce non si parcheggia: i pedoni non si vedono."],
+ [0,120,250,86,0,"In mezzo alla strada si blocca il traffico."],
+ [340,120,260,86,0,"In mezzo alla strada si blocca il traffico."],
+ [0,240,600,80,0,"Sul marciapiede devono stare i pedoni."],[0,50,600,70,0,"Sul marciapiede devono stare i pedoni."]]},
+{lv:3,q:"Nella rotonda, chi ha la precedenza?",v:()=>grass()+`<rect x="270" width="60" height="320" fill="#566573"/><rect y="130" width="600" height="60" fill="#566573"/><circle cx="300" cy="160" r="95" fill="#566573"/><circle cx="300" cy="160" r="95" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="14 12"/><circle cx="300" cy="160" r="48" fill="#27ae60" stroke="#fff" stroke-width="3"/><polygon points="150,95 190,95 170,125" fill="#fff" stroke="#c0392b" stroke-width="5"/>`+C(252,78,"#c0392b")+C(30,150,"#2874a6"),ch:[
+ ["Chi è già dentro la rotonda (auto rossa)",1,"Giusto! Chi entra dà la precedenza a chi è già nella rotonda."],
+ ["Chi sta entrando (auto blu)",0,"No: chi entra deve dare la precedenza."],
+ ["Chi è più veloce",0,"No: la velocità non dà la precedenza."]]},
+{lv:3,q:"Incrocio senza segnali. Quale auto passa per prima? Tocca l’auto.",v:()=>grass()+`<rect y="130" width="600" height="60" fill="#566573"/><rect x="270" width="60" height="320" fill="#566573"/><g transform="translate(536,152) scale(-1,1)">${C(0,0,"#2874a6")}</g><g transform="translate(284,300) rotate(-90)">${C(0,0,"#c0392b")}</g>`,z:[
+ [436,138,104,52,1,"Giusto! Passa prima chi arriva da destra."],
+ [268,200,60,104,0,"Questa auto deve aspettare: la precedenza è di chi arriva da destra."]]},
+{lv:3,q:"La bici deve svoltare a sinistra. Cosa fa?",v:()=>base()+B(300,215)+C(70,196,"#c0392b"),ch:[
+ ["Guardo indietro, tendo il braccio e poi svolto",1,"Bravo! Si guarda indietro e si segnala con il braccio."],
+ ["Svolto all’improvviso",0,"No: chi sta dietro non se lo aspetta."],
+ ["Svolto senza guardare",0,"No: prima si guarda sempre indietro."]]},
+{lv:3,q:"Trova i 3 errori! Tocca chi sbaglia.",need:3,v:()=>base()+`<rect y="206" width="600" height="34" fill="#58d68d"/>`+Z()+L(570,305,"r")+P(60,100,"#8e44ad")+C(235,150,"#2874a6")+P(110,192,"#27ae60")+B(430,222)+P(520,172),z:[
+ [240,136,100,52,1,"Giusto! Non si parcheggia sulle strisce."],
+ [88,150,44,64,1,"Giusto! Si attraversa solo sulle strisce."],
+ [498,132,44,62,1,"Giusto! Con il rosso non si attraversa."],
+ [36,58,48,64,0,"Qui va bene: cammina sul marciapiede."],
+ [390,176,80,60,0,"Qui va bene: la bici è sulla pista ciclabile."]]},
+{lv:1,q:"Chi va in bici in modo sicuro? Tocca il ciclista.",v:()=>base()+`<rect y="206" width="600" height="34" fill="#58d68d"/>`+B(170,222)+B(430,222,0),z:[
+ [135,170,80,64,1,"Giusto! Il casco protegge la testa."],
+ [395,170,80,64,0,"No: senza casco la testa non è protetta."]]},
+{lv:2,q:"Il semaforo è rosso. Cosa fa il ciclista?",v:()=>base()+Z()+L(390,305,"r")+B(290,285)+C(0,194,"#c0392b",1),ch:[
+ ["Si ferma e aspetta il verde",1,"Bravo! Anche chi va in bici si ferma al rosso."],
+ ["Passa lo stesso",0,"No: il semaforo rosso vale anche per le bici."]]},
+{lv:2,q:"Tocca chi si comporta in modo sbagliato.",v:()=>base()+Z()+P(290,185)+`<rect x="298" y="168" width="9" height="15" rx="2" fill="#111"/>`+P(80,285,"#16a085")+C(0,196,"#c0392b",1),z:[
+ [266,142,48,70,1,"Giusto! Mentre si attraversa si guarda la strada, non il telefonino."],
+ [58,240,44,70,0,"Lui aspetta e guarda la strada: bravo."]]},
+{lv:3,q:"Tocca i ciclisti che vanno nel modo giusto.",v:()=>base()+B(70,222)+B(150,222)+B(450,200)+B(450,230),z:[
+ [20,176,170,64,1,"Giusto! In strada si va in fila, uno dietro l’altro."],
+ [410,150,80,100,0,"No: uno accanto all’altro occupano troppo spazio."]]},
+{lv:4,q:"I due ciclisti vanno uno accanto all’altro. È giusto?",v:()=>base()+B(270,200)+B(270,232)+C(60,150,"#c0392b"),ch:[
+ ["No: bisogna andare in fila",1,"Giusto! In fila le auto possono passare in sicurezza."],
+ ["Sì: così chiacchierano",0,"No: appaiati occupano la strada e sono pericolosi."]]},
+{lv:4,q:"Un bambino gioca con la palla vicino alla strada. Cosa è giusto?",v:()=>base()+P(150,100,"#27ae60")+`<circle cx="190" cy="126" r="8" fill="#fff" stroke="#222" stroke-width="2"/>`+C(0,196,"#c0392b",1),ch:[
+ ["Gioco lontano dalla strada, nel parco",1,"Bravo! Con la palla si gioca lontano dalle auto."],
+ ["Gioco sul marciapiede vicino alle auto",0,"No: la palla può finire in strada."],
+ ["Corro in strada a prendere la palla",0,"No: è molto pericoloso. Prima si chiede aiuto a un adulto."]]},
+{lv:4,q:"Arriva un’ambulanza con la sirena. Cosa fa l’auto?",v:()=>base()+C(350,196,"#2874a6")+C(60,150,"#fdfefe")+`<rect x="104" y="158" width="8" height="16" fill="#c0392b"/><rect x="100" y="162" width="16" height="8" fill="#c0392b"/><rect x="100" y="132" width="16" height="6" fill="#3498db"><animate attributeName="fill" values="#3498db;#e74c3c;#3498db" dur=".6s" repeatCount="indefinite"/></rect>`,ch:[
+ ["Si ferma a destra e la lascia passare",1,"Giusto! L’ambulanza ha la precedenza: bisogna farla passare."],
+ ["Accelera",0,"No: bisogna fermarsi e lasciare passare l’ambulanza."],
+ ["Resta in mezzo alla strada",0,"No: si deve spostare a destra per far passare l’ambulanza."]]}
+);
+const SGN=[
+["STOP",()=>`<polygon points="263,60 337,60 390,113 390,187 337,240 263,240 210,187 210,113" fill="#c0392b" stroke="#fff" stroke-width="6"/><text x="300" y="165" font-size="44" font-weight="bold" fill="#fff" text-anchor="middle">STOP</text>`,"bisogna fermarsi sempre."],
+["Dai la precedenza",()=>`<polygon points="200,70 400,70 300,240" fill="#fff" stroke="#c0392b" stroke-width="18" stroke-linejoin="round"/>`,"si lascia passare chi ha la precedenza."],
+["Divieto di accesso",()=>`<circle cx="300" cy="150" r="88" fill="#c0392b"/><rect x="235" y="138" width="130" height="24" fill="#fff"/>`,"non si può entrare."],
+["Pista ciclabile",()=>`<circle cx="300" cy="150" r="88" fill="#1f5fa8"/><text x="300" y="185" font-size="90" text-anchor="middle">🚲</text>`,"qui possono passare le biciclette."],
+["Attraversamento pedonale",()=>`<rect x="210" y="65" width="180" height="170" rx="14" fill="#1f5fa8"/><polygon points="300,80 370,210 230,210" fill="#fff"/><text x="300" y="195" font-size="70" text-anchor="middle">🚶</text>`,"qui i pedoni attraversano."],
+["Parcheggio",()=>`<rect x="210" y="65" width="180" height="170" rx="14" fill="#1f5fa8"/><text x="300" y="190" font-size="130" font-weight="bold" fill="#fff" text-anchor="middle">P</text>`,"qui si può parcheggiare."],
+["Divieto di fermata",()=>`<circle cx="300" cy="150" r="88" fill="#1f5fa8"/><circle cx="300" cy="150" r="82" fill="none" stroke="#c0392b" stroke-width="14"/><path d="M245 95L355 205M355 95L245 205" stroke="#c0392b" stroke-width="14"/>`,"qui non ci si può fermare, nemmeno un momento."],
+["Limite di velocità 30 km/h",()=>`<circle cx="300" cy="150" r="88" fill="#fff" stroke="#c0392b" stroke-width="16"/><text x="300" y="180" font-size="80" font-weight="bold" fill="#111" text-anchor="middle">30</text>`,"non si va più veloci di 30 all’ora."],
+["Senso unico",()=>`<rect x="190" y="95" width="220" height="110" rx="12" fill="#1f5fa8"/><path d="M225 150H365M335 125L370 150L335 175" stroke="#fff" stroke-width="16" fill="none" stroke-linejoin="round"/>`,"si va in una sola direzione."],
+["Divieto per le bici",()=>`<circle cx="300" cy="150" r="88" fill="#fff" stroke="#c0392b" stroke-width="16"/><text x="300" y="180" font-size="80" text-anchor="middle">🚲</text><path d="M240 210L360 90" stroke="#c0392b" stroke-width="12"/>`,"qui le biciclette non possono passare."],
+["Corsia per i bus",()=>`<rect x="190" y="80" width="220" height="140" rx="12" fill="#1f5fa8"/><text x="300" y="165" font-size="80" text-anchor="middle">🚌</text><text x="300" y="205" font-size="26" font-weight="bold" fill="#fff" text-anchor="middle">BUS</text>`,"questa corsia è solo per gli autobus."],
+["Divieto di sosta",()=>`<circle cx="300" cy="150" r="88" fill="#1f5fa8"/><circle cx="300" cy="150" r="82" fill="none" stroke="#c0392b" stroke-width="14"/><path d="M245 205L355 95" stroke="#c0392b" stroke-width="14"/>`,"qui non si può parcheggiare."],
+["Parcheggio riservato ai disabili",()=>`<rect x="190" y="65" width="220" height="170" rx="14" fill="#1f5fa8"/><text x="265" y="180" font-size="100" font-weight="bold" fill="#fff" text-anchor="middle">P</text><text x="345" y="175" font-size="70" text-anchor="middle">♿</text>`,"questi posti sono riservati a chi ha bisogno."],
+["Parcheggio per donne in attesa",()=>`<rect x="190" y="65" width="220" height="170" rx="14" fill="#1f5fa8"/><text x="265" y="180" font-size="100" font-weight="bold" fill="#fff" text-anchor="middle">P</text><text x="345" y="175" font-size="70" text-anchor="middle">🤰</text>`,"questi posti sono riservati alle mamme in attesa."],
+["Fermata del bus",()=>`<rect x="190" y="70" width="220" height="160" rx="12" fill="#f4d03f" stroke="#222" stroke-width="5"/><text x="300" y="150" font-size="70" text-anchor="middle">🚌</text><text x="300" y="205" font-size="30" font-weight="bold" fill="#222" text-anchor="middle">FERMATA</text>`,"qui si aspetta l’autobus."],
+["Divieto di svolta a sinistra",()=>`<circle cx="300" cy="150" r="88" fill="#fff" stroke="#c0392b" stroke-width="16"/><path d="M315 205V140H255M280 115L252 140L280 165" stroke="#111" stroke-width="14" fill="none" stroke-linejoin="round"/><path d="M240 210L360 90" stroke="#c0392b" stroke-width="12"/>`,"qui non si può svoltare a sinistra."]];
+const ALL=[...SCN.map(x=>({...x,t:"s"})),...SGN.map((x,k)=>({t:"c",lv:k<8?1:2,k,q:"Che cartello è questo?",v:()=>`<rect width="600" height="320" fill="#eaf2f8"/>`+x[1]()}))];
+ALL.forEach(x=>x.id=x.t+":"+x.lv+":"+(x.t=="c"?SGN[x.k][0]:x.q));
+let SC=[],groups=[],gi=0,all=[],sel=null;
+try{const v=JSON.parse(localStorage.getItem("ps_sel"));if(v&&v.every(a=>typeof a=="string"))sel=new Set(v)}catch(e){}
+function start(){
+ all=[];res=[];$("#app").onclick=null;
+ $("#app").innerHTML=`<h1>🚦 Patentino del pedone e del ciclista</h1>
+ <p>Guarda le immagini e scegli come ci si comporta in strada. Ogni risposta giusta dà punti!</p>
+ <p><label>Come ti chiami?<br><input id="nm" value="${name}" autocomplete="off"></label></p>
+ <p><label><input type="checkbox" id="vc" ${voice?"checked":""} style="width:auto"> Leggi le domande ad alta voce</label></p>
+ ${sel?`<p>Il docente ha scelto ${sel.size} attività.</p>`:""}
+ <button class="btn go" id="b1">🚦 Gioco delle scene</button>
+ <button class="btn go" id="b2">🪧 Gioco dei cartelli</button><br>
+ <button class="btn" id="b3">🔒 Area docente</button>${location.protocol=="file:"?"":`<button class="btn" id="b4">⬇️ Scarica l’app</button>`}`;
+ $("#b1").onclick=()=>play("s");$("#b2").onclick=()=>play("c");$("#b3").onclick=teacher;if($("#b4"))$("#b4").onclick=scarica;
+}
+async function scarica(){
+ try{
+  const t=await (await fetch(location.href.split("#")[0])).text();
+  let n=decodeURIComponent(location.pathname.split("/").pop());
+  if(!/\.html?$/i.test(n))n="patentino-strada.html";
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([t],{type:"text/html"}));
+  a.download=n;a.click();
+ }catch(e){alert("Non riesco a scaricare l’app ora. Controlla la connessione e riprova.")}
+}
+function play(t){
+ const l=ALL.filter(x=>x.t==t&&(!sel||sel.has(x.id)));
+ if(!l.length){alert("Nessuna attività selezionata dal docente.");return}
+ name=$("#nm").value.trim();voice=$("#vc").checked;
+ groups=[...new Set(l.map(x=>x.lv))].sort().map(v=>l.filter(x=>x.lv==v));gi=0;begin();
+}
+function begin(){SC=groups[gi];i=0;res=[];show()}
+function grp(){
+ const p=res.reduce((a,r)=>a+r.p,0),m=SC.length*10,pass=p>=m*.6;
+ if(gi==groups.length-1){all.push(...res);res=[];end();return}
+ $("#app").onclick=null;
+ $("#app").innerHTML=`<h1>${pass?"🎉 Livello superato!":"💪 Quasi!"}</h1><h2>${p} punti su ${m}</h2><p>${pass?"Bravo! Ora le domande sono un po’ più difficili.":"Per passare servono almeno "+Math.ceil(m*.6)+" punti. Riprova!"}</p>`+(pass?`<button class="btn go" id="g1">Livello ${groups[gi+1][0].lv} ▶</button>`:`<button class="btn go" id="g1">Riprova il livello ↺</button><button class="btn" id="g2">Finisci qui</button>`);
+ $("#g1").onclick=()=>{if(pass){all.push(...res);gi++}begin()};
+ if(!pass)$("#g2").onclick=()=>{all.push(...res);res=[];end()};
+ say(pass?"Livello superato!":"Riprova il livello.");
+}
+function teacher(){
+ $("#app").innerHTML=`<h1>🔒 Area docente</h1><p><input type="password" id="pw" placeholder="Password"> <button class="btn go" id="ok">Entra</button></p><p id="er"></p><button class="btn" onclick="start()">← Indietro</button>`;
+ $("#ok").onclick=()=>{if($("#pw").value!=="doc2026"){$("#er").textContent="Password errata.";return}panel()};
+}
+function panel(){
+ const row=x=>`<label style="display:block"><input type="checkbox" class="ck" value="${x.id}" ${!sel||sel.has(x.id)?"checked":""} style="width:auto"> ${x.t=="c"?"Cartello: "+SGN[x.k][0]:"Livello "+x.lv+" – "+x.q}</label>`;
+ $("#app").innerHTML=`<h1>Scegli le attività</h1><p>Le attività spuntate saranno proposte agli alunni di questo dispositivo.</p>${ALL.map(row).join("")}
+ <p><button class="btn" id="ta">Tutte</button><button class="btn" id="tn">Nessuna</button><button class="btn go" id="sv">Salva e torna</button></p><p><button class="btn" id="ex">💾 Scarica impostazioni (.json)</button><label class="btn" style="display:inline-block">📂 Carica impostazioni<input type="file" id="im" accept=".json,application/json" hidden></label></p><p id="ms"></p>`;
+ const ck=v=>document.querySelectorAll(".ck").forEach(e=>e.checked=v);
+ $("#ta").onclick=()=>ck(true);$("#tn").onclick=()=>ck(false);
+ const cur=()=>[...document.querySelectorAll(".ck:checked")].map(e=>e.value);
+ $("#ex").onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify({app:"patentino-strada",selezione:cur().length==ALL.length?null:cur()},null,1)],{type:"application/json"}));a.download="impostazioni-patentino.json";a.click()};
+ $("#im").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(d.app!=="patentino-strada")throw 0;const S=d.selezione?new Set(d.selezione):null;document.querySelectorAll(".ck").forEach(c=>c.checked=!S||S.has(c.value));$("#ms").textContent="Impostazioni caricate. Premi «Salva e torna» per applicarle."}catch(x){$("#ms").textContent="File non valido."}};r.readAsText(f)};
+ $("#sv").onclick=()=>{const v=[...document.querySelectorAll(".ck:checked")].map(e=>e.value);sel=v.length==ALL.length?null:new Set(v);try{localStorage.setItem("ps_sel",JSON.stringify(sel?[...sel]:null))}catch(e){}start()};
+}
+
+/* ---------- voce e suoni ---------- */
+function say(t){if(!voice||!window.speechSynthesis)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang="it-IT";u.rate=.9;speechSynthesis.speak(u)}
+function beep(ok){try{const a=new(window.AudioContext||window.webkitAudioContext)(),o=a.createOscillator(),g=a.createGain();o.connect(g);g.connect(a.destination);o.frequency.value=ok?760:200;g.gain.value=.1;o.start();o.stop(a.currentTime+(ok?.25:.35))}catch(e){}}
+const tot=()=>[...all,...res].reduce((s,r)=>s+(r?r.p:0),0);
+const okOf=(s,k)=>s.z?s.z[k][4]:s.ch[k][1];
+
+/* ---------- schermate ---------- */
+function show(){
+ const s=SC[i];tr=0;found=0;done=false;
+ if(s.k!=null){const o=SGN.map((x,m)=>m).filter(m=>m!=s.k).sort(()=>Math.random()-.5).slice(0,3);s.ch=[[SGN[s.k][0],1,"Giusto! "+SGN[s.k][2]],...o.map(m=>[SGN[m][0],0,"No. Questo cartello è «"+SGN[s.k][0]+"»: "+SGN[s.k][2]])].sort(()=>Math.random()-.5)}
+ const zones=s.z?s.z.map((z,k)=>`<rect class="z it" data-k="${k}" x="${z[0]}" y="${z[1]}" width="${z[2]}" height="${z[3]}"/>`).join(""):"";
+ const chs=s.ch?`<div class="chs">${s.ch.map((c,k)=>`<button class="btn it" data-k="${k}">${c[0]}</button>`).join("")}</div>`:"";
+ $("#app").innerHTML=`<div class="top"><span>${SC[0].t=="c"?"Cartello":"Livello "+SC[0].lv} · ${i+1} di ${SC.length}</span><span>⭐ ${tot()} punti</span></div>
+ <h2>${s.q} <button class="btn" id="sp" aria-label="Leggi la domanda">🔊</button></h2>
+ <svg viewBox="0 0 600 320" role="img" aria-label="${s.q}">${s.v()}${zones}</svg>${chs}
+ <div id="fb" aria-live="polite">${s.z?"Tocca il punto giusto nel disegno.":"Scegli la risposta."}</div><div id="nx"></div>`;
+ $("#sp").onclick=()=>{const v=voice;voice=true;say(s.q);voice=v};
+ $("#app").onclick=e=>{const t=e.target.closest(".it");if(t&&!done)pick(t)};
+ say(s.q);
+}
+function fb(m,g){const f=$("#fb");f.textContent=m;f.className=g?"ok":"no";say(m)}
+function pick(t){
+ const s=SC[i],k=+t.dataset.k;
+ if(t.classList.contains("f"))return;
+ const a=s.z?s.z[k]:s.ch[k],ok=okOf(s,k),m=s.z?a[5]:a[2];
+ if(ok){
+  t.classList.add("f");found++;beep(1);
+  if(found>=(s.need||1))fin(PT[Math.min(tr,3)],m,true);
+  else fb(m+" Ne manca ancora qualcuno!",true);
+ }else{
+  tr++;beep(0);
+  if(tr>=(s.need?3:2)){
+   document.querySelectorAll(".it").forEach(e=>{if(okOf(s,+e.dataset.k)&&!e.classList.contains("f"))e.classList.add("rev")});
+   fin(0,m+" Guarda: la risposta giusta è evidenziata in verde.",false);
+  }else fb(m+" Riprova!",false);
+ }
+}
+function fin(p,m,g){
+ done=true;res[i]={q:SC[i].q,p,tr};
+ fb(m+(g?" +"+p+" punti":""),g);
+ $("#nx").innerHTML=`<button class="btn go" id="nb">${i<SC.length-1?"Avanti ▶":"Continua ▶"}</button>`;
+ $("#nb").onclick=()=>{i++;i<SC.length?show():grp()};
+ $("#nb").focus();
+}
+function end(){
+ const t=tot(),mx=all.length*10,st=t>=mx*.85?3:t>=mx*.55?2:1;
+ $("#app").onclick=null;
+ $("#app").innerHTML=`<h1>🏆 Patentino di ${name||"pedone e ciclista"}</h1>
+ <div class="stars">${"⭐".repeat(st)}${"☆".repeat(3-st)}</div>
+ <h2>${t} punti su ${mx}</h2>
+ <p>${st==3?"Bravissimo! Sei un esperto della strada.":st==2?"Bene! Ancora un po’ di allenamento.":"Hai iniziato bene. Riprova per migliorare!"}</p>
+ <table><tr><th>Scena</th><th>Errori</th><th>Punti</th></tr>${all.map(r=>`<tr><td>${r.q}</td><td>${r.tr}</td><td>${r.p}</td></tr>`).join("")}</table>
+ <p>Data: ${new Date().toLocaleDateString("it-IT")}</p>
+ <button class="btn go" onclick="window.print()">🖨️ Stampa il report</button>
+ <button class="btn" onclick="start()">↺ Gioca ancora</button>`;
+ say("Hai finito! Hai fatto "+t+" punti.");
+}
+start();
+</script>
+</body>
+</html>
