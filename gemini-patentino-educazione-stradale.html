@@ -1,0 +1,2205 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patentino del Bravo Cittadino - Educazione Stradale</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(135deg, #e0f2fe 0%, #fef9c3 50%, #dcfce7 100%);
+            min-height: 100vh;
+            user-select: none;
+        }
+        h1, h2, h3, .font-display {
+            font-family: 'Fredoka', sans-serif;
+        }
+        .btn-bounce {
+            transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s ease;
+        }
+        .btn-bounce:hover:not(:disabled) {
+            transform: translateY(-3px) scale(1.01);
+        }
+        .btn-bounce:active:not(:disabled) {
+            transform: translateY(2px) scale(0.98);
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-6px); }
+        }
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes popIn {
+            0% { opacity: 0; transform: scale(0.9) translateY(10px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .pop-in {
+            animation: popIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            border-radius: 1rem;
+        }
+        /* Stili per la stampa del diploma finale */
+        @media print {
+            body { background: white !important; }
+            .no-print { display: none !important; }
+            #screen-result { box-shadow: none !important; border: 2px solid #cbd5e1 !important; }
+        }
+    </style>
+</head>
+<body class="text-slate-800 flex flex-col items-center justify-center p-3 sm:p-6">
+
+    <!-- Contenitore Principale -->
+    <div class="w-full max-w-4xl bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border-4 border-sky-300 overflow-hidden">
+        
+        <!-- Header Fisso -->
+        <header class="bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-500 text-white px-4 py-3 sm:px-6 sm:py-4 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-3">
+                <div class="bg-white text-blue-600 w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center text-2xl sm:text-3xl shadow-md">
+                    🚦
+                </div>
+                <div>
+                    <h1 class="text-lg sm:text-2xl font-bold leading-tight tracking-wide">Patentino del Bravo Cittadino</h1>
+                    <p class="text-xs sm:text-sm text-sky-100 font-semibold">Impariamo a muoverci sicuri per strada!</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 sm:gap-3">
+                <!-- Info Alunno attiva durante il gioco -->
+                <div id="header-student-badge" class="hidden bg-white/20 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold backdrop-blur-sm">
+                    👤 <span id="badge-name"></span> (<span id="badge-class"></span>) • <span id="badge-session" class="text-amber-200">Partita #1</span>
+                </div>
+                <!-- Timer live -->
+                <div id="header-timer" class="hidden bg-amber-400 text-slate-900 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold shadow-sm">
+                    ⏱️ <span id="timer-display">00:00</span>
+                </div>
+                <!-- Pulsante Audio -->
+                <button id="btn-sound" onclick="toggleSound()" title="Attiva/Disattiva suoni" class="no-print bg-white/20 hover:bg-white/30 p-2 rounded-xl text-lg sm:text-xl transition">
+                    🔊
+                </button>
+            </div>
+        </header>
+
+        <!-- ==================== SCHERMATA 1: REGISTRAZIONE ALUNNO ==================== -->
+        <section id="screen-start" class="p-6 sm:p-10 pop-in">
+            <div class="text-center max-w-2xl mx-auto mb-6">
+                <div class="inline-flex items-center justify-center gap-3 text-4xl sm:text-5xl mb-3 animate-float">
+                    <span>🚶‍♂️</span><span>🚲</span><span>🚗</span><span>🛑</span>
+                </div>
+                <h2 class="text-2xl sm:text-3xl font-bold text-slate-800 mb-2">Benvenuto piccolo esploratore della strada!</h2>
+                <p class="text-slate-600 text-base sm:text-lg">
+                    Osserva attentamente le <strong>12 scenette animate</strong> divise in <strong>3 livelli</strong> e rispondi alle domande per conquistare il tuo Patentino!
+                </p>
+            </div>
+
+            <!-- Anteprima dei 3 livelli -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
+                <div class="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-3 text-center">
+                    <div class="text-2xl mb-1">🚶‍♀️</div>
+                    <div class="font-display font-bold text-emerald-800">Livello 1</div>
+                    <div class="text-xs font-bold text-emerald-600">Il Pedone Attento</div>
+                </div>
+                <div class="bg-amber-50 border-2 border-amber-200 rounded-2xl p-3 text-center">
+                    <div class="text-2xl mb-1">🚴‍♂️</div>
+                    <div class="font-display font-bold text-amber-800">Livello 2</div>
+                    <div class="text-xs font-bold text-amber-600">Il Ciclista Prudente</div>
+                </div>
+                <div class="bg-purple-50 border-2 border-purple-200 rounded-2xl p-3 text-center">
+                    <div class="text-2xl mb-1">🚸</div>
+                    <div class="font-display font-bold text-purple-800">Livello 3</div>
+                    <div class="text-xs font-bold text-purple-600">Esperto dei Segnali</div>
+                </div>
+            </div>
+
+            <!-- Form Scheda Alunno -->
+            <form id="student-form" onsubmit="startGame(event)" class="max-w-lg mx-auto bg-sky-50/80 border-2 border-sky-200 rounded-3xl p-5 sm:p-7 shadow-inner">
+                <h3 class="text-xl font-bold text-sky-900 mb-4 flex items-center gap-2">
+                    <span>📝</span> Compila la tua scheda prima di partire
+                </h3>
+
+                <div class="space-y-4">
+                    <div>
+                        <label for="input-nome" class="block text-sm font-extrabold text-slate-700 mb-1">Nome *</label>
+                        <input type="text" id="input-nome" required placeholder="Es. Marco" maxlength="30"
+                            class="w-full px-4 py-3 rounded-2xl border-2 border-sky-300 focus:border-blue-500 focus:outline-none text-lg font-bold bg-white">
+                    </div>
+
+                    <div>
+                        <label for="input-cognome" class="block text-sm font-extrabold text-slate-700 mb-1">Cognome *</label>
+                        <input type="text" id="input-cognome" required placeholder="Es. Rossi" maxlength="30"
+                            class="w-full px-4 py-3 rounded-2xl border-2 border-sky-300 focus:border-blue-500 focus:outline-none text-lg font-bold bg-white">
+                    </div>
+
+                    <div>
+                        <label for="input-classe" class="block text-sm font-extrabold text-slate-700 mb-1">Classe *</label>
+                        <input type="text" id="input-classe" required placeholder="Es. 3ª A" maxlength="15"
+                            class="w-full px-4 py-3 rounded-2xl border-2 border-sky-300 focus:border-blue-500 focus:outline-none text-lg font-bold bg-white">
+                    </div>
+                </div>
+
+                <!-- Messaggio di errore personalizzato (no alert) -->
+                <div id="form-error" class="hidden mt-3 p-3 bg-rose-100 border border-rose-300 text-rose-800 rounded-xl text-sm font-bold">
+                    ⚠️ Per favore inserisci Nome, Cognome e Classe per iniziare!
+                </div>
+
+                <button type="submit" class="mt-6 w-full btn-bounce bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-display text-xl sm:text-2xl font-bold py-4 px-6 rounded-2xl shadow-lg shadow-emerald-200 flex items-center justify-center gap-3">
+                    <span>🚀</span> Inizia il Gioco!
+                </button>
+            </form>
+        </section>
+
+        <!-- ==================== SCHERMATA 2: GIOCO E SCENETTE ANIMATE ==================== -->
+        <section id="screen-game" class="hidden p-4 sm:p-6">
+            <!-- Barra Progresso e Stato Livello -->
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3 bg-slate-100 p-3 rounded-2xl border border-slate-200">
+                <div class="flex items-center gap-2">
+                    <span id="level-badge" class="px-3 py-1 rounded-xl text-xs sm:text-sm font-extrabold bg-emerald-500 text-white shadow-sm">
+                        Livello 1: Pedone Attento
+                    </span>
+                    <span class="text-sm sm:text-base font-extrabold text-slate-700">
+                        Scena <span id="q-current">1</span> di <span id="q-total">12</span>
+                    </span>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <div class="bg-amber-100 border border-amber-300 px-3 py-1 rounded-xl text-sm font-extrabold text-amber-800">
+                        ⭐ Punti: <span id="score-display">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Barra avanzamento visuale -->
+            <div class="w-full bg-slate-200 h-3 rounded-full overflow-hidden mb-4">
+                <div id="progress-bar" class="bg-gradient-to-r from-sky-400 to-emerald-500 h-full transition-all duration-500" style="width: 8%"></div>
+            </div>
+
+            <!-- Titolo Scenetta -->
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                <h2 id="scene-title" class="text-lg sm:text-2xl font-bold text-slate-800">
+                    Osserva cosa succede...
+                </h2>
+                <button id="btn-replay" onclick="replayScene()" class="btn-bounce bg-sky-100 hover:bg-sky-200 text-sky-800 border-2 border-sky-300 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold flex items-center gap-1.5">
+                    🔄 Rivedi scenetta
+                </button>
+            </div>
+
+            <!-- Area Canvas Animata -->
+            <div class="relative w-full aspect-[16/9] max-h-[360px] bg-slate-800 rounded-2xl overflow-hidden shadow-lg border-4 border-slate-300 mb-4">
+                <canvas id="scene-canvas"></canvas>
+                
+                <!-- Badge stato animazione -->
+                <div id="anim-status-pill" class="absolute top-3 left-3 bg-slate-900/75 text-white px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
+                    <span id="anim-status-text">Animazione in corso... Guarda bene!</span>
+                </div>
+
+                <!-- Pulsante rapido salta animazione se l'alunno ha già capito -->
+                <button id="btn-skip-anim" onclick="finishAnimationEarly()" class="absolute bottom-3 right-3 bg-white/90 hover:bg-white text-slate-800 px-3 py-1.5 rounded-xl text-xs font-extrabold shadow-md transition">
+                    ⏭️ Vai alla domanda
+                </button>
+            </div>
+
+            <!-- Box Domanda e Opzioni (appare a fine animazione) -->
+            <div id="question-box" class="hidden pop-in bg-sky-50 border-2 border-sky-200 rounded-2xl p-4 sm:p-5">
+                <p id="question-text" class="text-lg sm:text-xl font-extrabold text-slate-800 mb-4">
+                    Domanda qui?
+                </p>
+
+                <div id="options-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <!-- Bottoni opzioni generati dinamicamente -->
+                </div>
+            </div>
+
+            <!-- Box Feedback dopo la risposta -->
+            <div id="feedback-box" class="hidden pop-in mt-4 rounded-2xl p-4 sm:p-5 border-2">
+                <div class="flex items-start gap-3">
+                    <div id="feedback-icon" class="text-3xl sm:text-4xl">✅</div>
+                    <div class="flex-1">
+                        <h4 id="feedback-title" class="text-lg sm:text-xl font-extrabold mb-1">Ottimo lavoro!</h4>
+                        <p id="feedback-explanation" class="text-sm sm:text-base font-semibold leading-relaxed"></p>
+                    </div>
+                </div>
+                <div class="mt-4 flex justify-end">
+                    <button id="btn-next" onclick="nextQuestion()" class="btn-bounce bg-blue-600 hover:bg-blue-700 text-white font-display text-lg font-bold px-6 py-3 rounded-2xl shadow-md flex items-center gap-2">
+                        <span>Prossima Scenetta</span> <span>➡️</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== SCHERMATA 3: RIEPILOGO E DOWNLOAD REPORT ==================== -->
+        <section id="screen-result" class="hidden p-5 sm:p-8 pop-in">
+            <div class="text-center mb-6">
+                <div id="final-trophy" class="text-6xl sm:text-7xl mb-2 animate-float">🏆</div>
+                <h2 class="text-2xl sm:text-4xl font-bold text-slate-800 mb-1">Complimenti, <span id="res-fullname" class="text-blue-600"></span>!</h2>
+                <p id="res-subtitle" class="text-base sm:text-lg font-bold text-slate-600">Hai completato il percorso di Educazione Stradale!</p>
+            </div>
+
+            <!-- Card Riepilogo Dati -->
+            <div class="bg-gradient-to-br from-sky-50 via-white to-amber-50 border-2 border-sky-200 rounded-3xl p-5 sm:p-6 mb-6 shadow-sm">
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center mb-5">
+                    <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs">
+                        <div class="text-xs font-bold text-slate-500 uppercase">Alunno / Classe</div>
+                        <div class="text-sm sm:text-base font-extrabold text-slate-800 mt-1" id="res-student-info">-</div>
+                    </div>
+                    <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs">
+                        <div class="text-xs font-bold text-slate-500 uppercase">Punteggio</div>
+                        <div class="text-lg sm:text-xl font-extrabold text-emerald-600 mt-0.5" id="res-score">0 / 12</div>
+                    </div>
+                    <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs">
+                        <div class="text-xs font-bold text-slate-500 uppercase">Tempo Impiegato</div>
+                        <div class="text-sm sm:text-base font-extrabold text-blue-600 mt-1" id="res-duration">-</div>
+                    </div>
+                    <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs">
+                        <div class="text-xs font-bold text-slate-500 uppercase">Data</div>
+                        <div class="text-sm sm:text-base font-extrabold text-slate-800 mt-1" id="res-date">-</div>
+                    </div>
+                </div>
+
+                <!-- Punteggio per Livello -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                    <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-center justify-between">
+                        <span class="text-xs font-extrabold text-emerald-800">🚶‍♂️ Liv. 1 Pedone</span>
+                        <span id="res-lvl1" class="font-extrabold text-emerald-700">0/4</span>
+                    </div>
+                    <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center justify-between">
+                        <span class="text-xs font-extrabold text-amber-800">🚴‍♂️ Liv. 2 Ciclista</span>
+                        <span id="res-lvl2" class="font-extrabold text-amber-700">0/4</span>
+                    </div>
+                    <div class="bg-purple-50 border border-purple-200 rounded-xl p-3 flex items-center justify-between">
+                        <span class="text-xs font-extrabold text-purple-800">🚸 Liv. 3 Segnali</span>
+                        <span id="res-lvl3" class="font-extrabold text-purple-700">0/4</span>
+                    </div>
+                </div>
+
+                <!-- Tabella Dettaglio Risposte -->
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                    <h3 class="text-base font-extrabold text-slate-700">📋 Dettaglio delle risposte (Ultima Partita):</h3>
+                    <span id="res-session-count-badge" class="hidden bg-indigo-100 text-indigo-800 border border-indigo-300 px-3 py-0.5 rounded-full text-xs font-extrabold">
+                        Sessioni registrate: 1
+                    </span>
+                </div>
+                <div class="max-h-64 overflow-y-auto border border-slate-200 rounded-2xl bg-white mb-4">
+                    <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                        <thead class="bg-slate-100 sticky top-0 text-slate-700">
+                            <tr>
+                                <th class="p-2.5 font-extrabold">#</th>
+                                <th class="p-2.5 font-extrabold">Titolo Scenetta e Argomento</th>
+                                <th class="p-2.5 font-extrabold">La tua risposta</th>
+                                <th class="p-2.5 font-extrabold text-center">Esito</th>
+                            </tr>
+                        </thead>
+                        <tbody id="res-table-body" class="divide-y divide-slate-100">
+                            <!-- Righe generate via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Sezione Storico e Confronto Multi-Partita (visibile se >= 2 partite) -->
+                <div id="multi-session-container" class="hidden mt-5 pt-4 border-t-2 border-dashed border-sky-200">
+                    <h3 class="text-base font-extrabold text-indigo-900 mb-2 flex items-center gap-2">
+                        <span>📊</span> Confronto tra tutte le partite giocate (<span id="total-sessions-num">2</span> sessioni)
+                    </h3>
+                    <div id="sessions-summary-cards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 mb-3">
+                        <!-- Card riassuntive per ogni partita -->
+                    </div>
+                    <div class="max-h-64 overflow-y-auto border border-indigo-200 rounded-2xl bg-white">
+                        <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                            <thead id="compare-table-head" class="bg-indigo-50 sticky top-0 text-indigo-900">
+                                <!-- Intestazioni dinamiche Partita 1, Partita 2... -->
+                            </thead>
+                            <tbody id="compare-table-body" class="divide-y divide-slate-100">
+                                <!-- Righe comparative per titolo scenetta -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pulsanti Azione Finale -->
+            <div class="no-print flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+                <button onclick="playAgainSameStudent()" class="btn-bounce bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-display text-lg font-bold px-6 py-3.5 rounded-2xl shadow-lg flex items-center gap-2">
+                    <span>🔁</span> Gioca di nuovo (Nuova partita)
+                </button>
+                <button onclick="downloadReportHTML()" class="btn-bounce bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-display text-lg font-bold px-6 py-3.5 rounded-2xl shadow-lg flex items-center gap-2">
+                    <span>📥</span> Scarica Report (.html)
+                </button>
+                <button onclick="downloadReportTXT()" class="btn-bounce bg-sky-600 hover:bg-sky-700 text-white font-display text-lg font-bold px-6 py-3.5 rounded-2xl shadow-lg flex items-center gap-2">
+                    <span>📄</span> Scarica Report (.txt)
+                </button>
+                <button onclick="window.print()" class="btn-bounce bg-amber-500 hover:bg-amber-600 text-white font-display text-lg font-bold px-5 py-3.5 rounded-2xl shadow-lg flex items-center gap-2">
+                    <span>🖨️</span> Stampa / PDF
+                </button>
+                <button onclick="resetGame()" class="btn-bounce bg-slate-200 hover:bg-slate-300 text-slate-800 font-display text-lg font-bold px-5 py-3.5 rounded-2xl flex items-center gap-2">
+                    <span>👤</span> Cambia Alunno
+                </button>
+            </div>
+        </section>
+    </div>
+
+    <!-- Banner Livello Completato (Modale leggero) -->
+    <div id="level-banner" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full text-center shadow-2xl border-4 border-amber-300 pop-in">
+            <div class="text-6xl mb-3">🌟</div>
+            <h3 id="banner-title" class="text-2xl sm:text-3xl font-bold text-slate-800 mb-2">Livello 1 Completato!</h3>
+            <p id="banner-desc" class="text-slate-600 font-semibold mb-6">Sei stato bravissimo! Ora passiamo al livello successivo con nuove sfide!</p>
+            <button onclick="closeLevelBanner()" class="btn-bounce w-full bg-gradient-to-r from-amber-400 to-orange-500 text-white font-display text-xl font-bold py-3.5 rounded-2xl shadow-lg">
+                Continua! 🚀
+            </button>
+        </div>
+    </div>
+
+    <script>
+        /* =========================================================================
+           1. GESTIONE AUDIO (Web Audio API senza file esterni)
+           ========================================================================= */
+        let soundEnabled = true;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) audioCtx = new AudioContext();
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('btn-sound').textContent = soundEnabled ? '🔊' : '🔇';
+        }
+
+        function playTone(type) {
+            if (!soundEnabled) return;
+            initAudio();
+            if (!audioCtx) return;
+
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'correct') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, now); // Do5
+                osc.frequency.setValueAtTime(659.25, now + 0.1); // Mi5
+                osc.frequency.setValueAtTime(783.99, now + 0.2); // Sol5
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+                osc.start(now);
+                osc.stop(now + 0.45);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.linearRampToValueAtTime(160, now + 0.3);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                osc.start(now);
+                osc.stop(now + 0.35);
+            } else if (type === 'levelup') {
+                osc.type = 'sine';
+                [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
+                    osc.frequency.setValueAtTime(freq, now + i * 0.1);
+                });
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.55);
+                osc.start(now);
+                osc.stop(now + 0.55);
+            }
+        }
+
+        /* =========================================================================
+           2. DATABASE DELLE 12 SCENETTE EDUCATIVE (3 LIVELLI x 4 DOMANDE)
+           ========================================================================= */
+        const SCENES = [
+            // --- LIVELLO 1: IL PEDONE ATTENTO ---
+            {
+                id: 1,
+                level: 1,
+                levelName: "Livello 1: Pedone Attento",
+                topic: "Attraversare sulle strisce guardando a sinistra e destra",
+                title: "Attraversamento sulle strisce",
+                animDuration: 5200,
+                question: "Hai visto cosa ha fatto la bambina prima di attraversare?",
+                options: [
+                    "Ha fatto bene: si è fermata sulle strisce, ha guardato a sinistra e destra e ha attraversato quando l'auto si è fermata.",
+                    "Ha sbagliato: doveva correre veloce senza guardare le macchine.",
+                    "Ha sbagliato: non si può mai attraversare sulle strisce bianche."
+                ],
+                correctIndex: 0,
+                explanation: "Bravissimo! Prima di attraversare sulle strisce pedonali bisogna sempre fermarsi sul bordo del marciapiede, guardare a sinistra e a destra e assicurarsi che le auto si siano fermate.",
+                render: (ctx, w, h, p) => {
+                    drawBaseRoadHorizontal(ctx, w, h, true);
+                    // Segnale attraversamento pedonale
+                    drawSignPedestrian(ctx, w * 0.62, h * 0.25);
+
+                    // Auto blu arriva da sinistra e frena prima delle strisce
+                    let carX = p < 0.45 ? lerp(-80, w * 0.28, p / 0.45) : w * 0.28;
+                    drawCarHorizontal(ctx, carX, h * 0.43, '#3b82f6', false, p < 0.45);
+                    if (p >= 0.45) {
+                        drawBubble(ctx, carX + 45, h * 0.33, "STOP ✋", "#dbeafe", "#1e40af");
+                    }
+
+                    // Bambina sul marciapiede alto -> guarda sx/dx -> attraversa
+                    let pedX = w * 0.50;
+                    let pedY = h * 0.23;
+                    let lookDir = 0; // -1 sx, 1 dx
+                    let walking = false;
+
+                    if (p < 0.2) {
+                        pedY = lerp(h * 0.14, h * 0.23, p / 0.2);
+                        walking = true;
+                    } else if (p < 0.38) {
+                        lookDir = -1;
+                        drawBubble(ctx, pedX + 40, pedY - 25, "👀 Guardo a sinistra...", "#fef3c7", "#92400e");
+                    } else if (p < 0.55) {
+                        lookDir = 1;
+                        drawBubble(ctx, pedX + 40, pedY - 25, "👀 Guardo a destra...", "#fef3c7", "#92400e");
+                    } else {
+                        let crossP = (p - 0.55) / 0.45;
+                        pedY = lerp(h * 0.23, h * 0.80, crossP);
+                        walking = true;
+                    }
+                    drawPedestrian(ctx, pedX, pedY, '#ec4899', '#fde047', walking ? p * 20 : 0, lookDir);
+                }
+            },
+            {
+                id: 2,
+                level: 1,
+                levelName: "Livello 1: Pedone Attento",
+                topic: "Attraversare fuori dalle strisce tra due auto parcheggiate",
+                title: "Sbucare tra le auto parcheggiate",
+                animDuration: 4800,
+                question: "Il comportamento del ragazzo in questa scena è sicuro?",
+                options: [
+                    "No, è molto pericoloso attraversare fuori dalle strisce sbucando tra due auto parcheggiate!",
+                    "Sì, se corre veloce non corre alcun pericolo.",
+                    "Sì, perché le auto parcheggiate lo proteggono dal traffico."
+                ],
+                correctIndex: 0,
+                explanation: "Esatto, è molto pericoloso! Le auto parcheggiate nascondono il pedone agli automobilisti che arrivano, e mancano le strisce pedonali.",
+                render: (ctx, w, h, p) => {
+                    drawBaseRoadHorizontal(ctx, w, h, false);
+                    // Due auto parcheggiate lungo il bordo alto
+                    drawCarHorizontal(ctx, w * 0.18, h * 0.33, '#64748b', false, false);
+                    drawCarHorizontal(ctx, w * 0.56, h * 0.33, '#94a3b8', false, false);
+
+                    // Auto rossa che sopraggiunge sulla corsia
+                    let redCarX = lerp(-100, w * 0.33, Math.min(1, p * 1.15));
+                    drawCarHorizontal(ctx, redCarX, h * 0.54, '#ef4444', false, p < 0.8);
+
+                    // Pedone che sbuca in mezzo alle due auto parcheggiate
+                    let pedX = w * 0.43;
+                    let pedY = p < 0.3 ? h * 0.22 : lerp(h * 0.22, h * 0.48, Math.min(1, (p - 0.3) / 0.5));
+                    drawPedestrian(ctx, pedX, pedY, '#f97316', '#38bdf8', p * 22, 0);
+
+                    if (p > 0.55) {
+                        drawWarningIcon(ctx, pedX, pedY - 32);
+                        drawBubble(ctx, redCarX + 50, h * 0.44, "⚠️ NON TI VEDO!", "#fee2e2", "#991b1b");
+                    }
+                }
+            },
+            {
+                id: 3,
+                level: 1,
+                levelName: "Livello 1: Pedone Attento",
+                topic: "Uso del telefonino mentre si attraversa",
+                title: "Camminare guardando lo smartphone",
+                animDuration: 4800,
+                question: "Cosa sta sbagliando il pedone mentre attraversa la strada?",
+                options: [
+                    "Cammina troppo lentamente sulle strisce.",
+                    "Guarda il telefonino invece di prestare attenzione alla strada e ai veicoli.",
+                    "Indossa una maglietta troppo colorata."
+                ],
+                correctIndex: 1,
+                explanation: "Giusto! Guardare il telefonino o usare le cuffie mentre si attraversa distrae vista e udito: il telefono va sempre tenuto in tasca quando si attraversa!",
+                render: (ctx, w, h, p) => {
+                    drawBaseRoadHorizontal(ctx, w, h, true);
+                    // Pedone che attraversa fissando lo schermo luminoso del telefono
+                    let pedY = lerp(h * 0.18, h * 0.72, p);
+                    let pedX = w * 0.48;
+                    drawPedestrian(ctx, pedX, pedY, '#8b5cf6', '#a7f3d0', p * 18, 0, true);
+                    drawBubble(ctx, pedX + 65, pedY - 25, "📱 Messaggi...", "#f3e8ff", "#6b21a8");
+
+                    // Auto che deve frenare all'improvviso
+                    let carX = lerp(w + 80, w * 0.58, Math.min(1, p * 1.2));
+                    drawCarHorizontal(ctx, carX, h * 0.56, '#eab308', true, p < 0.75);
+                    if (p > 0.65) {
+                        drawWarningIcon(ctx, pedX - 30, pedY);
+                    }
+                }
+            },
+            {
+                id: 4,
+                level: 1,
+                levelName: "Livello 1: Pedone Attento",
+                topic: "Semaforo pedonale rosso e verde",
+                title: "Il semaforo pedonale",
+                animDuration: 5500,
+                question: "Perché il bambino si è fermato all'inizio e poi è partito?",
+                options: [
+                    "Perché col semaforo pedonale ROSSO bisogna aspettare, e si attraversa solo quando diventa VERDE.",
+                    "Perché aveva dimenticato lo zaino a casa.",
+                    "Perché col rosso si attraversa correndo e col verde ci si ferma."
+                ],
+                correctIndex: 0,
+                explanation: "Perfetto! L'omino ROSSO dice ALT (fermati sul marciapiede); l'omino VERDE dice AVANTI (puoi attraversare con prudenza sulle strisce).",
+                render: (ctx, w, h, p) => {
+                    drawBaseRoadHorizontal(ctx, w, h, true);
+                    const isGreen = p >= 0.5;
+                    drawPedestrianTrafficLight(ctx, w * 0.62, h * 0.22, isGreen);
+
+                    // Auto passa mentre è rosso per i pedoni
+                    if (p < 0.45) {
+                        let carX = lerp(-90, w + 90, p / 0.45);
+                        drawCarHorizontal(ctx, carX, h * 0.44, '#10b981', false, true);
+                    }
+
+                    // Pedone aspetta fino a 0.5, poi attraversa
+                    let pedX = w * 0.48;
+                    let pedY = !isGreen ? h * 0.23 : lerp(h * 0.23, h * 0.80, (p - 0.5) / 0.5);
+                    drawPedestrian(ctx, pedX, pedY, '#0284c7', '#fde047', isGreen ? p * 20 : 0, 0);
+
+                    if (!isGreen) {
+                        drawBubble(ctx, pedX - 65, pedY - 25, "🔴 È rosso, aspetto!", "#fee2e2", "#991b1b");
+                    } else {
+                        drawBubble(ctx, pedX - 65, pedY - 25, "🟢 Verde! Vado!", "#dcfce7", "#166534");
+                    }
+                }
+            },
+
+            // --- LIVELLO 2: IL CICLISTA PRUDENTE ---
+            {
+                id: 5,
+                level: 2,
+                levelName: "Livello 2: Ciclista Prudente",
+                topic: "Uso del casco e pista ciclabile",
+                title: "In bicicletta in sicurezza",
+                animDuration: 4800,
+                question: "Osserva il ciclista sulla pista rossa: cosa sta facendo di giusto?",
+                options: [
+                    "Indossa il casco protettivo allacciato e pedala sulla pista ciclabile.",
+                    "Sta facendo una gara di velocità contromano.",
+                    "Sta andando in bici senza tenere le mani sul manubrio."
+                ],
+                correctIndex: 0,
+                explanation: "Ottima osservazione! Indossare il casco protettivo e usare la pista ciclabile rende gli spostamenti in bicicletta molto più sicuri.",
+                render: (ctx, w, h, p) => {
+                    drawRoadWithBikeLane(ctx, w, h);
+                    drawSignBikeLane(ctx, w * 0.82, h * 0.22);
+
+                    let bikeX = lerp(40, w - 80, p);
+                    drawBicycle(ctx, bikeX, h * 0.34, '#2563eb', true, p * 25, false);
+                    drawBubble(ctx, bikeX, h * 0.22, "🪖 Casco allacciato!", "#dbeafe", "#1e40af");
+                }
+            },
+            {
+                id: 6,
+                level: 2,
+                levelName: "Livello 2: Ciclista Prudente",
+                topic: "Pista ciclabile vs marciapiede pedonale",
+                title: "Bici sul marciapiede dei pedoni",
+                animDuration: 4800,
+                question: "Cosa c'è di sbagliato nel comportamento di questo ciclista?",
+                options: [
+                    "Pedala veloce sul marciapiede tra i pedoni invece di usare la pista ciclabile libera accanto.",
+                    "Ha una bicicletta di colore verde.",
+                    "Sta andando troppo piano."
+                ],
+                correctIndex: 0,
+                explanation: "Esatto! Il marciapiede è riservato ai pedoni. Quando c'è la pista ciclabile, le biciclette devono circolare lì per non investire chi cammina.",
+                render: (ctx, w, h, p) => {
+                    drawRoadWithBikeLane(ctx, w, h);
+                    // Pedone cammina tranquillo sul marciapiede alto
+                    let pedX = lerp(w * 0.65, w * 0.45, p);
+                    drawPedestrian(ctx, pedX, h * 0.16, '#db2777', '#fef08a', p * 15, 0);
+
+                    // Ciclista sfreccia sul marciapiede alto invece che sulla pista ciclabile
+                    let bikeX = lerp(40, w * 0.42, p);
+                    drawBicycle(ctx, bikeX, h * 0.17, '#16a34a', false, p * 35, false);
+
+                    if (p > 0.5) {
+                        drawWarningIcon(ctx, bikeX + 35, h * 0.11);
+                        drawBubble(ctx, bikeX + 20, h * 0.28, "⚠️ Usa la pista ciclabile!", "#fee2e2", "#991b1b");
+                    }
+                }
+            },
+            {
+                id: 7,
+                level: 2,
+                levelName: "Livello 2: Ciclista Prudente",
+                topic: "Camminare sulla pista pedonale / marciapiede",
+                title: "Il percorso pedonale protetto",
+                animDuration: 4500,
+                question: "Dove stanno camminando la mamma e il bambino?",
+                options: [
+                    "In mezzo alla strada dove passano le auto.",
+                    "Correttamente sul marciapiede / percorso pedonale, lontano dalle auto.",
+                    "Sulla pista riservata alle biciclette da corsa."
+                ],
+                correctIndex: 1,
+                explanation: "Bravissimo! I pedoni devono sempre camminare sul marciapiede o sulla pista pedonale protetta, mai sulla carreggiata dove transitano i veicoli.",
+                render: (ctx, w, h, p) => {
+                    drawBaseRoadHorizontal(ctx, w, h, false);
+                    drawSignPedestrianPath(ctx, w * 0.2, h * 0.22);
+
+                    // Auto passano regolarmente sulla carreggiata
+                    let carX = lerp(w + 80, -80, p);
+                    drawCarHorizontal(ctx, carX, h * 0.55, '#0ea5e9', true, true);
+
+                    // Mamma e bambino camminano sul marciapiede in sicurezza
+                    let walkX = lerp(w * 0.25, w * 0.72, p);
+                    drawPedestrian(ctx, walkX, h * 0.17, '#7c3aed', '#fbcfe8', p * 16, 0);
+                    drawPedestrian(ctx, walkX + 26, h * 0.19, '#10b981', '#fef08a', p * 18, 0, false, 0.8);
+                    drawBubble(ctx, walkX + 15, h * 0.09, "😊 Sicuri sul marciapiede!", "#dcfce7", "#166534");
+                }
+            },
+            {
+                id: 8,
+                level: 2,
+                levelName: "Livello 2: Ciclista Prudente",
+                topic: "Segnalare la svolta con il braccio in bicicletta",
+                title: "Svoltare in bicicletta",
+                animDuration: 5000,
+                question: "Perché il ciclista ha allungato il braccio prima di girare?",
+                options: [
+                    "Per salutare gli amici sul marciapiede.",
+                    "Per segnalare in anticipo agli altri veicoli da che parte sta per svoltare.",
+                    "Per fare ginnastica mentre pedala."
+                ],
+                correctIndex: 1,
+                explanation: "Esatto! La bicicletta non ha le frecce luminose come le auto: allungare il braccio serve a far capire agli altri dove stiamo svoltando.",
+                render: (ctx, w, h, p) => {
+                    drawIntersectionCross(ctx, w, h, false);
+                    // Ciclista arriva dal basso, allunga il braccio destro e gira a destra
+                    let bikeX = w * 0.55;
+                    let bikeY = h * 0.85;
+                    let armOut = false;
+
+                    if (p < 0.5) {
+                        bikeY = lerp(h * 0.88, h * 0.55, p / 0.5);
+                        if (p > 0.25) armOut = true;
+                    } else {
+                        let turnP = (p - 0.5) / 0.5;
+                        bikeX = lerp(w * 0.55, w * 0.88, turnP);
+                        bikeY = lerp(h * 0.55, h * 0.52, turnP);
+                        armOut = turnP < 0.6;
+                    }
+                    drawBicycle(ctx, bikeX, bikeY, '#f59e0b', true, p * 24, armOut);
+                    if (armOut) {
+                        drawBubble(ctx, bikeX - 75, bikeY - 25, "👉 Segnalo la svolta!", "#fef3c7", "#92400e");
+                    }
+                }
+            },
+
+            // --- LIVELLO 3: ESPERTO DEI SEGNALI E DELLA STRADA ---
+            {
+                id: 9,
+                level: 3,
+                levelName: "Livello 3: Esperto dei Segnali",
+                topic: "Parcheggiare fuori dagli stalli / sulle strisce pedonali",
+                title: "Auto parcheggiata fuori dagli stalli",
+                animDuration: 4600,
+                question: "Cosa ha fatto l'automobilista con l'auto viola?",
+                options: [
+                    "Ha parcheggiato correttamente dentro le strisce blu.",
+                    "Ha parcheggiato fuori dagli stalli e sopra le strisce pedonali, bloccando il passaggio!",
+                    "Si è fermato a far attraversare i pedoni."
+                ],
+                correctIndex: 1,
+                explanation: "Giusto! Non si deve mai parcheggiare fuori dagli appositi stalli o sopra le strisce pedonali perché si ostacola la visuale e il passaggio sicuro dei pedoni.",
+                render: (ctx, w, h, p) => {
+                    drawBaseRoadHorizontal(ctx, w, h, true);
+                    // Stalli parcheggio blu disegnati a sinistra
+                    ctx.strokeStyle = '#38bdf8';
+                    ctx.lineWidth = 3;
+                    ctx.strokeRect(w * 0.12, h * 0.30, 95, 44);
+                    ctx.strokeRect(w * 0.26, h * 0.30, 95, 44);
+
+                    // Auto viola arriva e si parcheggia storta sopra le strisce pedonali!
+                    let carX = p < 0.5 ? lerp(-80, w * 0.45, p / 0.5) : w * 0.45;
+                    let carY = p < 0.5 ? h * 0.43 : lerp(h * 0.43, h * 0.34, Math.min(1, (p - 0.5) / 0.25));
+                    drawCarHorizontal(ctx, carX, carY, '#9333ea', false, p < 0.7);
+
+                    // Pedone bloccato davanti alle strisce
+                    drawPedestrian(ctx, w * 0.50, h * 0.21, '#059669', '#fde047', 0, 0);
+                    if (p > 0.7) {
+                        drawWarningIcon(ctx, carX + 45, carY - 15);
+                        drawBubble(ctx, w * 0.68, h * 0.21, "🚫 Non posso passare!", "#fee2e2", "#991b1b");
+                    }
+                }
+            },
+            {
+                id: 10,
+                level: 3,
+                levelName: "Livello 3: Esperto dei Segnali",
+                topic: "Precedenza a destra all'incrocio senza segnali",
+                title: "Precedenza a destra all'incrocio",
+                animDuration: 5400,
+                question: "A un incrocio senza semaforo arrivano due auto insieme. Perché l'auto gialla si ferma?",
+                options: [
+                    "Perché deve dare la precedenza all'auto rossa che arriva da destra.",
+                    "Perché l'auto gialla ha finito la benzina.",
+                    "Perché all'incrocio passa sempre prima chi va più veloce."
+                ],
+                correctIndex: 0,
+                explanation: "Bravissimo! Quando non ci sono semafori o segnali diversi, vale la regola generale: si dà la precedenza a chi arriva da destra!",
+                render: (ctx, w, h, p) => {
+                    drawIntersectionCross(ctx, w, h, false);
+
+                    // Auto Gialla arriva da sinistra verso destra -> ha l'auto rossa alla sua destra (dal basso)
+                    let yellowX = p < 0.4 ? lerp(w * 0.08, w * 0.31, p / 0.4) : (p < 0.75 ? w * 0.31 : lerp(w * 0.31, w * 0.85, (p - 0.75) / 0.25));
+                    drawCarHorizontal(ctx, yellowX, h * 0.53, '#eab308', false, p < 0.4 || p > 0.75);
+
+                    // Auto Rossa arriva dal basso verso l'alto (è alla destra dell'auto gialla!)
+                    let redY = lerp(h * 0.88, h * 0.05, Math.min(1, p * 1.15));
+                    drawCarVertical(ctx, w * 0.53, redY, '#ef4444', true);
+
+                    if (p >= 0.35 && p <= 0.75) {
+                        drawBubble(ctx, yellowX + 20, h * 0.40, "✋ Do precedenza a destra!", "#fef3c7", "#92400e");
+                    }
+                }
+            },
+            {
+                id: 11,
+                level: 3,
+                levelName: "Livello 3: Esperto dei Segnali",
+                topic: "Segnale di Divieto di Accesso",
+                title: "Il segnale di Divieto di Accesso",
+                animDuration: 4800,
+                question: "Che cosa indica quel segnale rotondo rosso con la striscia bianca orizzontale?",
+                options: [
+                    "Strada chiusa solo per i camion.",
+                    "Divieto di accesso: non si può entrare in quella strada perché è contromano!",
+                    "Parcheggio gratuito per tutte le auto."
+                ],
+                correctIndex: 1,
+                explanation: "Esatto! Quel segnale significa DIVIETO DI ACCESSO: da quella parte non si può entrare perché i veicoli arrivano nel senso opposto.",
+                render: (ctx, w, h, p) => {
+                    drawBaseRoadHorizontal(ctx, w, h, false);
+                    // Segnale Divieto di Accesso ben visibile
+                    drawSignNoEntry(ctx, w * 0.62, h * 0.24);
+
+                    // Auto verde si avvicina al divieto di accesso
+                    let carX = p < 0.6 ? lerp(w * 0.1, w * 0.46, p / 0.6) : w * 0.46;
+                    drawCarHorizontal(ctx, carX, h * 0.45, '#10b981', false, p < 0.6);
+
+                    if (p >= 0.55) {
+                        drawWarningIcon(ctx, w * 0.62, h * 0.45);
+                        drawBubble(ctx, carX + 35, h * 0.33, "⛔ Divieto di accesso!", "#fee2e2", "#991b1b");
+                    }
+                }
+            },
+            {
+                id: 12,
+                level: 3,
+                levelName: "Livello 3: Esperto dei Segnali",
+                topic: "Attraversamento davanti allo scuolabus fermo",
+                title: "Scesi dallo scuolabus fermo",
+                animDuration: 5000,
+                question: "Perché è pericoloso attraversare subito davanti allo scuolabus fermo?",
+                options: [
+                    "Perché l'autobus nasconde la vista: chi arriva dietro non vede il bambino e il bambino non vede le auto.",
+                    "Perché lo scuolabus non ha i fari accesi.",
+                    "Non è pericoloso, si può attraversare correndo."
+                ],
+                correctIndex: 0,
+                explanation: "Complimenti! Mai attraversare subito davanti o dietro un autobus fermo: bisogna aspettare che l'autobus riparta e raggiungere le strisce pedonali con visuale libera.",
+                render: (ctx, w, h, p) => {
+                    drawBaseRoadHorizontal(ctx, w, h, false);
+                    // Scuolabus giallo fermo
+                    drawSchoolBus(ctx, w * 0.28, h * 0.35);
+
+                    // Auto azzurra sorpassa lo scuolabus sulla corsia centrale
+                    let carX = lerp(-80, w * 0.52, Math.min(1, p * 1.1));
+                    drawCarHorizontal(ctx, carX, h * 0.56, '#0284c7', false, p < 0.8);
+
+                    // Bambino sbuca proprio davanti al muso dello scuolabus
+                    let pedX = w * 0.53;
+                    let pedY = p < 0.35 ? h * 0.36 : lerp(h * 0.36, h * 0.54, Math.min(1, (p - 0.35) / 0.45));
+                    drawPedestrian(ctx, pedX, pedY, '#ec4899', '#fde047', p * 20, 0, false, 0.85);
+
+                    if (p > 0.55) {
+                        drawWarningIcon(ctx, pedX, pedY - 30);
+                        drawBubble(ctx, pedX + 65, pedY - 25, "⚠️ Visuale coperta!", "#fee2e2", "#991b1b");
+                    }
+                }
+            }
+        ];
+
+        /* =========================================================================
+           3. MOTORE DI DISEGNO CANVAS 2D (STRADE, SEGNALI, VEICOLI, PEDONI)
+           ========================================================================= */
+        function lerp(a, b, t) {
+            return a + (b - a) * Math.max(0, Math.min(1, t));
+        }
+
+        function drawBaseRoadHorizontal(ctx, w, h, hasCrosswalk) {
+            // Prato / Sfondo superiore e inferiore
+            ctx.fillStyle = '#86efac';
+            ctx.fillRect(0, 0, w, h);
+
+            // Marciapiede superiore
+            ctx.fillStyle = '#e2e8f0';
+            ctx.fillRect(0, h * 0.14, w, h * 0.16);
+            ctx.fillStyle = '#cbd5e1';
+            ctx.fillRect(0, h * 0.28, w, h * 0.02);
+
+            // Carreggiata asfaltata
+            ctx.fillStyle = '#334155';
+            ctx.fillRect(0, h * 0.30, w, h * 0.42);
+
+            // Linea tratteggiata centrale
+            ctx.strokeStyle = '#f8fafc';
+            ctx.lineWidth = 4;
+            ctx.setLineDash([22, 18]);
+            ctx.beginPath();
+            ctx.moveTo(0, h * 0.51);
+            ctx.lineTo(w, h * 0.51);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Marciapiede inferiore
+            ctx.fillStyle = '#cbd5e1';
+            ctx.fillRect(0, h * 0.72, w, h * 0.02);
+            ctx.fillStyle = '#e2e8f0';
+            ctx.fillRect(0, h * 0.74, w, h * 0.16);
+
+            // Strisce pedonali
+            if (hasCrosswalk) {
+                ctx.fillStyle = '#ffffff';
+                const cwX = w * 0.45;
+                const cwW = w * 0.10;
+                for (let y = h * 0.32; y < h * 0.70; y += 22) {
+                    ctx.fillRect(cwX, y, cwW, 12);
+                }
+            }
+        }
+
+        function drawRoadWithBikeLane(ctx, w, h) {
+            ctx.fillStyle = '#86efac';
+            ctx.fillRect(0, 0, w, h);
+
+            // Marciapiede pedonale alto
+            ctx.fillStyle = '#e2e8f0';
+            ctx.fillRect(0, h * 0.10, w, h * 0.16);
+
+            // Pista ciclabile rossa protetta
+            ctx.fillStyle = '#f87171';
+            ctx.fillRect(0, h * 0.27, w, h * 0.15);
+            // Simbolo bici bianco sull'asfalto rosso
+            ctx.fillStyle = 'rgba(255,255,255,0.6)';
+            ctx.font = 'bold 20px sans-serif';
+            ctx.fillText('🚲', w * 0.25, h * 0.37);
+            ctx.fillText('🚲', w * 0.70, h * 0.37);
+
+            // Cordolo separatore
+            ctx.fillStyle = '#facc15';
+            ctx.fillRect(0, h * 0.42, w, h * 0.025);
+
+            // Carreggiata auto
+            ctx.fillStyle = '#334155';
+            ctx.fillRect(0, h * 0.445, w, h * 0.36);
+
+            // Marciapiede basso
+            ctx.fillStyle = '#e2e8f0';
+            ctx.fillRect(0, h * 0.805, w, h * 0.12);
+        }
+
+        function drawIntersectionCross(ctx, w, h) {
+            ctx.fillStyle = '#86efac';
+            ctx.fillRect(0, 0, w, h);
+
+            // Strada orizzontale
+            ctx.fillStyle = '#334155';
+            ctx.fillRect(0, h * 0.34, w, h * 0.32);
+
+            // Strada verticale
+            ctx.fillRect(w * 0.38, 0, w * 0.24, h);
+
+            // Linee tratteggiate
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([16, 14]);
+            ctx.beginPath();
+            ctx.moveTo(0, h * 0.50);
+            ctx.lineTo(w * 0.36, h * 0.50);
+            ctx.moveTo(w * 0.64, h * 0.50);
+            ctx.lineTo(w, h * 0.50);
+            ctx.moveTo(w * 0.50, 0);
+            ctx.lineTo(w * 0.50, h * 0.32);
+            ctx.moveTo(w * 0.50, h * 0.68);
+            ctx.lineTo(w * 0.50, h);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        // --- SEGNALI STRADALI ---
+        function drawSignPedestrian(ctx, x, y) {
+            ctx.fillStyle = '#64748b';
+            ctx.fillRect(x - 2, y, 4, 34);
+            ctx.fillStyle = '#2563eb';
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.fillRect(x - 15, y - 28, 30, 30);
+            ctx.strokeRect(x - 15, y - 28, 30, 30);
+            // Triangolo bianco
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.moveTo(x, y - 24);
+            ctx.lineTo(x - 11, y - 3);
+            ctx.lineTo(x + 11, y - 3);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = '#0f172a';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.fillText('🚶', x - 7, y - 6);
+        }
+
+        function drawSignBikeLane(ctx, x, y) {
+            ctx.fillStyle = '#64748b';
+            ctx.fillRect(x - 2, y, 4, 32);
+            ctx.beginPath();
+            ctx.arc(x, y - 14, 16, 0, Math.PI * 2);
+            ctx.fillStyle = '#2563eb';
+            ctx.fill();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#ffffff';
+            ctx.stroke();
+            ctx.font = '15px sans-serif';
+            ctx.fillText('🚲', x - 10, y - 8);
+        }
+
+        function drawSignPedestrianPath(ctx, x, y) {
+            ctx.fillStyle = '#64748b';
+            ctx.fillRect(x - 2, y, 4, 32);
+            ctx.beginPath();
+            ctx.arc(x, y - 14, 16, 0, Math.PI * 2);
+            ctx.fillStyle = '#2563eb';
+            ctx.fill();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#ffffff';
+            ctx.stroke();
+            ctx.font = '15px sans-serif';
+            ctx.fillText('🚶', x - 9, y - 8);
+        }
+
+        function drawSignNoEntry(ctx, x, y) {
+            ctx.fillStyle = '#64748b';
+            ctx.fillRect(x - 3, y, 6, 38);
+            ctx.beginPath();
+            ctx.arc(x, y - 16, 20, 0, Math.PI * 2);
+            ctx.fillStyle = '#dc2626';
+            ctx.fill();
+            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = '#ffffff';
+            ctx.stroke();
+            // Barra bianca orizzontale
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(x - 13, y - 20, 26, 8);
+        }
+
+        function drawPedestrianTrafficLight(ctx, x, y, isGreen) {
+            ctx.fillStyle = '#475569';
+            ctx.fillRect(x - 3, y, 6, 36);
+            ctx.fillStyle = '#1e293b';
+            ctx.beginPath();
+            ctx.roundRect(x - 13, y - 42, 26, 44, 6);
+            ctx.fill();
+
+            // Luce Rossa
+            ctx.beginPath();
+            ctx.arc(x, y - 30, 7, 0, Math.PI * 2);
+            ctx.fillStyle = !isGreen ? '#ef4444' : '#450a0a';
+            ctx.fill();
+
+            // Luce Verde
+            ctx.beginPath();
+            ctx.arc(x, y - 11, 7, 0, Math.PI * 2);
+            ctx.fillStyle = isGreen ? '#22c55e' : '#052e16';
+            ctx.fill();
+        }
+
+        // --- VEICOLI E PERSONAGGI ---
+        function drawCarHorizontal(ctx, x, y, color, facingLeft = false, moving = true) {
+            ctx.save();
+            ctx.translate(x, y);
+            if (facingLeft) ctx.scale(-1, 1);
+
+            // Ombra
+            ctx.fillStyle = 'rgba(0,0,0,0.22)';
+            ctx.beginPath();
+            ctx.ellipse(42, 34, 42, 8, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Carrozzeria
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.roundRect(0, 10, 84, 22, 8);
+            ctx.fill();
+
+            // Abitacolo
+            ctx.beginPath();
+            ctx.roundRect(14, 0, 50, 16, 7);
+            ctx.fill();
+
+            // Finestrini
+            ctx.fillStyle = '#e0f2fe';
+            ctx.beginPath();
+            ctx.roundRect(19, 3, 18, 10, 3);
+            ctx.roundRect(41, 3, 18, 10, 3);
+            ctx.fill();
+
+            // Fari
+            ctx.fillStyle = '#fef08a';
+            ctx.fillRect(80, 14, 4, 6);
+
+            // Ruote
+            [18, 66].forEach(wx => {
+                ctx.fillStyle = '#0f172a';
+                ctx.beginPath();
+                ctx.arc(wx, 32, 9, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#cbd5e1';
+                ctx.beginPath();
+                ctx.arc(wx, 32, 4, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            ctx.restore();
+        }
+
+        function drawCarVertical(ctx, x, y, color, facingUp = true) {
+            ctx.save();
+            ctx.translate(x, y);
+            if (!facingUp) ctx.scale(1, -1);
+
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.roundRect(-18, -36, 36, 72, 10);
+            ctx.fill();
+
+            // Parabrezza
+            ctx.fillStyle = '#bae6fd';
+            ctx.beginPath();
+            ctx.roundRect(-13, -22, 26, 16, 4);
+            ctx.roundRect(-13, 12, 26, 12, 4);
+            ctx.fill();
+
+            // Fari anteriori
+            ctx.fillStyle = '#fef08a';
+            ctx.fillRect(-14, -36, 7, 4);
+            ctx.fillRect(7, -36, 7, 4);
+
+            ctx.restore();
+        }
+
+        function drawSchoolBus(ctx, x, y) {
+            ctx.save();
+            ctx.translate(x, y);
+            // Corpo giallo
+            ctx.fillStyle = '#facc15';
+            ctx.beginPath();
+            ctx.roundRect(0, 0, 145, 44, 8);
+            ctx.fill();
+            ctx.strokeStyle = '#ca8a04';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Finestrini
+            ctx.fillStyle = '#e0f2fe';
+            for (let wx = 12; wx <= 105; wx += 24) {
+                ctx.fillRect(wx, 7, 18, 14);
+            }
+            // Scritta SCUOLABUS
+            ctx.fillStyle = '#1e293b';
+            ctx.font = 'bold 9px sans-serif';
+            ctx.fillText('SCUOLABUS', 42, 32);
+
+            // Ruote
+            [26, 116].forEach(wx => {
+                ctx.fillStyle = '#0f172a';
+                ctx.beginPath();
+                ctx.arc(wx, 44, 10, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#cbd5e1';
+                ctx.beginPath();
+                ctx.arc(wx, 44, 4, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.restore();
+        }
+
+        function drawBicycle(ctx, x, y, color, hasHelmet, phase, armOut) {
+            ctx.save();
+            ctx.translate(x, y);
+
+            // Ruote bici
+            [-18, 18].forEach(wx => {
+                ctx.strokeStyle = '#1e293b';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(wx, 14, 11, 0, Math.PI * 2);
+                ctx.stroke();
+            });
+
+            // Telaio bici
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3.5;
+            ctx.beginPath();
+            ctx.moveTo(-18, 14);
+            ctx.lineTo(-2, 2);
+            ctx.lineTo(14, 2);
+            ctx.lineTo(18, 14);
+            ctx.moveTo(-2, 2);
+            ctx.lineTo(2, 14);
+            ctx.stroke();
+
+            // Ciclista
+            ctx.fillStyle = '#0284c7';
+            ctx.beginPath();
+            ctx.roundRect(-7, -14, 12, 16, 4);
+            ctx.fill();
+
+            // Testa
+            ctx.fillStyle = '#fed7aa';
+            ctx.beginPath();
+            ctx.arc(0, -21, 7, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Casco protettivo
+            if (hasHelmet) {
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath();
+                ctx.arc(0, -23, 8, Math.PI, 0);
+                ctx.fill();
+            }
+
+            // Braccio segnalazione svolta
+            if (armOut) {
+                ctx.strokeStyle = '#0284c7';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(0, -10);
+                ctx.lineTo(22, -10);
+                ctx.stroke();
+            }
+
+            ctx.restore();
+        }
+
+        function drawPedestrian(ctx, x, y, shirtColor, pantsColor, walkPhase, lookDir = 0, hasPhone = false, scale = 1) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(scale, scale);
+
+            const legSwing = Math.sin(walkPhase) * 5;
+
+            // Gambe
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 4.5;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(-4, 6);
+            ctx.lineTo(-4 - legSwing, 18);
+            ctx.moveTo(4, 6);
+            ctx.lineTo(4 + legSwing, 18);
+            ctx.stroke();
+
+            // Maglietta
+            ctx.fillStyle = shirtColor;
+            ctx.beginPath();
+            ctx.roundRect(-9, -10, 18, 18, 5);
+            ctx.fill();
+
+            // Testa
+            ctx.fillStyle = '#fed7aa';
+            ctx.beginPath();
+            ctx.arc(lookDir * 2, -18, 8, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Occhi (mostrano dove guarda!)
+            ctx.fillStyle = '#0f172a';
+            ctx.beginPath();
+            ctx.arc(-2 + lookDir * 4, -19, 1.5, 0, Math.PI * 2);
+            ctx.arc(3 + lookDir * 4, -19, 1.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Telefonino in mano se previsto
+            if (hasPhone) {
+                ctx.fillStyle = '#38bdf8';
+                ctx.fillRect(8, -8, 6, 9);
+            }
+
+            ctx.restore();
+        }
+
+        function drawBubble(ctx, x, y, text, bg, fg) {
+            ctx.save();
+            ctx.font = 'bold 12px Nunito, sans-serif';
+            const metrics = ctx.measureText(text);
+            const padX = 10;
+            const boxW = metrics.width + padX * 2;
+            const boxH = 26;
+
+            const bx = Math.max(8, Math.min(ctx.canvas.width / (window.devicePixelRatio || 1) - boxW - 8, x - boxW / 2));
+            const by = Math.max(8, y - boxH / 2);
+
+            ctx.fillStyle = bg;
+            ctx.strokeStyle = fg;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.roundRect(bx, by, boxW, boxH, 10);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = fg;
+            ctx.fillText(text, bx + padX, by + 17);
+            ctx.restore();
+        }
+
+        function drawWarningIcon(ctx, x, y) {
+            ctx.save();
+            ctx.font = '24px sans-serif';
+            ctx.fillText('⚠️', x - 12, y);
+            ctx.restore();
+        }
+
+        /* =========================================================================
+           4. STATO DEL GIOCO, TIMER E LOGICA INTERATTIVA
+           ========================================================================= */
+        let student = { nome: '', cognome: '', classe: '' };
+        let currentIndex = 0;
+        let score = 0;
+        let answersHistory = [];
+        let startTime = null;
+        let endTime = null;
+        let timerInterval = null;
+        let animFrameId = null;
+        let animStartTime = null;
+        let questionShown = false;
+
+        function startGame(e) {
+            e.preventDefault();
+            const nome = document.getElementById('input-nome').value.trim();
+            const cognome = document.getElementById('input-cognome').value.trim();
+            const classe = document.getElementById('input-classe').value.trim();
+
+            if (!nome || !cognome || !classe) {
+                document.getElementById('form-error').classList.remove('hidden');
+                return;
+            }
+
+            document.getElementById('form-error').classList.add('hidden');
+            student = { nome, cognome, classe };
+
+            // Reset stato
+            currentIndex = 0;
+            score = 0;
+            answersHistory = [];
+            startTime = new Date();
+            endTime = null;
+
+            // Aggiorna header
+            document.getElementById('badge-name').textContent = `${nome} ${cognome}`;
+            document.getElementById('badge-class').textContent = classe;
+            document.getElementById('header-student-badge').classList.remove('hidden');
+            document.getElementById('header-timer').classList.remove('hidden');
+
+            // Avvia cronometro
+            clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimerUI, 1000);
+            updateTimerUI();
+
+            // Cambia schermata
+            document.getElementById('screen-start').classList.add('hidden');
+            document.getElementById('screen-result').classList.add('hidden');
+            document.getElementById('screen-game').classList.remove('hidden');
+
+            initAudio();
+            loadScene(0);
+        }
+
+        function updateTimerUI() {
+            if (!startTime) return;
+            const now = endTime || new Date();
+            const diffSec = Math.floor((now - startTime) / 1000);
+            const mins = String(Math.floor(diffSec / 60)).padStart(2, '0');
+            const secs = String(diffSec % 60).padStart(2, '0');
+            document.getElementById('timer-display').textContent = `${mins}:${secs}`;
+        }
+
+        function loadScene(index) {
+            currentIndex = index;
+            questionShown = false;
+            const scene = SCENES[index];
+
+            // Aggiorna UI barra superiore
+            document.getElementById('q-current').textContent = index + 1;
+            document.getElementById('q-total').textContent = SCENES.length;
+            document.getElementById('score-display').textContent = score;
+            document.getElementById('scene-title').textContent = scene.title;
+            document.getElementById('progress-bar').style.width = `${((index + 1) / SCENES.length) * 100}%`;
+
+            // Colore badge livello
+            const lvlBadge = document.getElementById('level-badge');
+            lvlBadge.textContent = scene.levelName;
+            lvlBadge.className = 'px-3 py-1 rounded-xl text-xs sm:text-sm font-extrabold text-white shadow-sm ' +
+                (scene.level === 1 ? 'bg-emerald-500' : scene.level === 2 ? 'bg-amber-500' : 'bg-purple-600');
+
+            // Nascondi domanda e feedback
+            document.getElementById('question-box').classList.add('hidden');
+            document.getElementById('feedback-box').classList.add('hidden');
+            document.getElementById('btn-skip-anim').classList.remove('hidden');
+            document.getElementById('anim-status-text').textContent = 'Animazione in corso... Guarda bene!';
+
+            startAnimation();
+        }
+
+        function startAnimation() {
+            cancelAnimationFrame(animFrameId);
+            animStartTime = performance.now();
+            const scene = SCENES[currentIndex];
+            const canvas = document.getElementById('scene-canvas');
+
+            function loop(now) {
+                const elapsed = now - animStartTime;
+                const progress = Math.min(1, elapsed / scene.animDuration);
+
+                // Adatta risoluzione nitida al contenitore
+                const rect = canvas.getBoundingClientRect();
+                const dpr = window.devicePixelRatio || 1;
+                if (canvas.width !== Math.floor(rect.width * dpr) || canvas.height !== Math.floor(rect.height * dpr)) {
+                    canvas.width = Math.floor(rect.width * dpr);
+                    canvas.height = Math.floor(rect.height * dpr);
+                }
+
+                const ctx = canvas.getContext('2d');
+                ctx.save();
+                ctx.scale(dpr, dpr);
+                ctx.clearRect(0, 0, rect.width, rect.height);
+                scene.render(ctx, rect.width, rect.height, progress);
+                ctx.restore();
+
+                if (progress < 1) {
+                    animFrameId = requestAnimationFrame(loop);
+                } else {
+                    onAnimationEnd();
+                }
+            }
+
+            animFrameId = requestAnimationFrame(loop);
+        }
+
+        function replayScene() {
+            startAnimation();
+        }
+
+        function finishAnimationEarly() {
+            cancelAnimationFrame(animFrameId);
+            const scene = SCENES[currentIndex];
+            const canvas = document.getElementById('scene-canvas');
+            const rect = canvas.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            const ctx = canvas.getContext('2d');
+            ctx.save();
+            ctx.scale(dpr, dpr);
+            scene.render(ctx, rect.width, rect.height, 1);
+            ctx.restore();
+            onAnimationEnd();
+        }
+
+        function onAnimationEnd() {
+            document.getElementById('btn-skip-anim').classList.add('hidden');
+            document.getElementById('anim-status-text').textContent = 'Scena terminata! Rispondi qui sotto 👇';
+
+            if (!questionShown) {
+                questionShown = true;
+                showQuestionBox();
+            }
+        }
+
+        function showQuestionBox() {
+            const scene = SCENES[currentIndex];
+            const qBox = document.getElementById('question-box');
+            const grid = document.getElementById('options-grid');
+
+            document.getElementById('question-text').textContent = scene.question;
+            grid.innerHTML = '';
+
+            const letters = ['A', 'B', 'C', 'D'];
+            scene.options.forEach((optText, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn btn-bounce text-left bg-white hover:bg-sky-100 border-2 border-sky-300 rounded-2xl p-4 font-bold text-slate-800 text-sm sm:text-base shadow-xs flex items-start gap-3 transition';
+                btn.innerHTML = `
+                    <span class="shrink-0 w-8 h-8 rounded-xl bg-sky-500 text-white font-display font-bold flex items-center justify-center">
+                        ${letters[idx]}
+                    </span>
+                    <span class="pt-0.5">${optText}</span>
+                `;
+                btn.onclick = () => selectAnswer(idx);
+                grid.appendChild(btn);
+            });
+
+            qBox.classList.remove('hidden');
+        }
+
+        function selectAnswer(selectedIdx) {
+            const scene = SCENES[currentIndex];
+            const isCorrect = selectedIdx === scene.correctIndex;
+
+            // Disabilita tutti i pulsanti opzione e colora giusto/sbagliato
+            const buttons = document.querySelectorAll('.option-btn');
+            buttons.forEach((btn, idx) => {
+                btn.disabled = true;
+                btn.classList.remove('hover:bg-sky-100');
+                if (idx === scene.correctIndex) {
+                    btn.classList.remove('bg-white', 'border-sky-300');
+                    btn.classList.add('bg-emerald-100', 'border-emerald-500', 'text-emerald-900');
+                } else if (idx === selectedIdx && !isCorrect) {
+                    btn.classList.remove('bg-white', 'border-sky-300');
+                    btn.classList.add('bg-rose-100', 'border-rose-500', 'text-rose-900');
+                } else {
+                    btn.classList.add('opacity-60');
+                }
+            });
+
+            if (isCorrect) {
+                score++;
+                document.getElementById('score-display').textContent = score;
+                playTone('correct');
+            } else {
+                playTone('wrong');
+            }
+
+            // Salva nello storico per il report finale
+            answersHistory.push({
+                number: currentIndex + 1,
+                level: scene.level,
+                topic: scene.topic,
+                question: scene.question,
+                chosenAnswer: scene.options[selectedIdx],
+                correctAnswer: scene.options[scene.correctIndex],
+                isCorrect: isCorrect
+            });
+
+            // Mostra box feedback
+            const fbBox = document.getElementById('feedback-box');
+            const fbIcon = document.getElementById('feedback-icon');
+            const fbTitle = document.getElementById('feedback-title');
+            const fbExp = document.getElementById('feedback-explanation');
+
+            fbBox.classList.remove('hidden', 'bg-emerald-50', 'border-emerald-300', 'text-emerald-900', 'bg-rose-50', 'border-rose-300', 'text-rose-900');
+            if (isCorrect) {
+                fbBox.classList.add('bg-emerald-50', 'border-emerald-300', 'text-emerald-900');
+                fbIcon.textContent = '🎉';
+                fbTitle.textContent = 'Risposta Esatta! Ottimo lavoro!';
+            } else {
+                fbBox.classList.add('bg-rose-50', 'border-rose-300', 'text-rose-900');
+                fbIcon.textContent = '💡';
+                fbTitle.textContent = 'Attenzione! Ecco la regola giusta:';
+            }
+            fbExp.textContent = scene.explanation;
+
+            const btnNext = document.getElementById('btn-next');
+            if (currentIndex === SCENES.length - 1) {
+                btnNext.innerHTML = '<span>Vedi il tuo Patentino!</span> <span>🏆</span>';
+            } else {
+                btnNext.innerHTML = '<span>Prossima Scenetta</span> <span>➡️</span>';
+            }
+        }
+
+        function nextQuestion() {
+            const nextIdx = currentIndex + 1;
+            if (nextIdx >= SCENES.length) {
+                finishGame();
+                return;
+            }
+
+            // Se cambia livello, mostra banner celebrativo
+            if (SCENES[nextIdx].level !== SCENES[currentIndex].level) {
+                playTone('levelup');
+                const newLvl = SCENES[nextIdx].level;
+                document.getElementById('banner-title').textContent = `Livello ${newLvl - 1} Superato!`;
+                document.getElementById('banner-desc').textContent =
+                    newLvl === 2
+                        ? 'Fantastico! Ora saliamo in sella con il Livello 2: Il Ciclista Prudente!'
+                        : 'Super! Sei arrivato al Livello 3: Esperto dei Segnali e della Strada!';
+                document.getElementById('level-banner').classList.remove('hidden');
+            } else {
+                loadScene(nextIdx);
+            }
+        }
+
+        function closeLevelBanner() {
+            document.getElementById('level-banner').classList.add('hidden');
+            loadScene(currentIndex + 1);
+        }
+
+        /* =========================================================================
+           4. STATO DEL GIOCO, SHUFFLE FISHER-YATES, TIMER E LOGICA INTERATTIVA
+           ========================================================================= */
+        let student = { nome: '', cognome: '', classe: '' };
+        let activeScenes = []; // Scenette mescolate per la partita corrente
+        let currentOptionsShuffled = []; // Opzioni mescolate per la domanda corrente
+        let currentIndex = 0;
+        let score = 0;
+        let answersHistory = []; // Risposte della partita corrente
+        let sessionsHistory = []; // Storico di tutte le partite giocate dall'alunno
+        let startTime = null;
+        let endTime = null;
+        let timerInterval = null;
+        let animFrameId = null;
+        let animStartTime = null;
+        let questionShown = false;
+
+        // Algoritmo Fisher-Yates per mescolare un array in modo imparziale
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // Prepara l'ordine delle scenette mescolandole separatamente dentro ciascun livello (1, 2, 3)
+        function buildShuffledScenesByLevel() {
+            const lvl1 = shuffleArray(SCENES.filter(s => s.level === 1));
+            const lvl2 = shuffleArray(SCENES.filter(s => s.level === 2));
+            const lvl3 = shuffleArray(SCENES.filter(s => s.level === 3));
+            return [...lvl1, ...lvl2, ...lvl3];
+        }
+
+        function startGame(e) {
+            e.preventDefault();
+            const nome = document.getElementById('input-nome').value.trim();
+            const cognome = document.getElementById('input-cognome').value.trim();
+            const classe = document.getElementById('input-classe').value.trim();
+
+            if (!nome || !cognome || !classe) {
+                document.getElementById('form-error').classList.remove('hidden');
+                return;
+            }
+
+            document.getElementById('form-error').classList.add('hidden');
+            student = { nome, cognome, classe };
+            sessionsHistory = []; // Nuovo alunno: azzera lo storico delle sessioni
+
+            beginNewSession();
+        }
+
+        function beginNewSession() {
+            // Mescola le scenette dentro ogni livello ad ogni nuova partita
+            activeScenes = buildShuffledScenesByLevel();
+
+            // Reset stato partita corrente
+            currentIndex = 0;
+            score = 0;
+            answersHistory = [];
+            startTime = new Date();
+            endTime = null;
+
+            const sessionNumber = sessionsHistory.length + 1;
+
+            // Aggiorna header
+            document.getElementById('badge-name').textContent = `${student.nome} ${student.cognome}`;
+            document.getElementById('badge-class').textContent = student.classe;
+            document.getElementById('badge-session').textContent = `Partita #${sessionNumber}`;
+            document.getElementById('header-student-badge').classList.remove('hidden');
+            document.getElementById('header-timer').classList.remove('hidden');
+
+            // Avvia cronometro
+            clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimerUI, 1000);
+            updateTimerUI();
+
+            // Cambia schermata
+            document.getElementById('screen-start').classList.add('hidden');
+            document.getElementById('screen-result').classList.add('hidden');
+            document.getElementById('screen-game').classList.remove('hidden');
+
+            initAudio();
+            loadScene(0);
+        }
+
+        function playAgainSameStudent() {
+            beginNewSession();
+        }
+
+        function updateTimerUI() {
+            if (!startTime) return;
+            const now = endTime || new Date();
+            const diffSec = Math.floor((now - startTime) / 1000);
+            const mins = String(Math.floor(diffSec / 60)).padStart(2, '0');
+            const secs = String(diffSec % 60).padStart(2, '0');
+            document.getElementById('timer-display').textContent = `${mins}:${secs}`;
+        }
+
+        function loadScene(index) {
+            currentIndex = index;
+            questionShown = false;
+            const scene = activeScenes[index];
+
+            // Aggiorna UI barra superiore (mostra il numero progressivo della scena + il titolo della scenetta)
+            document.getElementById('q-current').textContent = index + 1;
+            document.getElementById('q-total').textContent = activeScenes.length;
+            document.getElementById('score-display').textContent = score;
+            document.getElementById('scene-title').textContent = `Scena ${index + 1}: ${scene.title}`;
+            document.getElementById('progress-bar').style.width = `${((index + 1) / activeScenes.length) * 100}%`;
+
+            // Colore badge livello
+            const lvlBadge = document.getElementById('level-badge');
+            lvlBadge.textContent = scene.levelName;
+            lvlBadge.className = 'px-3 py-1 rounded-xl text-xs sm:text-sm font-extrabold text-white shadow-sm ' +
+                (scene.level === 1 ? 'bg-emerald-500' : scene.level === 2 ? 'bg-amber-500' : 'bg-purple-600');
+
+            // Nascondi domanda e feedback
+            document.getElementById('question-box').classList.add('hidden');
+            document.getElementById('feedback-box').classList.add('hidden');
+            document.getElementById('btn-skip-anim').classList.remove('hidden');
+            document.getElementById('anim-status-text').textContent = 'Animazione in corso... Guarda bene!';
+
+            startAnimation();
+        }
+
+        function startAnimation() {
+            cancelAnimationFrame(animFrameId);
+            animStartTime = performance.now();
+            const scene = activeScenes[currentIndex];
+            const canvas = document.getElementById('scene-canvas');
+
+            function loop(now) {
+                const elapsed = now - animStartTime;
+                const progress = Math.min(1, elapsed / scene.animDuration);
+
+                // Adatta risoluzione nitida al contenitore
+                const rect = canvas.getBoundingClientRect();
+                const dpr = window.devicePixelRatio || 1;
+                if (canvas.width !== Math.floor(rect.width * dpr) || canvas.height !== Math.floor(rect.height * dpr)) {
+                    canvas.width = Math.floor(rect.width * dpr);
+                    canvas.height = Math.floor(rect.height * dpr);
+                }
+
+                const ctx = canvas.getContext('2d');
+                ctx.save();
+                ctx.scale(dpr, dpr);
+                ctx.clearRect(0, 0, rect.width, rect.height);
+                scene.render(ctx, rect.width, rect.height, progress);
+                ctx.restore();
+
+                if (progress < 1) {
+                    animFrameId = requestAnimationFrame(loop);
+                } else {
+                    onAnimationEnd();
+                }
+            }
+
+            animFrameId = requestAnimationFrame(loop);
+        }
+
+        function replayScene() {
+            startAnimation();
+        }
+
+        function finishAnimationEarly() {
+            cancelAnimationFrame(animFrameId);
+            const scene = activeScenes[currentIndex];
+            const canvas = document.getElementById('scene-canvas');
+            const rect = canvas.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            const ctx = canvas.getContext('2d');
+            ctx.save();
+            ctx.scale(dpr, dpr);
+            scene.render(ctx, rect.width, rect.height, 1);
+            ctx.restore();
+            onAnimationEnd();
+        }
+
+        function onAnimationEnd() {
+            document.getElementById('btn-skip-anim').classList.add('hidden');
+            document.getElementById('anim-status-text').textContent = 'Scena terminata! Rispondi qui sotto 👇';
+
+            if (!questionShown) {
+                questionShown = true;
+                showQuestionBox();
+            }
+        }
+
+        function showQuestionBox() {
+            const scene = activeScenes[currentIndex];
+            const qBox = document.getElementById('question-box');
+            const grid = document.getElementById('options-grid');
+
+            document.getElementById('question-text').textContent = scene.question;
+            grid.innerHTML = '';
+
+            // Mescola le opzioni di risposta mantenendo il flag isCorrect
+            const mappedOptions = scene.options.map((text, idx) => ({
+                text,
+                isCorrect: idx === scene.correctIndex
+            }));
+            currentOptionsShuffled = shuffleArray(mappedOptions);
+
+            const letters = ['A', 'B', 'C', 'D'];
+            currentOptionsShuffled.forEach((optObj, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn btn-bounce text-left bg-white hover:bg-sky-100 border-2 border-sky-300 rounded-2xl p-4 font-bold text-slate-800 text-sm sm:text-base shadow-xs flex items-start gap-3 transition';
+                btn.innerHTML = `
+                    <span class="shrink-0 w-8 h-8 rounded-xl bg-sky-500 text-white font-display font-bold flex items-center justify-center">
+                        ${letters[idx]}
+                    </span>
+                    <span class="pt-0.5">${optObj.text}</span>
+                `;
+                btn.onclick = () => selectAnswer(idx);
+                grid.appendChild(btn);
+            });
+
+            qBox.classList.remove('hidden');
+        }
+
+        function selectAnswer(selectedIdx) {
+            const scene = activeScenes[currentIndex];
+            const chosenObj = currentOptionsShuffled[selectedIdx];
+            const isCorrect = chosenObj.isCorrect;
+
+            // Disabilita tutti i pulsanti opzione e colora giusto/sbagliato
+            const buttons = document.querySelectorAll('.option-btn');
+            buttons.forEach((btn, idx) => {
+                btn.disabled = true;
+                btn.classList.remove('hover:bg-sky-100');
+                if (currentOptionsShuffled[idx].isCorrect) {
+                    btn.classList.remove('bg-white', 'border-sky-300');
+                    btn.classList.add('bg-emerald-100', 'border-emerald-500', 'text-emerald-900');
+                } else if (idx === selectedIdx && !isCorrect) {
+                    btn.classList.remove('bg-white', 'border-sky-300');
+                    btn.classList.add('bg-rose-100', 'border-rose-500', 'text-rose-900');
+                } else {
+                    btn.classList.add('opacity-60');
+                }
+            });
+
+            if (isCorrect) {
+                score++;
+                document.getElementById('score-display').textContent = score;
+                playTone('correct');
+            } else {
+                playTone('wrong');
+            }
+
+            // Salva nello storico della partita corrente includendo sceneId e sceneTitle
+            answersHistory.push({
+                number: currentIndex + 1,
+                sceneId: scene.id,
+                sceneTitle: scene.title,
+                level: scene.level,
+                topic: scene.topic,
+                question: scene.question,
+                chosenAnswer: chosenObj.text,
+                correctAnswer: scene.options[scene.correctIndex],
+                isCorrect: isCorrect
+            });
+
+            // Mostra box feedback
+            const fbBox = document.getElementById('feedback-box');
+            const fbIcon = document.getElementById('feedback-icon');
+            const fbTitle = document.getElementById('feedback-title');
+            const fbExp = document.getElementById('feedback-explanation');
+
+            fbBox.classList.remove('hidden', 'bg-emerald-50', 'border-emerald-300', 'text-emerald-900', 'bg-rose-50', 'border-rose-300', 'text-rose-900');
+            if (isCorrect) {
+                fbBox.classList.add('bg-emerald-50', 'border-emerald-300', 'text-emerald-900');
+                fbIcon.textContent = '🎉';
+                fbTitle.textContent = 'Risposta Esatta! Ottimo lavoro!';
+            } else {
+                fbBox.classList.add('bg-rose-50', 'border-rose-300', 'text-rose-900');
+                fbIcon.textContent = '💡';
+                fbTitle.textContent = 'Attenzione! Ecco la regola giusta:';
+            }
+            fbExp.textContent = scene.explanation;
+
+            const btnNext = document.getElementById('btn-next');
+            if (currentIndex === activeScenes.length - 1) {
+                btnNext.innerHTML = '<span>Vedi il tuo Patentino!</span> <span>🏆</span>';
+            } else {
+                btnNext.innerHTML = '<span>Prossima Scenetta</span> <span>➡️</span>';
+            }
+        }
+
+        function nextQuestion() {
+            const nextIdx = currentIndex + 1;
+            if (nextIdx >= activeScenes.length) {
+                finishGame();
+                return;
+            }
+
+            // Se cambia livello, mostra banner celebrativo
+            if (activeScenes[nextIdx].level !== activeScenes[currentIndex].level) {
+                playTone('levelup');
+                const newLvl = activeScenes[nextIdx].level;
+                document.getElementById('banner-title').textContent = `Livello ${newLvl - 1} Superato!`;
+                document.getElementById('banner-desc').textContent =
+                    newLvl === 2
+                        ? 'Fantastico! Ora saliamo in sella con il Livello 2: Il Ciclista Prudente!'
+                        : 'Super! Sei arrivato al Livello 3: Esperto dei Segnali e della Strada!';
+                document.getElementById('level-banner').classList.remove('hidden');
+            } else {
+                loadScene(nextIdx);
+            }
+        }
+
+        function closeLevelBanner() {
+            document.getElementById('level-banner').classList.add('hidden');
+            loadScene(currentIndex + 1);
+        }
+
+        /* =========================================================================
+           5. SCHERMATA FINALE E GENERAZIONE REPORT MULTI-SESSIONE SCARICABILE
+           ========================================================================= */
+        function formatDurationItalian(ms) {
+            const totalSec = Math.max(1, Math.floor(ms / 1000));
+            const mins = Math.floor(totalSec / 60);
+            const secs = totalSec % 60;
+            if (mins === 0) return `${secs} secondi`;
+            return `${mins} min e ${secs} sec`;
+        }
+
+        function finishGame() {
+            endTime = new Date();
+            clearInterval(timerInterval);
+            updateTimerUI();
+            playTone('levelup');
+
+            const durationMs = endTime - startTime;
+            const durationStr = formatDurationItalian(durationMs);
+            const dateStr = endTime.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            const startTimeStr = startTime.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+            const endTimeStr = endTime.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+            const pct = Math.round((score / activeScenes.length) * 100);
+
+            // Salva la sessione appena conclusa nello storico dell'alunno
+            sessionsHistory.push({
+                sessionNumber: sessionsHistory.length + 1,
+                dateStr,
+                startTimeStr,
+                endTimeStr,
+                durationStr,
+                score,
+                totalQuestions: activeScenes.length,
+                pct,
+                answers: [...answersHistory]
+            });
+
+            document.getElementById('screen-game').classList.add('hidden');
+            document.getElementById('screen-result').classList.remove('hidden');
+
+            const fullName = `${student.nome} ${student.cognome}`;
+
+            document.getElementById('res-fullname').textContent = fullName;
+            document.getElementById('res-student-info').textContent = `${fullName} (${student.classe})`;
+            document.getElementById('res-score').textContent = `${score} / ${activeScenes.length}`;
+            document.getElementById('res-duration').textContent = durationStr;
+            document.getElementById('res-date').textContent = dateStr;
+
+            // Badge numero partite
+            const sessionBadge = document.getElementById('res-session-count-badge');
+            sessionBadge.textContent = sessionsHistory.length === 1
+                ? 'Partita #1 completata'
+                : `Partite giocate: ${sessionsHistory.length}`;
+            sessionBadge.classList.remove('hidden');
+
+            // Valutazione finale
+            const trophy = document.getElementById('final-trophy');
+            const sub = document.getElementById('res-subtitle');
+            if (pct >= 85) {
+                trophy.textContent = '🏆';
+                sub.textContent = `Eccezionale (${pct}%)! Hai ottenuto il Patentino d'Oro del Bravo Cittadino!`;
+            } else if (pct >= 60) {
+                trophy.textContent = '🥇';
+                sub.textContent = `Molto bene (${pct}%)! Hai superato la prova di Educazione Stradale!`;
+            } else {
+                trophy.textContent = '🎖️';
+                sub.textContent = `Buon inizio (${pct}%)! Riguarda le regole nel riepilogo per diventare ancora più esperto!`;
+            }
+
+            // Punteggi per livello (ultima sessione)
+            for (let lvl = 1; lvl <= 3; lvl++) {
+                const lvlCorrect = answersHistory.filter(a => a.level === lvl && a.isCorrect).length;
+                document.getElementById(`res-lvl${lvl}`).textContent = `${lvlCorrect}/4`;
+            }
+
+            // Tabella riepilogo ultima partita (con Titolo Scenetta ben evidenziato)
+            const tbody = document.getElementById('res-table-body');
+            tbody.innerHTML = '';
+            answersHistory.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-2.5 font-bold text-slate-500">${item.number}</td>
+                    <td class="p-2.5">
+                        <div class="font-extrabold text-slate-800">${item.sceneTitle}</div>
+                        <div class="text-xs text-slate-500">Liv. ${item.level} • ${item.topic}</div>
+                    </td>
+                    <td class="p-2.5 text-slate-600">${item.chosenAnswer}</td>
+                    <td class="p-2.5 text-center font-extrabold ${item.isCorrect ? 'text-emerald-600' : 'text-rose-600'}">
+                        ${item.isCorrect ? '✅ Corretta' : '❌ Errata'}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Se ci sono 2 o più partite, mostra il riepilogo comparativo multi-partita
+            const multiContainer = document.getElementById('multi-session-container');
+            if (sessionsHistory.length >= 2) {
+                multiContainer.classList.remove('hidden');
+                document.getElementById('total-sessions-num').textContent = sessionsHistory.length;
+
+                // Card riassuntive delle varie partite
+                const cardsDiv = document.getElementById('sessions-summary-cards');
+                cardsDiv.innerHTML = sessionsHistory.map(sess => `
+                    <div class="bg-indigo-50/70 border border-indigo-200 rounded-xl p-3 text-xs">
+                        <div class="font-extrabold text-indigo-900 text-sm mb-1">🎮 Partita #${sess.sessionNumber}</div>
+                        <div class="text-slate-700"><strong>Punteggio:</strong> ${sess.score}/${sess.totalQuestions} (${sess.pct}%)</div>
+                        <div class="text-slate-700"><strong>Durata:</strong> ${sess.durationStr}</div>
+                        <div class="text-slate-500"><strong>Orario:</strong> ${sess.dateStr} • ${sess.startTimeStr}-${sess.endTimeStr}</div>
+                    </div>
+                `).join('');
+
+                // Tabella comparativa per Titolo della Scenetta
+                const cHead = document.getElementById('compare-table-head');
+                cHead.innerHTML = `
+                    <tr>
+                        <th class="p-2.5 font-extrabold">Liv.</th>
+                        <th class="p-2.5 font-extrabold">Titolo Scenetta</th>
+                        ${sessionsHistory.map(s => `<th class="p-2.5 font-extrabold text-center">Partita #${s.sessionNumber}</th>`).join('')}
+                    </tr>
+                `;
+
+                const cBody = document.getElementById('compare-table-body');
+                cBody.innerHTML = SCENES.map(baseScene => {
+                    const cells = sessionsHistory.map(sess => {
+                        const found = sess.answers.find(a => a.sceneId === baseScene.id);
+                        if (!found) return '<td class="p-2.5 text-center text-slate-400">-</td>';
+                        return `<td class="p-2.5 text-center font-extrabold ${found.isCorrect ? 'text-emerald-600' : 'text-rose-600'}">
+                            ${found.isCorrect ? '✅ Corretta' : '❌ Errata'}
+                        </td>`;
+                    }).join('');
+
+                    return `
+                        <tr>
+                            <td class="p-2.5 font-bold text-slate-500">Liv. ${baseScene.level}</td>
+                            <td class="p-2.5 font-extrabold text-slate-800">${baseScene.title}</td>
+                            ${cells}
+                        </tr>
+                    `;
+                }).join('');
+            } else {
+                multiContainer.classList.add('hidden');
+            }
+        }
+
+        function downloadReportHTML() {
+            const fullName = `${student.nome} ${student.cognome}`;
+            const isMulti = sessionsHistory.length > 1;
+
+            // Sezioni dettagliate per ogni partita giocata
+            const sessionsSectionsHtml = sessionsHistory.map(sess => {
+                const rowsHtml = sess.answers.map(item => `
+                    <tr>
+                        <td style="padding:8px; border:1px solid #cbd5e1; text-align:center;">${item.number}</td>
+                        <td style="padding:8px; border:1px solid #cbd5e1;">
+                            <strong>${item.sceneTitle}</strong><br>
+                            <span style="font-size:12px; color:#475569;">Livello ${item.level} - ${item.topic}</span>
+                        </td>
+                        <td style="padding:8px; border:1px solid #cbd5e1;">
+                            ${item.chosenAnswer}
+                            ${!item.isCorrect ? `<br><span style="font-size:12px; color:#15803d;"><em>Risposta corretta: ${item.correctAnswer}</em></span>` : ''}
+                        </td>
+                        <td style="padding:8px; border:1px solid #cbd5e1; text-align:center; font-weight:bold; color:${item.isCorrect ? '#15803d' : '#b91c1c'};">
+                            ${item.isCorrect ? 'CORRETTA' : 'ERRATA'}
+                        </td>
+                    </tr>
+                `).join('');
+
+                return `
+                    <div style="margin-top:28px; page-break-inside: avoid;">
+                        <div style="background:#e0f2fe; border-left:5px solid #0284c7; padding:12px 15px; border-radius:6px; margin-bottom:10px;">
+                            <h2 style="margin:0 0 6px 0; font-size:18px; color:#0c4a6e;">
+                                ${isMulti ? `Partita #${sess.sessionNumber}` : 'Riepilogo della Prova'}
+                            </h2>
+                            <p style="margin:0; font-size:14px;">
+                                <strong>Data:</strong> ${sess.dateStr} | 
+                                <strong>Orario:</strong> ${sess.startTimeStr} - ${sess.endTimeStr} | 
+                                <strong>Durata compito:</strong> ${sess.durationStr} | 
+                                <strong>Punteggio:</strong> ${sess.score} su ${sess.totalQuestions} (${sess.pct}%)
+                            </p>
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width:40px; text-align:center;">Ord.</th>
+                                    <th>Titolo Scenetta e Argomento</th>
+                                    <th>Risposta dell'alunno</th>
+                                    <th style="width:95px; text-align:center;">Esito</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rowsHtml}</tbody>
+                        </table>
+                    </div>
+                `;
+            }).join('');
+
+            // Tabella comparativa per Titolo della Scenetta (se l'alunno ha giocato 2 o più partite)
+            let comparativeHtml = '';
+            if (isMulti) {
+                const compHeaders = sessionsHistory.map(s => `<th style="text-align:center;">Partita #${s.sessionNumber}<br><span style="font-weight:normal; font-size:11px;">(${s.score}/${s.totalQuestions} - ${s.durationStr})</span></th>`).join('');
+                const compRows = SCENES.map(baseScene => {
+                    const tds = sessionsHistory.map(sess => {
+                        const ans = sess.answers.find(a => a.sceneId === baseScene.id);
+                        if (!ans) return '<td style="padding:7px; border:1px solid #cbd5e1; text-align:center;">-</td>';
+                        return `<td style="padding:7px; border:1px solid #cbd5e1; text-align:center; font-weight:bold; color:${ans.isCorrect ? '#15803d' : '#b91c1c'};">
+                            ${ans.isCorrect ? 'CORRETTA' : 'ERRATA'}
+                        </td>`;
+                    }).join('');
+                    return `
+                        <tr>
+                            <td style="padding:7px; border:1px solid #cbd5e1; text-align:center;">Liv. ${baseScene.level}</td>
+                            <td style="padding:7px; border:1px solid #cbd5e1;"><strong>${baseScene.title}</strong></td>
+                            ${tds}
+                        </tr>
+                    `;
+                }).join('');
+
+                comparativeHtml = `
+                    <div style="margin-top:32px; page-break-inside: avoid;">
+                        <h2 style="color:#312e81; border-bottom:2px solid #c7d2fe; padding-bottom:6px;">
+                            📊 Tabella Comparativa per Titolo della Scenetta (${sessionsHistory.length} Partite)
+                        </h2>
+                        <p style="font-size:13px; color:#475569;">Confronto dei risultati dell'alunno sulle singole scenette nelle diverse sessioni di gioco:</p>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width:65px; text-align:center;">Livello</th>
+                                    <th>Titolo della Scenetta</th>
+                                    ${compHeaders}
+                                </tr>
+                            </thead>
+                            <tbody>${compRows}</tbody>
+                        </table>
+                    </div>
+                `;
+            }
+
+            const reportContent = `<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Report Educazione Stradale - ${fullName}</title>
+<style>
+    body { font-family: Arial, sans-serif; color: #1e293b; max-width: 900px; margin: 25px auto; padding: 20px; }
+    .header { background: #0284c7; color: white; padding: 20px; border-radius: 12px; text-align: center; }
+    .info-box { display: flex; justify-content: space-between; flex-wrap: wrap; background: #f1f5f9; padding: 15px; border-radius: 10px; margin: 20px 0; border: 1px solid #cbd5e1; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13.5px; }
+    th { background: #e2e8f0; padding: 9px; border: 1px solid #cbd5e1; text-align: left; }
+</style>
+</head>
+<body>
+    <div class="header">
+        <h1 style="margin:0 0 6px 0;">🚦 Patentino del Bravo Cittadino</h1>
+        <p style="margin:0;">Report di Verifica - Educazione Stradale (Scuola Primaria)</p>
+    </div>
+    <div class="info-box">
+        <div>
+            <p style="margin:4px 0;"><strong>Alunno/a:</strong> ${fullName}</p>
+            <p style="margin:4px 0;"><strong>Classe:</strong> ${student.classe}</p>
+        </div>
+        <div>
+            <p style="margin:4px 0;"><strong>Partite registrate:</strong> ${sessionsHistory.length}</p>
+            <p style="margin:4px 0;"><strong>Data generazione report:</strong> ${new Date().toLocaleDateString('it-IT')}</p>
+        </div>
+    </div>
+    ${comparativeHtml}
+    ${sessionsSectionsHtml}
+</body>
+</html>`;
+
+            triggerDownload(reportContent, `Report_Educazione_Stradale_${student.cognome}_${student.nome}.html`, 'text/html;charset=utf-8');
+        }
+
+        function downloadReportTXT() {
+            const fullName = `${student.nome} ${student.cognome}`;
+            const isMulti = sessionsHistory.length > 1;
+
+            let txt = `====================================================================\n`;
+            txt += `   PATENTINO DEL BRAVO CITTADINO - REPORT EDUCAZIONE STRADALE\n`;
+            txt += `====================================================================\n\n`;
+            txt += `Alunno/a          : ${fullName}\n`;
+            txt += `Classe            : ${student.classe}\n`;
+            txt += `Partite giocate   : ${sessionsHistory.length}\n\n`;
+
+            if (isMulti) {
+                txt += `--------------------------------------------------------------------\n`;
+                txt += `CONFRONTO RAPIDO PER TITOLO SCENETTA TRA LE PARTITE:\n`;
+                txt += `--------------------------------------------------------------------\n`;
+                SCENES.forEach(baseScene => {
+                    const resultsPerSession = sessionsHistory.map(sess => {
+                        const ans = sess.answers.find(a => a.sceneId === baseScene.id);
+                        return `Partita #${sess.sessionNumber}: ${ans ? (ans.isCorrect ? 'CORRETTA' : 'ERRATA') : '-'}`;
+                    }).join(' | ');
+                    txt += `- [Liv.${baseScene.level}] ${baseScene.title}\n  -> ${resultsPerSession}\n`;
+                });
+                txt += `\n`;
+            }
+
+            sessionsHistory.forEach(sess => {
+                txt += `====================================================================\n`;
+                txt += `PARTITA #${sess.sessionNumber} - Data: ${sess.dateStr} (${sess.startTimeStr}-${sess.endTimeStr})\n`;
+                txt += `Durata compito: ${sess.durationStr} | Punteggio: ${sess.score}/${sess.totalQuestions} (${sess.pct}%)\n`;
+                txt += `====================================================================\n`;
+
+                sess.answers.forEach(item => {
+                    txt += `\n${item.number}. [Livello ${item.level}] Titolo Scenetta: ${item.sceneTitle}\n`;
+                    txt += `   Argomento: ${item.topic}\n`;
+                    txt += `   Esito: ${item.isCorrect ? 'CORRETTA' : 'ERRATA'}\n`;
+                    txt += `   Risposta data: ${item.chosenAnswer}\n`;
+                    if (!item.isCorrect) {
+                        txt += `   Risposta corretta: ${item.correctAnswer}\n`;
+                    }
+                });
+                txt += `\n`;
+            });
+
+            triggerDownload(txt, `Report_Educazione_Stradale_${student.cognome}_${student.nome}.txt`, 'text/plain;charset=utf-8');
+        }
+
+        function triggerDownload(content, filename, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename.replace(/\s+/g, '_');
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function resetGame() {
+            clearInterval(timerInterval);
+            cancelAnimationFrame(animFrameId);
+            sessionsHistory = [];
+            document.getElementById('student-form').reset();
+            document.getElementById('header-student-badge').classList.add('hidden');
+            document.getElementById('header-timer').classList.add('hidden');
+            document.getElementById('screen-result').classList.add('hidden');
+            document.getElementById('screen-start').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
