@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html lang="it">
+<head><meta charset="utf-8"><title>ok</title></head>
+<body>
+<script>
+// Avvisa la pagina principale (stessa cartella) che il gioco è stato risolto
+var t = new URLSearchParams(location.search).get("t");
+try { window.top.postMessage({type: "LA_OK", t: t}, location.origin); } catch (e) {}
+</script>
+</body>
+</html>
