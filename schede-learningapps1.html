@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Esercizi a schede</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{--ink:#14313b;--teal:#0e6e78;--bg:#eef3f2;--amb:#e8a33d;--ok:#2c7a4b;--ko:#b3382c}
+*{box-sizing:border-box}
+body{margin:0;font:17px/1.5 "Trebuchet MS",Verdana,sans-serif;background:var(--bg);color:var(--ink)}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 22px;background:var(--ink);color:#fff}
+h1{font-size:1.25rem;margin:0}h2{margin:.2em 0 .6em}
+button{font:inherit;cursor:pointer;border:0;border-radius:8px;padding:9px 16px;background:var(--teal);color:#fff}
+button:hover:not(:disabled){filter:brightness(1.12)}
+button:focus-visible,input:focus-visible{outline:3px solid var(--amb);outline-offset:2px}
+button:disabled{background:#c5d0d0;color:#6b7c7c;cursor:not-allowed}
+button.sec{background:#fff;color:var(--ink);border:2px solid var(--teal)}
+header button{background:var(--amb);color:var(--ink)}
+nav{display:flex;gap:6px;flex-wrap:wrap;padding:16px 22px 0}
+nav button{border-radius:8px 8px 0 0;background:#d3e0df;color:var(--ink)}
+nav button.on{background:#fff;border-bottom:4px solid var(--amb)}
+main{background:#fff;margin:0 22px 22px;padding:22px;border-radius:0 8px 8px 8px;min-height:60vh}
+label{display:block;margin:.8em 0 .2em;font-weight:bold}
+input[type=text],input[type=number]{font:inherit;padding:9px;border:2px solid #9db3b3;border-radius:8px;width:100%;max-width:380px}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.tm{font-weight:bold;font-size:1.15rem}
+.st{padding:9px 14px;border-radius:8px;background:#fff3d6;margin-bottom:12px}
+.st.ok{background:#d9f0e2;color:var(--ok);font-weight:bold}.st.ko{background:#f7dcd8;color:var(--ko);font-weight:bold}
+iframe{display:block;margin-bottom:14px;background:#f4f4f4}
+table{border-collapse:collapse;width:100%;margin:12px 0}
+td,th{border:1px solid #9db3b3;padding:8px;text-align:left}th{background:#d3e0df}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.note{color:#4d6666;font-size:.92rem}
+dialog{border:0;border-radius:12px;padding:22px;max-width:460px;width:92%}
+dialog::backdrop{background:rgba(20,49,59,.55)}
+</style>
+</head>
+<body>
+<header><h1>Esercizi a schede</h1><button id="bDoc">Area docente</button></header>
+<nav id="tabs"></nav>
+<main>
+ <section id="p1">
+  <h2>I tuoi dati</h2>
+  <label for="nome">Nome</label><input type="text" id="nome" autocomplete="off">
+  <label for="cognome">Cognome</label><input type="text" id="cognome" autocomplete="off">
+  <label for="classe">Classe</label><input type="text" id="classe" autocomplete="off">
+  <div class="row"><button id="bGo">Inizia gli esercizi</button></div>
+  <p id="msg1" class="st" hidden></p>
+ </section>
+ <section id="p2" hidden></section>
+ <section id="p3" hidden></section>
+ <section id="p4" hidden></section>
+ <section id="p5" hidden></section>
+</main>
+<dialog id="dlg"></dialog>
+
+<script>
+/* ===== CONFIGURAZIONE ===== */
+const PWD = "doc2026";
+// token = codice che deve comparire nell’iframe inserito nel Feedback di LearningApps (vedi istruzioni)
+const EX = [
+  {n:2, id:"pnafneuu225", tk:"k2x9"},
+  {n:3, id:"pw3qrnmcj25", tk:"m7q4"},
+  {n:4, id:"pmns77qbc25", tk:"z5w1"}
+];
+/* ========================== */
+const KEY = "schede_la_cfg", L = ["1. Dati","2. Gioco 1","3. Gioco 2","4. Gioco 3","5. Report"];
+let cfg = {mode:"seq", t:{2:0,3:0,4:0}};
+try { Object.assign(cfg, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch(e){}
+const S = {nome:"", cognome:"", classe:"", ok:false};
+const mk = () => ({start:new Date(), ex:{2:{s:"todo",a:0,t:0},3:{s:"todo",a:0,t:0},4:{s:"todo",a:0,t:0}}});
+let ses = [mk()], tab = 1, act = null, t0 = 0, tm = null, saved = true, flash = "", lastMsg = "nessuno";
+const $ = s => document.querySelector(s);
+const cur = () => ses[ses.length-1];
+const fmt = s => Math.floor(s/60) + " min " + String(s%60).padStart(2,"0") + " s";
+const fin = () => { const e = Object.values(cur().ex); return e.some(x=>x.s==="ko") || e.every(x=>x.s==="ok"); };
+const esito = e => e.s==="ok" ? "Superato" : e.s==="ko" ? "Non superato (tempo scaduto)" : "Non svolto";
+
+function can(n){
+  if(n===1) return act===null;
+  if(!S.ok) return false;
+  if(n===5) return fin();
+  if(fin()) return false;
+  if(act!==null && act!==n) return false;
+  if(cfg.mode==="seq" && n>2 && cur().ex[n-1].s!=="ok") return false;
+  return true;
+}
+function go(n){
+  if(!can(n)) return;
+  tab = n;
+  if(n>=2 && n<=4) start(n);
+  render();
+}
+function start(n){
+  const e = cur().ex[n];
+  if(e.s!=="todo" || e.a>0) return;
+  e.a = 1; act = n; t0 = Date.now(); saved = false;
+  $("#if"+n).src = "https://learningapps.org/watch?v=" + EX.find(q=>q.n===n).id;
+  clearInterval(tm); tm = setInterval(tick, 500); tick();
+}
+function tick(){
+  if(act===null) return;
+  const el = Math.round((Date.now()-t0)/1000), lim = cfg.t[act]|0;
+  if(lim>0 && el>=lim){
+    const e = cur().ex[act];
+    e.s = "ko"; e.t = lim; act = null; clearInterval(tm);
+    tab = 5; flash = "Il tempo è scaduto: l’esercizio non è superato. Scarica il report."; render(); return;
+  }
+  $("#tm"+act).textContent = lim>0 ? "Tempo rimasto: "+fmt(lim-el) : "Tempo trascorso: "+fmt(el);
+}
+function solve(){
+  if(act===null) return;
+  const e = cur().ex[act];
+  e.s = "ok"; e.t = Math.round((Date.now()-t0)/1000);
+  act = null; clearInterval(tm); render();
+}
+function redo(n){
+  if(act!==n) return;
+  cur().ex[n].a++;
+  const f = $("#if"+n); f.src = f.src;
+}
+function nextTab(){
+  for(const m of [2,3,4,5]) if(m!==tab && can(m)){ go(m); return; }
+}
+// Il Feedback di LearningApps carica ok.html, che avvisa questa pagina
+addEventListener("message", ev => {
+  const d = ev.data;
+  if(!d || d.type!=="LA_OK") return;
+  lastMsg = new Date().toLocaleTimeString("it-IT") + " - codice ricevuto: " + d.t + (act===null ? " (nessun gioco in corso)" : "");
+  if(act===null) return;
+  const q = EX.find(x=>x.n===act);
+  if(d.t===q.tk) solve(); else lastMsg += " - ma il gioco in corso si aspetta: " + q.tk;
+});
+addEventListener("beforeunload", e => { if(!saved){ e.preventDefault(); e.returnValue = ""; } });
+
+function build(){
+  EX.forEach(q => {
+    $("#p"+q.n).innerHTML = `<h2>Gioco ${q.n-1}</h2>
+    <div class="bar"><span id="tm${q.n}" class="tm"></span><button id="rl${q.n}" class="sec" onclick="redo(${q.n})">Ricomincia il gioco</button></div>
+    <div id="st${q.n}" class="st"></div>
+    <iframe id="if${q.n}" title="Gioco ${q.n-1}" allowfullscreen style="border:0;width:100%;height:500px"></iframe>
+    <button id="nx${q.n}" onclick="nextTab()" hidden></button>`;
+  });
+}
+function render(){
+  $("#tabs").innerHTML = [1,2,3,4,5].map(n => `<button class="${n===tab?"on":""}" ${can(n)?"":"disabled"} onclick="go(${n})">${L[n-1]}</button>`).join("");
+  for(let n=1;n<=5;n++) $("#p"+n).hidden = n!==tab;
+  EX.forEach(q => {
+    const e = cur().ex[q.n], lim = cfg.t[q.n]|0, b = $("#st"+q.n);
+    b.className = "st " + e.s;
+    b.textContent = e.s==="ok" ? "Esercizio superato in "+fmt(e.t) : e.s==="ko" ? "Tempo scaduto" :
+      "Risolvi il gioco per poter proseguire" + (lim>0 ? " (tempo massimo: "+fmt(lim)+")" : "");
+    if(e.s!=="todo") $("#tm"+q.n).textContent = "";
+    $("#rl"+q.n).hidden = e.s!=="todo";
+    const nx = $("#nx"+q.n);
+    nx.hidden = e.s!=="ok";
+    nx.textContent = fin() ? "Vai al report" : (cfg.mode==="seq" ? "Vai al gioco successivo" : "Scegli un altro gioco");
+  });
+  if(tab===1){
+    const m = $("#msg1");
+    m.hidden = !(S.ok && cfg.mode==="free");
+    m.textContent = "Dati salvati. Scegli una scheda con un gioco da risolvere.";
+  }
+  if(tab===5) renderReport();
+}
+function renderReport(){
+  const rows = EX.map(q => { const e = cur().ex[q.n];
+    return `<tr><td>Gioco ${q.n-1}</td><td>${esito(e)}</td><td>${e.a}</td><td>${e.a?fmt(e.t):"-"}</td></tr>`; }).join("");
+  $("#p5").innerHTML = `<h2>Report finale</h2>
+  ${flash ? `<p class="st ko">${flash}</p>` : ""}
+  <p>${S.nome} ${S.cognome}, classe ${S.classe}</p>
+  <table><tr><th>Esercizio</th><th>Esito</th><th>Tentativi</th><th>Tempo</th></tr>${rows}</table>
+  <p class="st ${saved?"ok":""}">${saved ? "Report scaricato." : "Devi scaricare il report prima di chiudere la pagina."}</p>
+  <div class="row"><button onclick="pdf()">Scarica il report in PDF</button><button class="sec" onclick="again()">Gioca di nuovo</button></div>
+  <p class="note">Se giochi di nuovo, il report conterrà i risultati di tutte le sessioni.</p>`;
+}
+function pdf(){
+  const d = new window.jspdf.jsPDF(); let y = 20;
+  const w = (t, sz=11, b=false) => { if(y>275){ d.addPage(); y = 20; } d.setFont("helvetica", b?"bold":"normal"); d.setFontSize(sz); d.text(t, 15, y); y += sz*0.62; };
+  w("Report esercizi", 18, true); y += 4;
+  w("Nome: "+S.nome); w("Cognome: "+S.cognome); w("Classe: "+S.classe); y += 4;
+  ses.filter(s => Object.values(s.ex).some(x => x.s!=="todo")).forEach((s,i) => {
+    w("Sessione "+(i+1)+" - eseguita il "+s.start.toLocaleString("it-IT"), 13, true); y += 1;
+    EX.forEach(q => { const e = s.ex[q.n];
+      w("Gioco "+(q.n-1)+": "+esito(e)+" | tentativi: "+e.a+" | tempo: "+(e.a?fmt(e.t):"-")); });
+    y += 5;
+  });
+  d.save("report_"+(S.cognome+"_"+S.nome).replace(/\s+/g,"_")+".pdf");
+  saved = true; render();
+}
+function again(){
+  ses.push(mk()); build(); flash = ""; tab = 1; render();
+  if(cfg.mode==="seq") go(2);
+}
+$("#bGo").onclick = () => {
+  const n = $("#nome").value.trim(), c = $("#cognome").value.trim(), k = $("#classe").value.trim();
+  if(!n || !c || !k){ const m = $("#msg1"); m.hidden = false; m.textContent = "Compila nome, cognome e classe."; return; }
+  Object.assign(S, {nome:n, cognome:c, classe:k, ok:true});
+  if(cfg.mode==="seq") go(2); else render();
+};
+
+/* ===== Area docente ===== */
+$("#bDoc").onclick = () => {
+  const p = prompt("Password docente:");
+  if(p===null) return;
+  if(p!==PWD){ alert("Password errata."); return; }
+  const dl = $("#dlg");
+  dl.innerHTML = `<h2>Area docente</h2>
+  <p><b>Ordine delle schede</b></p>
+  <label><input type="radio" name="md" value="seq" ${cfg.mode==="seq"?"checked":""}> Obbligatorio: gioco 1, poi 2, poi 3</label>
+  <label><input type="radio" name="md" value="free" ${cfg.mode==="free"?"checked":""}> Libero: l’alunno sceglie quale gioco risolvere</label>
+  <p><b>Tempo per ogni gioco (secondi, 0 = nessun timer)</b></p>
+  ${EX.map(q => `<label for="tt${q.n}">Gioco ${q.n-1}</label><input type="number" min="0" id="tt${q.n}" value="${cfg.t[q.n]|0}">`).join("")}
+  <div class="row"><button id="dSave">Salva</button>
+  <button class="sec" id="dTest" ${act!==null?"":"disabled"}>Prova: segna come risolto</button>
+  <button class="sec" id="dClose">Chiudi</button></div>
+  <p class="note">Il pulsante di prova si attiva solo se un gioco è aperto e in corso: inserisci dei dati di prova nella scheda 1, apri un gioco, poi rientra qui.</p>
+  <p class="note">Le impostazioni sono salvate in questo browser.</p>
+  <p class="note"><b>Diagnostica</b> - ultimo segnale da LearningApps: ${lastMsg}</p>`;
+  dl.showModal();
+  $("#dClose").onclick = () => dl.close();
+  $("#dSave").onclick = () => {
+    cfg.mode = document.querySelector("input[name=md]:checked").value;
+    EX.forEach(q => cfg.t[q.n] = Math.max(0, parseInt($("#tt"+q.n).value)||0));
+    try { localStorage.setItem(KEY, JSON.stringify(cfg)); } catch(e){}
+    dl.close(); render();
+  };
+  if($("#dTest")) $("#dTest").onclick = () => { dl.close(); solve(); };
+};
+
+build(); render();
+</script>
+</body>
+</html>
