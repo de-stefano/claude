@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Apri presentazione</title>
+<style>
+*{box-sizing:border-box}html,body{height:100%;margin:0;font-family:Segoe UI,Arial,sans-serif}
+body{display:flex;align-items:center;justify-content:center;background:#eef2f7}
+#open{font-size:1.3em;padding:16px 28px;border:0;border-radius:12px;background:#2563eb;color:#fff;cursor:pointer;box-shadow:0 3px 8px #0003}
+#open:hover{background:#1d4ed8}
+#ov{display:none;position:fixed;inset:0;background:#000a;z-index:10;padding:2.5%}
+#ov.on{display:block}
+#box{position:relative;width:100%;height:100%;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 6px 24px #0008}
+#bar{height:44px;background:#1f2937;display:flex;align-items:center;justify-content:space-between;padding:0 8px 0 14px;color:#fff}
+#bar a{color:#93c5fd;font-size:.9em}
+#x{width:36px;height:36px;border:0;border-radius:8px;background:#dc2626;color:#fff;font-size:1.3em;cursor:pointer}
+iframe{width:100%;height:calc(100% - 44px);border:0;display:block}
+</style></head><body>
+<button id="open" onclick="op()">▶ Apri la presentazione</button>
+<div id="ov"><div id="box"><div id="bar"><a id="ext" target="_blank" rel="noopener">Apri in una nuova scheda</a><button id="x" onclick="cl()" title="Chiudi">✕</button></div>
+<iframe id="fr" allowfullscreen allow="fullscreen"></iframe></div></div>
+<script>
+const URL_="https://view.genially.com/6afadd796323e220ff107e82";
+document.getElementById("ext").href=URL_;
+function op(){document.getElementById("fr").src=URL_;document.getElementById("ov").classList.add("on")}
+function cl(){document.getElementById("ov").classList.remove("on");document.getElementById("fr").src="about:blank"}
+addEventListener("keydown",e=>{if(e.key==="Escape")cl()});
+</script></body></html>
