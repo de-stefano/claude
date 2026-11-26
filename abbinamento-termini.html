@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Abbinamento termini</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*{box-sizing:border-box}body{font-family:Segoe UI,Arial,sans-serif;margin:0;background:#eef2f7;color:#1f2937}
+.wrap{max-width:900px;margin:0 auto;padding:16px}.card{background:#fff;border-radius:14px;padding:20px;box-shadow:0 2px 8px #0002;margin-bottom:14px}
+h1{margin:0 0 10px;font-size:1.5em}button{cursor:pointer;border:0;border-radius:8px;padding:10px 16px;font-size:1em;background:#2563eb;color:#fff;margin:3px}
+button.sec{background:#64748b}button.red{background:#dc2626}button.green{background:#16a34a;font-size:1.15em;text-decoration:none}
+button:disabled{opacity:.5;cursor:default}input,textarea{width:100%;padding:8px;font-size:1em;border:1px solid #cbd5e1;border-radius:8px}
+label{display:block;margin:8px 0 3px;font-weight:600}.row{display:flex;gap:8px;margin-bottom:6px;align-items:center}.row input{flex:1}
+.hide{display:none}.center{text-align:center}
+#board{position:relative;display:flex;justify-content:space-between;gap:20%;padding:10px 0}
+.col{flex:1;display:flex;flex-direction:column;gap:12px;z-index:2}
+.box{background:#fff;border:2px solid #94a3b8;border-radius:10px;padding:12px;text-align:center;cursor:pointer;user-select:none;min-height:48px;display:flex;align-items:center;justify-content:center}
+.box:hover{border-color:#2563eb}.box.sel{background:#dbeafe;border-color:#2563eb}.box.linked{background:#f1f5f9}
+svg{position:absolute;inset:0;width:100%;height:100%;z-index:1}svg line{stroke-width:4;stroke-linecap:round;cursor:pointer}
+#timer{font-size:1.4em;font-weight:700}.msg{font-weight:600;margin:8px 0}
+</style></head><body><div class="wrap">
+
+<div id="home" class="card center"><h1 id="hTitle">Abbinamento termini</h1>
+<button onclick="go('login')">Area studente</button><button class="sec" onclick="askPwd()">Area docente</button></div>
+
+<div id="login" class="card hide"><h1>I tuoi dati</h1>
+<label>Nome</label><input id="sNome"><label>Cognome</label><input id="sCognome"><label>Classe</label><input id="sClasse">
+<p><button onclick="startEx()">Inizia</button><button class="sec" onclick="go('home')">Indietro</button></p></div>
+
+<div id="teacher" class="hide"><div class="card"><h1>Area docente</h1>
+<label>Titolo</label><input id="tTitle">
+<label>Timer in secondi (0 = nessun timer)</label><input id="tTimer" type="number" min="0">
+<label>Link del pulsante finale (aperto solo se la soluzione è corretta)</label><input id="tUrl">
+<label>Password area docente</label><input id="tPwd"></div>
+<div class="card"><h2>Coppie corrette</h2><div class="row"><b style="flex:1">Colonna sinistra</b><b style="flex:1">Colonna destra</b><span style="width:42px"></span></div>
+<div id="pairs"></div><button class="sec" onclick="addPair()">+ Aggiungi coppia</button>
+<label>Distrattori (termini in più a destra, uno per riga)</label><textarea id="tDistr" rows="4"></textarea></div>
+<div class="card"><button onclick="saveJson()">💾 Salva impostazioni (JSON)</button>
+<button class="sec" onclick="document.getElementById('file').click()">📂 Carica impostazioni</button>
+<input type="file" id="file" accept=".json" class="hide" onchange="loadJson(event)">
+<button onclick="applyT();go('login')">▶ Prova come studente</button><button class="sec" onclick="applyT();go('home')">Esci</button></div></div>
+
+<div id="ex" class="card hide"><div class="row"><h1 style="flex:1" id="eTitle"></h1><span id="timer"></span></div>
+<p>Clicca un termine a sinistra e poi quello corrispondente a destra. Per cancellare un collegamento clicca sulla linea o su uno dei due box.</p>
+<div id="board"><svg id="svg"></svg><div class="col" id="cL"></div><div class="col" id="cR"></div></div>
+<div class="msg" id="msg"></div>
+<button id="bCheck" onclick="check()">Verifica</button><button class="sec" onclick="resetLinks()">Cancella tutto</button>
+<button class="sec" onclick="pdf()">📄 Scarica PDF</button>
+<a id="bGo" class="hide" target="_blank" rel="noopener"><button class="green">Vai avanti ➜</button></a></div>
+</div>
+<script>
+const DEF={title:"Abbinamento termini",pwd:"docente",timer:0,url:"https://view.genially.com/6afadd796323e220ff107e82?idSlide=17ffd209-57ab-4d82-b08f-32582c5bd306",
+pairs:[{l:"Cane",r:"Abbaia"},{l:"Gatto",r:"Miagola"},{l:"Mucca",r:"Muggisce"}],distr:["Ruggisce"]};
+let cfg=JSON.parse(JSON.stringify(DEF)),stu={},L=[],R=[],links={},sel=null,att=[],solved=false,locked=false,tm=null,left=0,checked=null,t0=0;
+const $=id=>document.getElementById(id);
+function go(v){["home","login","teacher","ex"].forEach(x=>$(x).classList.toggle("hide",x!==v));$("hTitle").textContent=cfg.title;if(v=="ex")setTimeout(draw,0)}
+fetch("esercizio.json").then(r=>r.ok?r.json():null).then(j=>{if(j){cfg=j;$("hTitle").textContent=cfg.title}}).catch(()=>{});
+function askPwd(){const p=prompt("Password docente:");if(p===null)return;if(p===cfg.pwd){fillT();go("teacher")}else alert("Password errata")}
+function fillT(){$("tTitle").value=cfg.title;$("tTimer").value=cfg.timer;$("tUrl").value=cfg.url;$("tPwd").value=cfg.pwd;$("tDistr").value=cfg.distr.join("\n");
+$("pairs").innerHTML="";cfg.pairs.forEach(p=>addPair(p.l,p.r))}
+function addPair(l="",r=""){const d=document.createElement("div");d.className="row";
+d.innerHTML='<input placeholder="Sinistra"><input placeholder="Destra"><button class="red" onclick="this.parentNode.remove()">✕</button>';
+d.children[0].value=l;d.children[1].value=r;$("pairs").appendChild(d)}
+function readT(){return{title:$("tTitle").value||"Abbinamento termini",pwd:$("tPwd").value||"docente",timer:Math.max(0,parseInt($("tTimer").value)||0),url:$("tUrl").value.trim(),
+pairs:[...$("pairs").children].map(d=>({l:d.children[0].value.trim(),r:d.children[1].value.trim()})).filter(p=>p.l&&p.r),
+distr:$("tDistr").value.split("\n").map(s=>s.trim()).filter(Boolean)}}
+function applyT(){cfg=readT()}
+function saveJson(){const b=new Blob([JSON.stringify(readT(),null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="esercizio.json";a.click()}
+function loadJson(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const j=JSON.parse(r.result);if(!Array.isArray(j.pairs))throw 0;cfg=Object.assign({},DEF,j);fillT()}catch(x){alert("File JSON non valido")}};r.readAsText(f);e.target.value=""}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function startEx(){stu={n:$("sNome").value.trim(),c:$("sCognome").value.trim(),k:$("sClasse").value.trim()};
+if(!stu.n||!stu.c||!stu.k){alert("Compila nome, cognome e classe");return}
+if(!cfg.pairs.length){alert("Nessun esercizio impostato");return}
+L=cfg.pairs.map((p,i)=>({id:i,t:p.l}));R=shuffle(cfg.pairs.map((p,i)=>({id:i,t:p.r})).concat(cfg.distr.map(t=>({id:-1,t}))));
+R.forEach((r,i)=>r.k=i);links={};sel=null;att=[];solved=locked=false;checked=null;$("msg").textContent="";$("bGo").classList.add("hide");$("bCheck").disabled=false;
+$("eTitle").textContent=cfg.title;t0=Date.now();clearInterval(tm);$("timer").textContent="";
+if(cfg.timer>0){left=cfg.timer;tick();tm=setInterval(tick,1000)}go("ex")}
+function tick(){$("timer").textContent="⏱ "+Math.floor(left/60)+":"+String(left%60).padStart(2,"0");
+if(left<=0){clearInterval(tm);locked=true;$("bCheck").disabled=true;record(true);$("msg").textContent="Tempo scaduto!";$("msg").style.color="#dc2626";draw();return}left--}
+function draw(){const mk=(arr,side)=>arr.map((x,i)=>{const linked=side=="L"?links[i]!==undefined:Object.values(links).includes(x.k);
+return'<div class="box'+(sel&&sel.s==side&&sel.i==i?" sel":"")+(linked?" linked":"")+'" id="'+side+i+'" onclick="clk(\''+side+"',"+i+')">'+x.t.replace(/</g,"&lt;")+"</div>"}).join("");
+$("cL").innerHTML=mk(L,"L");$("cR").innerHTML=mk(R,"R");lines()}
+function lines(){const s=$("svg"),b=$("board").getBoundingClientRect();let h="";
+for(const li in links){const a=$("L"+li).getBoundingClientRect(),r=R.findIndex(x=>x.k==links[li]),c=$("R"+r).getBoundingClientRect();
+let col="#2563eb";if(checked)col=R[r].id==li?"#16a34a":"#dc2626";
+h+='<line data-l="'+li+'" x1="'+(a.right-b.left)+'" y1="'+(a.top+a.height/2-b.top)+'" x2="'+(c.left-b.left)+'" y2="'+(c.top+c.height/2-b.top)+'" stroke="'+col+'" onclick="del('+li+')"/>'}
+s.innerHTML=h}
+function del(li){if(locked||solved)return;delete links[li];checked=null;draw()}
+function clk(s,i){if(locked||solved)return;checked=null;
+const lk=s=="L"?(links[i]!==undefined?i:null):(Object.keys(links).find(k=>links[k]==R[i].k)??null);
+if(lk!==null){delete links[lk];sel=null;draw();return}
+if(!sel||sel.s==s){sel={s,i};draw();return}
+const li=s=="L"?i:sel.i,ri=s=="R"?i:sel.i;links[li]=R[ri].k;sel=null;draw()}
+function resetLinks(){if(locked||solved)return;links={};sel=null;checked=null;draw()}
+function record(timeout){const rows=L.map((l,i)=>{const r=links[i]!==undefined?R.find(x=>x.k==links[i]):null;return{l:l.t,r:r?r.t:"(nessun collegamento)",ok:!!r&&r.id==i}});
+const sc=rows.filter(x=>x.ok).length;att.push({n:att.length+1,time:new Date().toLocaleTimeString("it-IT"),rows,sc,tot:L.length,timeout:!!timeout});return sc}
+function check(){if(locked||solved)return;const sc=record(false);checked=true;draw();const m=$("msg");
+if(sc==L.length){solved=true;clearInterval(tm);m.style.color="#16a34a";m.textContent="🎉 Ottimo! Tutti i collegamenti sono corretti.";$("bCheck").disabled=true;
+if(cfg.url){$("bGo").href=cfg.url;$("bGo").classList.remove("hide")}}
+else{m.style.color="#dc2626";m.textContent="Collegamenti corretti: "+sc+" su "+L.length+". Le linee rosse sono sbagliate: cancellale e riprova."}}
+function pdf(){if(!window.jspdf){window.print();return}
+const d=new window.jspdf.jsPDF(),W=180;let y=20;const ln=(t,b,sz)=>{d.setFont("helvetica",b?"bold":"normal");d.setFontSize(sz||11);
+d.splitTextToSize(String(t),W).forEach(x=>{if(y>280){d.addPage();y=20}d.text(x,15,y);y+=6})};
+ln(cfg.title,1,16);y+=2;ln("Alunno: "+stu.n+" "+stu.c+"   Classe: "+stu.k);ln("Data: "+new Date().toLocaleDateString("it-IT"));
+ln("Tempo impiegato: "+Math.round((Date.now()-t0)/1000)+" s"+(cfg.timer?" (timer: "+cfg.timer+" s)":""));
+ln("Esito finale: "+(solved?"ESERCIZIO RISOLTO":"non risolto"),1);ln("Tentativi: "+att.length);y+=3;
+att.forEach(a=>{ln("Tentativo "+a.n+" - ore "+a.time+" - "+a.sc+"/"+a.tot+(a.timeout?" (tempo scaduto)":""),1,12);
+a.rows.forEach(r=>ln("   "+r.l+"  ->  "+r.r+"   ["+(r.ok?"corretto":"errato")+"]"));y+=3});
+d.save("risultati-"+stu.c+"-"+stu.n+".pdf")}
+addEventListener("resize",()=>{if(!$("ex").classList.contains("hide"))lines()});
+</script></body></html>
