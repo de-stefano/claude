@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Presentazione Genially</title>
+<style>
+  :root {
+    --sfondo: #eef2f6;
+    --testo: #1f2a37;
+    --accento: #2b6cb0;
+    --accento-scuro: #1e4e82;
+    --bordo: #cfd8e3;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--sfondo);
+    color: var(--testo);
+  }
+  header {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px 16px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  h1 { margin: 0; font-size: 1.5rem; }
+  button {
+    font: inherit;
+    padding: 9px 16px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--accento);
+    color: #fff;
+    cursor: pointer;
+  }
+  button:hover { background: var(--accento-scuro); }
+  button:focus-visible { outline: 3px solid #f6ad55; outline-offset: 2px; }
+  main { max-width: 1200px; margin: 0 auto; padding: 0 16px 24px; }
+  .cornice {
+    border: 1px solid var(--bordo);
+    border-radius: 10px;
+    overflow: hidden;
+    background: #fff;
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Presentazione</h1>
+    <button type="button" id="schermoIntero">Schermo intero</button>
+  </header>
+
+  <main>
+    <div class="cornice" id="cornice">
+      <div style="width: 100%;"><div style="position: relative; padding-bottom: 56.25%; padding-top: 0; height: 0;"><iframe title="Titolo 1" frameborder="0" width="1200" height="675" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" src="https://view.genially.com/6afadd796323e220ff107e82" type="text/html" allowscriptaccess="always" allowfullscreen="true" scrolling="yes" allownetworking="all"></iframe> </div> </div>
+    </div>
+  </main>
+
+<script>
+  document.getElementById('schermoIntero').addEventListener('click', function () {
+    var el = document.getElementById('cornice');
+    if (el.requestFullscreen) { el.requestFullscreen(); }
+    else if (el.webkitRequestFullscreen) { el.webkitRequestFullscreen(); }
+  });
+</script>
+</body>
+</html>
